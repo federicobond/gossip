@@ -1,8 +1,8 @@
 package ar.edu.itba.it.gossip;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
 
 public class AppTest {
     /**
@@ -10,6 +10,6 @@ public class AppTest {
      */
     @Test
     public void trueStatement() {
-        assertTrue( true );
+        assertTrue(true);
     }
 }
