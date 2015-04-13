@@ -1,7 +1,5 @@
 package ar.edu.itba.it.gossip.tcp;
 
-import static ar.edu.itba.it.gossip.util.ExceptionUtils.unsafely;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -10,14 +8,20 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import ar.edu.itba.it.gossip.util.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class TCPReactorImpl implements TCPReactor, Logging {
+public class TCPReactorImpl implements TCPReactor {
     private static final int TIMEOUT = 3000; // Wait timeout (milliseconds)
+    private static final String DEFAULT_HOSTNAME = "localhost";
+
+    private static final Logger logger = LoggerFactory
+            .getLogger(TCPReactorImpl.class);
 
     private final Map<Integer, TCPHandler> handlersByListenerPort;
 
@@ -28,22 +32,28 @@ public class TCPReactorImpl implements TCPReactor, Logging {
     private boolean running = false;
     private String hostname;
 
-    public TCPReactorImpl(Map<Integer, TCPHandler> handlersByPort,
-            String hostname) {
-        this.handlersByListenerPort = handlersByPort;
+    public TCPReactorImpl(String hostname,
+            Map<Integer, TCPHandler> handlersByListenerPort) {
         this.hostname = hostname;
+        this.handlersByListenerPort = Collections
+                .unmodifiableMap(handlersByListenerPort);
+    }
+
+    public TCPReactorImpl(Map<Integer, TCPHandler> handlersByListenerPort) {
+        this(DEFAULT_HOSTNAME, handlersByListenerPort);
     }
 
     @Override
     public void subscribe(SocketChannel channel, TCPHandler handler) {
+        // TODO: shouldn't we be checking for collisions here?
         handlersByChannel.put(channel, handler);
-        logInfo("Channel subscribed to handler: " + channel + "-" + handler);
+        logger.info("Channel subscribed to handler: " + channel + "-" + handler);
     }
 
     @Override
     public void unsubscribe(SocketChannel channel) {
         handlersByChannel.remove(channel);
-        logInfo("Done handling channel: " + channel);
+        logger.info("Done handling channel: " + channel);
     }
 
     @Override
@@ -61,9 +71,9 @@ public class TCPReactorImpl implements TCPReactor, Logging {
         Selector selector = Selector.open();
 
         // Create listening socket channel for each port and register selector
-        handlersByListenerPort.forEach(unsafely(
-                (port, handler) -> startListener(selector, port),
-                onErrorLog("Error starting listener")));
+        for (Integer port : handlersByListenerPort.keySet()) {
+            startListener(selector, port);
+        }
 
         while (running) {
             // Wait for some channel to be ready (or timeout)
@@ -86,7 +96,7 @@ public class TCPReactorImpl implements TCPReactor, Logging {
         listenerChannel.configureBlocking(false);
         listenerChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-        logInfo("listener started on port: " + port);
+        logger.info("listener started on port: " + port);
     }
 
     private void handleEvents(Iterator<SelectionKey> keyIter)
@@ -117,16 +127,20 @@ public class TCPReactorImpl implements TCPReactor, Logging {
     }
 
     private TCPHandler getHandlerForChannel(SelectableChannel channel)
-            throws IOException {
-        try {
+            throws IOException { // TODO: check! (there must be a nice
+                                 // polymorphic way to do this) -note that the
+                                 // trivial case isn't working
+        if (channel instanceof SocketChannel) {
             SocketChannel socketChannel = (SocketChannel) channel;
             return handlersByChannel.get(socketChannel);
-        } catch (ClassCastException e) { // XXX
+        }
+        if (channel instanceof ServerSocketChannel) {
             ServerSocketChannel serverSocketChannel = (ServerSocketChannel) channel;
             InetSocketAddress address = (InetSocketAddress) serverSocketChannel
                     .getLocalAddress();
             int port = address.getPort();
             return handlersByListenerPort.get(port);
         }
+        throw new IllegalArgumentException("Unknown type of channel");
     }
 }

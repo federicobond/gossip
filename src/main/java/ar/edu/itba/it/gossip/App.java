@@ -12,7 +12,7 @@ public class App {
     public static void main(String[] args) throws IOException {
         Map<Integer, TCPHandler> protocolHandlers = new HashMap<>();
 
-        TCPReactor reactor = new TCPReactorImpl(protocolHandlers, "localhost");
+        TCPReactor reactor = new TCPReactorImpl("localhost", protocolHandlers);
         reactor.start();
     }
 }
