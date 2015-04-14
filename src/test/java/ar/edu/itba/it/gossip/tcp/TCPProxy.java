@@ -29,13 +29,16 @@ public class TCPProxy implements TCPHandler {
     private final short port;
     private final String host;
 
-    public TCPProxy(String host, short port) {
+    private final TCPReactor reactor;
+
+    public TCPProxy(TCPReactor reactor, String host, short port) {
+        this.reactor = reactor;
         this.host = host;
         this.port = port;
     }
 
-    public TCPProxy(short port) {
-        this(DEFAULT_HOST, port);
+    public TCPProxy(TCPReactor reactor, short port) {
+        this(reactor, DEFAULT_HOST, port);
     }
 
     @Override
@@ -44,6 +47,7 @@ public class TCPProxy implements TCPHandler {
 
         SocketChannel clntChan = ((ServerSocketChannel) key.channel()).accept();
         clntChan.configureBlocking(false); // Must be nonblocking to register
+
         originServer.configureBlocking(false);
         // no nos registramos a ningun evento porque primero tenemos que
         // establecer la conexion hacia el origin server
@@ -52,6 +56,9 @@ public class TCPProxy implements TCPHandler {
         originServer.connect(new InetSocketAddress(host, port));
         originServer
                 .register(key.selector(), SelectionKey.OP_CONNECT, clntChan);
+
+        reactor.subscribe(clntChan, this);
+        reactor.subscribe(originServer, this);
     }
 
     @Override
@@ -67,13 +74,19 @@ public class TCPProxy implements TCPHandler {
                 // dos puntas
                 state.updateSubscription(key.selector());
             } else {
-                state.closeChannels();
+                closeChannels(state);
             }
         } catch (IOException e) {
             System.err.println("Failed to connect to origin server: "
                     + e.getMessage());
-            state.closeChannels();
+            closeChannels(state);
         }
+    }
+
+    private void closeChannels(ProxyState state) throws IOException {
+        reactor.unsubscribe(state.clientChannel);
+        reactor.unsubscribe(state.originChannel);
+        state.closeChannels();
     }
 
     @Override
@@ -85,7 +98,7 @@ public class TCPProxy implements TCPHandler {
 
         long bytesRead = channel.read(buffer);
         if (bytesRead == -1) { // Did the other end close?
-            proxyState.closeChannels();
+            closeChannels(proxyState);
         } else if (bytesRead > 0) {
             proxyState.updateSubscription(key.selector());
         }

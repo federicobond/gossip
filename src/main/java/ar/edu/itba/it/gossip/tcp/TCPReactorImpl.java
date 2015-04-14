@@ -1,5 +1,7 @@
 package ar.edu.itba.it.gossip.tcp;
 
+import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -8,7 +10,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -23,7 +25,7 @@ public class TCPReactorImpl implements TCPReactor {
     private static final Logger logger = LoggerFactory
             .getLogger(TCPReactorImpl.class);
 
-    private final Map<Integer, TCPHandler> handlersByListenerPort;
+    private final Map<Integer, TCPHandler> handlersByListenerPort = new HashMap<>();
 
     // Since SocketChannels don't implement hashcode and equals, compare them by
     // identity
@@ -32,40 +34,44 @@ public class TCPReactorImpl implements TCPReactor {
     private boolean running = false;
     private String hostname;
 
-    public TCPReactorImpl(String hostname,
-            Map<Integer, TCPHandler> handlersByListenerPort) {
+    public TCPReactorImpl(String hostname) {
         this.hostname = hostname;
-        this.handlersByListenerPort = Collections
-                .unmodifiableMap(handlersByListenerPort);
     }
 
-    public TCPReactorImpl(Map<Integer, TCPHandler> handlersByListenerPort) {
-        this(DEFAULT_HOSTNAME, handlersByListenerPort);
+    public TCPReactorImpl() {
+        this(DEFAULT_HOSTNAME);
+    }
+
+    @Override
+    public void addHandler(TCPHandler handler, int listenerPort) {
+        this.handlersByListenerPort.put(listenerPort, handler);
     }
 
     @Override
     public void subscribe(SocketChannel channel, TCPHandler handler) {
         // TODO: shouldn't we be checking for collisions here?
         handlersByChannel.put(channel, handler);
-        logger.info("Channel subscribed to handler: " + channel + "-" + handler);
+        logger.info("Subscribed channel {} to handler {}", channel, handler);
     }
 
     @Override
     public void unsubscribe(SocketChannel channel) {
         handlersByChannel.remove(channel);
-        logger.info("Done handling channel: " + channel);
+        logger.info("Done handling channel: {}", channel);
     }
 
     @Override
     public void stop() {
         this.running = false;
+        logger.info("[STOP]: {}", this);
     }
 
     @Override
     public void start() throws IOException {
-        if (running) {
-            throw new IllegalStateException("Reactor is already running!");
-        }
+        assumeState(!running, "%s is already running", this);
+        assumeState(!handlersByListenerPort.isEmpty(),
+                "A non-empty Map of handlers is expected");
+
         running = true;
         // Create a selector to multiplex listening sockets and connections
         Selector selector = Selector.open();
@@ -75,6 +81,7 @@ public class TCPReactorImpl implements TCPReactor {
             startListener(selector, port);
         }
 
+        logger.info("[START]: {}", this);
         while (running) {
             // Wait for some channel to be ready (or timeout)
             int readyChannelCount = selector.select(TIMEOUT);
@@ -96,7 +103,8 @@ public class TCPReactorImpl implements TCPReactor {
         listenerChannel.configureBlocking(false);
         listenerChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-        logger.info("listener started on port: " + port);
+        TCPHandler handler = handlersByListenerPort.get(port);
+        logger.info("Subscribed handler {} as listener on port {}", handler, port);
     }
 
     private void handleEvents(Iterator<SelectionKey> keyIter)
@@ -107,20 +115,27 @@ public class TCPReactorImpl implements TCPReactor {
 
             if (handler != null) {
                 if (key.isValid() && key.isAcceptable()) {
+                    logger.info("Handling TCP accept with handler: {}", handler);
                     handler.handleAccept(key);
                 }
 
                 if (key.isValid() && key.isConnectable()) {
+                    logger.info("Handling TCP connect with handler: {}",
+                            handler);
                     handler.handleConnect(key);
                 }
 
                 if (key.isValid() && key.isReadable()) {
+                    logger.info("Handling TCP read with handler: {}", handler);
                     handler.handleRead(key);
                 }
 
                 if (key.isValid() && key.isWritable()) {
+                    logger.info("Handling TCP write with handler: {}", handler);
                     handler.handleWrite(key);
                 }
+            } else {
+                logger.info("No handler found for channel: {}", key.channel());
             }
             keyIter.remove(); // remove from set of selected keys
         }
@@ -141,6 +156,6 @@ public class TCPReactorImpl implements TCPReactor {
             int port = address.getPort();
             return handlersByListenerPort.get(port);
         }
-        throw new IllegalArgumentException("Unknown type of channel");
+        throw new IllegalArgumentException("Unknown channel type: " + channel);
     }
 }
