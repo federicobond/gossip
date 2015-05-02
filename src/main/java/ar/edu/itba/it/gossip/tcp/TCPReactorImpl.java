@@ -22,7 +22,7 @@ public class TCPReactorImpl implements TCPReactor {
     private static final int TIMEOUT = 3000; // Wait timeout (milliseconds)
     private static final String DEFAULT_HOSTNAME = "localhost";
 
-    private static final Logger logger = LoggerFactory
+    private final Logger logger = LoggerFactory
             .getLogger(TCPReactorImpl.class);
 
     private final Map<Integer, TCPHandler> handlersByListenerPort = new HashMap<>();
