@@ -1,10 +1,10 @@
-package ar.edu.itba.it.gossip.xmpp.event;
+package ar.edu.itba.it.gossip.proxy.xmpp.event;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
-public class AuthStanza extends Event {
+public class AuthStanza extends XMPPEvent {
     private final String mechanism;
     private final String username;
     private final String password;
@@ -14,7 +14,8 @@ public class AuthStanza extends Event {
 
         // TODO: this is not tolerant to auth without initial \0
         body = body.replaceAll("\n", "");
-        String[] parts = new String(Base64.getDecoder().decode(body), StandardCharsets.UTF_8).split("\0");
+        String[] parts = new String(Base64.getDecoder().decode(body),
+                StandardCharsets.UTF_8).split("\0");
 
         this.username = parts[1];
         this.password = parts[2];
@@ -35,5 +36,9 @@ public class AuthStanza extends Event {
 
     public String getPassword() {
         return password;
+    }
+
+    public boolean mechanismMatches(String mechanism) {
+        return this.mechanism.equals(mechanism);
     }
 }

@@ -1,17 +1,19 @@
-package ar.edu.itba.it.gossip.util;
+package ar.edu.itba.it.gossip.util.nio;
+
+import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public class ByteBufferInputStream extends InputStream {
+    private final ByteBuffer buf;
 
-    ByteBuffer buf;
-
-    public ByteBufferInputStream(ByteBuffer buf) {
+    public ByteBufferInputStream(final ByteBuffer buf) {
         this.buf = buf;
     }
 
+    @Override
     public int read() throws IOException {
         if (!buf.hasRemaining()) {
             return -1;
@@ -19,8 +21,8 @@ public class ByteBufferInputStream extends InputStream {
         return buf.get() & 0xFF;
     }
 
-    public int read(byte[] bytes, int off, int len)
-            throws IOException {
+    @Override
+    public int read(byte[] bytes, int off, int len) throws IOException {
         if (!buf.hasRemaining()) {
             return -1;
         }
@@ -28,5 +30,10 @@ public class ByteBufferInputStream extends InputStream {
         len = Math.min(len, buf.remaining());
         buf.get(bytes, off, len);
         return len;
+    }
+    
+    @Override
+    public String toString() {
+        return reflectionToString(this);
     }
 }

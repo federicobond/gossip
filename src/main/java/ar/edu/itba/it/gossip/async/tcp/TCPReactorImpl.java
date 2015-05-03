@@ -1,4 +1,4 @@
-package ar.edu.itba.it.gossip.tcp;
+package ar.edu.itba.it.gossip.async.tcp;
 
 import static ar.edu.itba.it.gossip.util.Validations.assumeState;
 
@@ -22,14 +22,13 @@ public class TCPReactorImpl implements TCPReactor {
     private static final int TIMEOUT = 3000; // Wait timeout (milliseconds)
     private static final String DEFAULT_HOSTNAME = "localhost";
 
-    private final Logger logger = LoggerFactory
-            .getLogger(TCPReactorImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
 
-    private final Map<Integer, TCPHandler> handlersByListenerPort = new HashMap<>();
+    private final Map<Integer, TCPChannelEventHandler> handlersByListenerPort = new HashMap<>();
 
     // Since SocketChannels don't implement hashcode and equals, compare them by
     // identity
-    private final Map<SocketChannel, TCPHandler> handlersByChannel = new IdentityHashMap<>();
+    private final Map<SocketChannel, TCPChannelEventHandler> handlersByChannel = new IdentityHashMap<>();
 
     private boolean running = false;
     private String hostname;
@@ -43,12 +42,12 @@ public class TCPReactorImpl implements TCPReactor {
     }
 
     @Override
-    public void addHandler(TCPHandler handler, int listenerPort) {
+    public void addHandler(TCPChannelEventHandler handler, int listenerPort) {
         this.handlersByListenerPort.put(listenerPort, handler);
     }
 
     @Override
-    public void subscribe(SocketChannel channel, TCPHandler handler) {
+    public void subscribe(SocketChannel channel, TCPChannelEventHandler handler) {
         // TODO: shouldn't we be checking for collisions here?
         handlersByChannel.put(channel, handler);
         logger.info("Subscribed channel {} to handler {}", channel, handler);
@@ -103,15 +102,16 @@ public class TCPReactorImpl implements TCPReactor {
         listenerChannel.configureBlocking(false);
         listenerChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-        TCPHandler handler = handlersByListenerPort.get(port);
-        logger.info("Subscribed handler {} as listener on port {}", handler, port);
+        TCPChannelEventHandler handler = handlersByListenerPort.get(port);
+        logger.info("Subscribed handler {} as listener on port {}", handler,
+                port);
     }
 
     private void handleEvents(Iterator<SelectionKey> keyIter)
             throws IOException {
         while (keyIter.hasNext()) {
             SelectionKey key = keyIter.next();
-            TCPHandler handler = getHandlerForChannel(key.channel());
+            TCPChannelEventHandler handler = getHandlerForChannel(key.channel());
 
             if (handler != null) {
                 if (key.isValid() && key.isAcceptable()) {
@@ -141,10 +141,8 @@ public class TCPReactorImpl implements TCPReactor {
         }
     }
 
-    private TCPHandler getHandlerForChannel(SelectableChannel channel)
-            throws IOException { // TODO: check! (there must be a nice
-                                 // polymorphic way to do this) -note that the
-                                 // trivial case isn't working
+    private TCPChannelEventHandler getHandlerForChannel(
+            SelectableChannel channel) throws IOException {
         if (channel instanceof SocketChannel) {
             SocketChannel socketChannel = (SocketChannel) channel;
             return handlersByChannel.get(socketChannel);

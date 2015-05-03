@@ -1,17 +1,32 @@
-package ar.edu.itba.it.gossip.tcp;
+package ar.edu.itba.it.gossip.proxy;
 
-import com.fasterxml.aalto.AsyncByteBufferFeeder;
-import com.fasterxml.aalto.AsyncXMLInputFactory;
-import com.fasterxml.aalto.AsyncXMLStreamReader;
-import com.fasterxml.aalto.stax.InputFactoryImpl;
-
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
-public class TCPXMLProxy implements TCPHandler {
+import ar.edu.itba.it.gossip.async.tcp.TCPChannelEventHandler;
+import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
+
+/**
+ * Proxy TCP full duplex
+ * 
+ * +---------+ 1 +-------+ 2 +---------------+ | cliente | --> | proxy | ---> |
+ * origin server | +---------+ +-------+ +---------------+
+ * 
+ * 1. Por cada conexion entrante al proxy server (onAccept) 2. Intentamos
+ * establecer una conexi�n al origin server (onConnect) a. Si falla la conexi�n
+ * cerramos ambos sockets b. De otro modo registramos para leer algo. 3. Lo que
+ * leemos desde el cliente lo escribimos en toOriginBuffer Lo que leemos desde
+ * el origin server lo escribimos en toClientBuffer.
+ * 
+ * Si alguno de los buffers tienen algo para escribir se actualiza
+ */
+public class TCPProxy implements TCPChannelEventHandler {
     public static final String DEFAULT_HOST = "127.0.0.1";
 
     private final short port;
@@ -19,13 +34,13 @@ public class TCPXMLProxy implements TCPHandler {
 
     private final TCPReactor reactor;
 
-    public TCPXMLProxy(TCPReactor reactor, String host, short port) {
+    public TCPProxy(TCPReactor reactor, String host, short port) {
         this.reactor = reactor;
         this.host = host;
         this.port = port;
     }
 
-    public TCPXMLProxy(TCPReactor reactor, short port) {
+    public TCPProxy(TCPReactor reactor, short port) {
         this(reactor, DEFAULT_HOST, port);
     }
 
@@ -37,6 +52,8 @@ public class TCPXMLProxy implements TCPHandler {
         clntChan.configureBlocking(false); // Must be nonblocking to register
 
         originServer.configureBlocking(false);
+        // no nos registramos a ningun evento porque primero tenemos que
+        // establecer la conexion hacia el origin server
 
         // Initiate connection to server and repeatedly poll until complete
         originServer.connect(new InetSocketAddress(host, port));
@@ -56,6 +73,8 @@ public class TCPXMLProxy implements TCPHandler {
         try {
             boolean ret = originChannel.finishConnect();
             if (ret) {
+                // nos interesa cualquier cosa que venga de cualquiera de las
+                // dos puntas
                 state.updateSubscription(key.selector());
             } else {
                 closeChannels(state);
@@ -79,33 +98,11 @@ public class TCPXMLProxy implements TCPHandler {
         final SocketChannel channel = (SocketChannel) key.channel();
 
         final ByteBuffer buffer = proxyState.readBufferFor(channel);
-        final AsyncXMLStreamReader<AsyncByteBufferFeeder> parser = proxyState.parserFor(channel);
 
         long bytesRead = channel.read(buffer);
-
         if (bytesRead == -1) { // Did the other end close?
             closeChannels(proxyState);
-            parser.getInputFeeder().endOfInput();
         } else if (bytesRead > 0) {
-            int pos = 0;
-            try {
-                pos = buffer.position();
-                buffer.flip();
-                parser.getInputFeeder().feedInput(buffer);
-                int type = 0;
-                while (true) {
-                    type = parser.next();
-                    if (type == AsyncXMLStreamReader.EVENT_INCOMPLETE || type == AsyncXMLStreamReader.END_DOCUMENT) {
-                        break;
-                    }
-                    System.out.println(type);
-                }
-            } catch (XMLStreamException e) {
-                throw new RuntimeException(e);
-            } finally {
-                buffer.position(pos);
-                buffer.limit(buffer.capacity());
-            }
             proxyState.updateSubscription(key.selector());
         }
     }
@@ -118,36 +115,34 @@ public class TCPXMLProxy implements TCPHandler {
 
         final ByteBuffer buffer = proxyState.writeBufferFor(channel);
 
-        buffer.flip();
+        buffer.flip(); // Prepare buffer for writing
         channel.write(buffer);
         buffer.compact(); // Make room for more data to be read in
 
         proxyState.updateSubscription(key.selector());
     }
 
+    /**
+     * Mantiene el estado del proxy. Aqui viven los dos sockets: A. El iniciado
+     * por el cliente Cliente hacia el proxy server B. El iniciado por el proxy
+     * server hacia el Origin Server.
+     * 
+     * Y sus buffers intermedios.
+     * 
+     * @author Juan F. Codagnone
+     * @since Oct 14, 2014
+     */
     private static class ProxyState {
-
-        public final SocketChannel clientChannel;
-        public final SocketChannel originChannel;
-
-        private final int BUFF_SIZE = 4 * 1024;
-
-        public final ByteBuffer toOriginBuffer = ByteBuffer.allocate(BUFF_SIZE);
-        public final ByteBuffer toClientBuffer = ByteBuffer.allocate(BUFF_SIZE);
-
-        public final AsyncXMLStreamReader<AsyncByteBufferFeeder> clientParser;
-        public final AsyncXMLStreamReader<AsyncByteBufferFeeder> originParser;
-
-
-        ProxyState(final SocketChannel clientChannel, final SocketChannel originChannel) {
-            AsyncXMLInputFactory xmlInputFactory = new InputFactoryImpl();
-            try {
-                clientParser = xmlInputFactory.createAsyncFor(ByteBuffer.allocate(0));
-                originParser = xmlInputFactory.createAsyncFor(ByteBuffer.allocate(0));
-            } catch (XMLStreamException e) {
-                throw new RuntimeException(e);
-            }
-
+        /**
+         * crea un estado de conexion
+         * 
+         * @param clientChannel
+         *            El iniciado por el cliente Cliente hacia el proxy server
+         * @param originChannel
+         *            El iniciado por el proxy server hacia el Origin Server.
+         */
+        ProxyState(final SocketChannel clientChannel,
+                final SocketChannel originChannel) {
             if (clientChannel == null || originChannel == null) {
                 throw new IllegalArgumentException();
             }
@@ -155,6 +150,21 @@ public class TCPXMLProxy implements TCPHandler {
             this.originChannel = originChannel;
         }
 
+        public final SocketChannel clientChannel;
+        public final SocketChannel originChannel;
+
+        /**
+         * tama�o de buffer de lectura y escritura. Si se juega con este valor
+         * se puede ver la inicidencia en CPU de un buffer chico.
+         * 
+         * Por ejemplo llevarlo a 1 y correr pv /path/a/un/archivo.grande | nc
+         * localhost 9090
+         */
+        private final int BUFF_SIZE = 4 * 1024;
+        public final ByteBuffer toOriginBuffer = ByteBuffer.allocate(BUFF_SIZE);
+        public final ByteBuffer toClientBuffer = ByteBuffer.allocate(BUFF_SIZE);
+
+        /** obtiene el buffer donde se deben dejar los bytes leidos */
         public ByteBuffer readBufferFor(final SocketChannel channel) {
             final ByteBuffer ret;
             // no usamos equals porque la comparacion es suficiente por
@@ -186,16 +196,7 @@ public class TCPXMLProxy implements TCPHandler {
             return ret;
         }
 
-        public AsyncXMLStreamReader<AsyncByteBufferFeeder> parserFor(SocketChannel channel) {
-            if (clientChannel == channel) {
-                return clientParser;
-            } else if (originChannel == channel) {
-                return originParser;
-            } else {
-                throw new IllegalArgumentException("socket desconocido");
-            }
-        }
-
+        /** cierra los canales. */
         public void closeChannels() throws IOException {
             // el try finally es importante porque el primer close podria tirar
             // una
@@ -208,6 +209,14 @@ public class TCPXMLProxy implements TCPHandler {
             }
         }
 
+        /**
+         * Basado en el estado interno de los buffers actualiza las
+         * subscripciones de eventos de los canales.
+         * 
+         * Basicamente: - Si hay algun byte en el buffer nos interesa escribirlo
+         * - Si hay lugar para guardar un byte mas en el buffer nos interesa
+         * leer
+         */
         public void updateSubscription(Selector selector)
                 throws ClosedChannelException {
             int originFlags = 0;
