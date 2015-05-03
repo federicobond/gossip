@@ -1,5 +1,8 @@
 package ar.edu.itba.it.gossip.xmpp;
 
+import ar.edu.itba.it.gossip.tcp.ProxyState;
+import ar.edu.itba.it.gossip.tcp.TCPXMLProxy3;
+import ar.edu.itba.it.gossip.tcp.TCPXMLProxy3.Connector;
 import ar.edu.itba.it.gossip.xml.EventHandler;
 import ar.edu.itba.it.gossip.xmpp.event.Event;
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
@@ -16,14 +19,23 @@ public abstract class StreamHandler {
     protected static final XMLOutputFactory OUTPUT_FACTORY = XMLOutputFactory.newFactory();
     protected static final AsyncXMLInputFactory INPUT_FACTORY = new InputFactoryImpl();
 
+    protected final ProxyState proxyState;
+
     protected AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
 
-    protected OutputStream client;
-    protected OutputStream origin;
+    protected OutputStream toClient;
+    protected OutputStream toOrigin;
+
+    protected Connector connector;
 
     private EventHandler eventHandler;
 
-    public void read(ByteBuffer buf) {
+    protected StreamHandler(ProxyState proxyState) {
+        this.proxyState = proxyState;
+    }
+
+    public void read(ByteBuffer buf, Connector connector) {
+        this.connector = connector;
         try {
             reader.getInputFeeder().feedInput(buf);
 
@@ -52,6 +64,8 @@ public abstract class StreamHandler {
             }
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
+        } finally {
+            this.connector = null;
         }
     }
 

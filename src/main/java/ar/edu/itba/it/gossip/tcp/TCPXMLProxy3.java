@@ -1,13 +1,13 @@
 package ar.edu.itba.it.gossip.tcp;
 
-import ar.edu.itba.it.gossip.util.ByteBufferOutputStream;
-import ar.edu.itba.it.gossip.xmpp.ClientStreamHandler;
 import ar.edu.itba.it.gossip.xmpp.StreamHandler;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 public class TCPXMLProxy3 implements TCPHandler {
     public static final String DEFAULT_HOST = "127.0.0.1";
@@ -25,6 +25,10 @@ public class TCPXMLProxy3 implements TCPHandler {
 
     public TCPXMLProxy3(TCPReactor reactor, short port) {
         this(reactor, DEFAULT_HOST, port);
+    }
+
+    public TCPReactor getReactor() {
+        return reactor;
     }
 
     @Override
@@ -55,9 +59,10 @@ public class TCPXMLProxy3 implements TCPHandler {
 
     @Override
     public void handleConnect(final SelectionKey key) throws IOException {
-        /*
-        final SocketChannel clientChannel = (SocketChannel) key.attachment();
+        ProxyState state = (ProxyState) key.attachment();
+        state.updateSubscription(key.selector());
 
+        /*
         SocketChannel originChannel = (SocketChannel) key.channel();
         final ProxyState state = new ProxyState(clientChannel, originChannel);
         try {
@@ -76,7 +81,7 @@ public class TCPXMLProxy3 implements TCPHandler {
     }
 
     private void closeChannels(ProxyState state) throws IOException {
-        reactor.unsubscribe(state.clientChannel);
+        reactor.unsubscribe(state.getClientChannel());
         /* reactor.unsubscribe(state.originChannel); */
         state.closeChannels();
     }
@@ -86,7 +91,7 @@ public class TCPXMLProxy3 implements TCPHandler {
         ProxyState state = (ProxyState) key.attachment();
         SocketChannel channel = (SocketChannel) key.channel();
 
-        if (channel == state.clientChannel) {
+        if (channel == state.getClientChannel()) {
             ByteBuffer buffer = state.readBufferFor(channel);
             StreamHandler handler = state.handlerFor(channel);
 
@@ -96,7 +101,8 @@ public class TCPXMLProxy3 implements TCPHandler {
                 closeChannels(state);
             } else if (bytesRead > 0) {
                 buffer.flip();
-                handler.read(buffer);
+                handler.read(buffer, new Connector(key, state));
+
                 state.updateSubscription(key.selector());
             }
         }
@@ -116,58 +122,29 @@ public class TCPXMLProxy3 implements TCPHandler {
         state.updateSubscription(key.selector());
     }
 
-    class ProxyState {
+    public class Connector {
+        private final SelectionKey key;
+        private final ProxyState state;
 
-        private static final int BUF_SIZE = 4 * 1024;
+        public Connector(SelectionKey key, ProxyState state) {
+            this.key = key;
+            this.state = state;
+        }
 
-        private final SocketChannel clientChannel;
-
-        private final ByteBuffer fromClientBuffer = ByteBuffer.allocate(BUF_SIZE);
-        private final ByteBuffer toClientBuffer = ByteBuffer.allocate(BUF_SIZE);
-
-        private final StreamHandler clientHandler;
-
-        ProxyState(SocketChannel clientChannel) {
-            this.clientChannel = clientChannel;
+        public void connect(InetSocketAddress address) {
             try {
-                this.clientHandler = new ClientStreamHandler(
-                    new ByteBufferOutputStream(toClientBuffer)
-                );
-            } catch (XMLStreamException e) {
-                throw new RuntimeException(e);
+                SocketChannel origin = SocketChannel.open();
+                origin.configureBlocking(false);
+                origin.connect(address);
+
+                state.setOriginChannel(origin);
+                origin.register(key.selector(), SelectionKey.OP_CONNECT, state);
+                TCPXMLProxy3.this.getReactor().subscribe(origin, TCPXMLProxy3.this);
+
+            } catch (IOException e) {
+                throw new RuntimeException("should inform this to client");
             }
         }
 
-        public void updateSubscription(Selector selector) throws ClosedChannelException {
-            int clientFlags = 0;
-
-            if (fromClientBuffer.hasRemaining()) {
-                clientFlags |= SelectionKey.OP_READ;
-            }
-
-            if (toClientBuffer.position() > 0) {
-                clientFlags |= SelectionKey.OP_WRITE;
-            }
-
-            clientChannel.register(selector, clientFlags, this);
-        }
-
-        public ByteBuffer readBufferFor(final SocketChannel channel) {
-            return fromClientBuffer;
-        }
-
-        public ByteBuffer writeBufferFor(SocketChannel channel) {
-            return toClientBuffer;
-        }
-
-        public StreamHandler handlerFor(SocketChannel channel) {
-            return clientHandler;
-        }
-
-        public void closeChannels() {
-            try {
-                clientChannel.close();
-            } catch (IOException ignore) {}
-        }
     }
 }

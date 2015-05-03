@@ -1,11 +1,13 @@
 package ar.edu.itba.it.gossip.xmpp;
 
+import ar.edu.itba.it.gossip.tcp.ProxyState;
 import ar.edu.itba.it.gossip.xmpp.event.AuthStanza;
 import ar.edu.itba.it.gossip.xmpp.event.Event;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -21,20 +23,19 @@ public class ClientStreamHandler extends StreamHandler {
 
     private AuthState authState = AuthState.INITIAL;
 
-    public ClientStreamHandler(OutputStream client) throws XMLStreamException {
-        super();
+    public ClientStreamHandler(ProxyState proxyState, OutputStream client) throws XMLStreamException {
+        super(proxyState);
 
         reader = INPUT_FACTORY.createAsyncFor(ByteBuffer.allocate(0));
 
-        // this.client = client;
-        this.client = client;
+        this.toClient = client;
 
         setEventHandler(new StanzaEventHandler(this));
     }
 
     public void sendStreamOpen() {
         try {
-            client.write("<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:client'>"
+            toClient.write("<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>"
                     .getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -43,7 +44,7 @@ public class ClientStreamHandler extends StreamHandler {
 
     public void sendStreamFeatures() {
         try {
-            client.write(("<stream:features>\n" +
+            toClient.write(("<stream:features>\n" +
                     "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n" +
                     "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n" +
                     "<mechanism>PLAIN</mechanism>\n" +
@@ -56,7 +57,7 @@ public class ClientStreamHandler extends StreamHandler {
 
     public void sendAuthenticatedStreamFeatures() {
         try {
-            client.write(("<stream:features>\n" +
+            toClient.write(("<stream:features>\n" +
                     "<bind xmlns=\"urn:ietf:params:xml:ns:xmpp-bind\">\n" +
                     "<required/>\n" +
                     "</bind>\n" +
@@ -73,7 +74,7 @@ public class ClientStreamHandler extends StreamHandler {
 
     public void sendAuthChallenge() {
         try {
-            client.write("<challenge xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">cmVhbG09ImxvY2FsaG9zdCIsbm9uY2U9IjA4NmQzNTJmLTY3YWMtNDU0MS1iNzA0LTQ1MmQ5ZjViNjRmMiIscW9wPSJhdXRoIixjaGFyc2V0PXV0Zi04LGFsZ29yaXRobT1tZDUtc2Vzcw==</challenge>"
+            toClient.write("<challenge xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">cmVhbG09ImxvY2FsaG9zdCIsbm9uY2U9IjA4NmQzNTJmLTY3YWMtNDU0MS1iNzA0LTQ1MmQ5ZjViNjRmMiIscW9wPSJhdXRoIixjaGFyc2V0PXV0Zi04LGFsZ29yaXRobT1tZDUtc2Vzcw==</challenge>"
                     .getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -82,7 +83,7 @@ public class ClientStreamHandler extends StreamHandler {
 
     public void sendAuthChallengeResponse() {
         try {
-            client.write("<challenge xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">cnNwYXV0aD1lZTAwMzkyZDlhYTg2NmYzMDFhM2U0MjI4MzFkYTYwOQ==</challenge>"
+            toClient.write("<challenge xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">cnNwYXV0aD1lZTAwMzkyZDlhYTg2NmYzMDFhM2U0MjI4MzFkYTYwOQ==</challenge>"
                     .getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -91,7 +92,7 @@ public class ClientStreamHandler extends StreamHandler {
 
     public void sendAuthSuccess() {
         try {
-            client.write("<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>".getBytes(StandardCharsets.UTF_8));
+            toClient.write("<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>".getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -112,7 +113,10 @@ public class ClientStreamHandler extends StreamHandler {
                 matchAuthMechanism(auth, "PLAIN");
                 username = auth.getUsername();
                 password = auth.getPassword();
-                sendAuthChallenge();
+
+                InetSocketAddress address = getOriginAddressForUsername(username);
+                connector.connect(address);
+
                 authState = AUTHENTICATING;
                 break;
             case AUTHENTICATING:
@@ -128,8 +132,8 @@ public class ClientStreamHandler extends StreamHandler {
                 break;
             case CONFIRMED:
                 matchEventType(event, Event.Type.START_STREAM);
-                sendStreamOpen();
-                sendAuthenticatedStreamFeatures();
+                // sendStreamOpen();
+                // sendAuthenticatedStreamFeatures();
                 System.out.println(username);
                 System.out.println(password);
                 authState = OPEN;
@@ -138,6 +142,10 @@ public class ClientStreamHandler extends StreamHandler {
                 break;
         }
 
+    }
+
+    private InetSocketAddress getOriginAddressForUsername(String username) {
+        return new InetSocketAddress("localhost", 5222);
     }
 
     private void matchAuthMechanism(AuthStanza auth, String mechanism) {
