@@ -12,7 +12,7 @@ import java.nio.channels.SocketChannel;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferInputStream;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
-class TCPStream {
+public class TCPStream {
     private static final int BUF_SIZE = 4 * 1024;
 
     private final Endpoint from;
@@ -25,7 +25,7 @@ class TCPStream {
         this.to = new Endpoint(toChannel);
     }
 
-    void setHandler(final TCPStreamHandler handler) {
+    public void setHandler(final TCPStreamHandler handler) {
         assumeNotSet(this.handler, "Handler already set: %s");
         this.handler = handler;
     }

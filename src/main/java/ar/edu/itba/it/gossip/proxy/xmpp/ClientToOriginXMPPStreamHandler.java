@@ -5,12 +5,12 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.A
 import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.CONFIRMED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.NEGOTIATING;
 import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.OPEN;
-import static ar.edu.itba.it.gossip.util.Validations.*;
+import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -42,8 +42,8 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
         switch (authState) {
         case INITIAL:
             assumeEventType(event, XMPPEvent.Type.START_STREAM);
-            sendStreamOpen();
-            sendStreamFeatures();
+            sendStreamOpenToClient();
+            sendStreamFeaturesToClient();
             authState = NEGOTIATING;
             break;
         case NEGOTIATING:
@@ -53,9 +53,13 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
                     "Auth mechanism not supported: %s");
             username = auth.getUsername();
             password = auth.getPassword();
+            System.out.println(username
+                    + " is trying to log in with password: " + password);
 
             InetSocketAddress address = getOriginAddressForUsername(username);
             getConnector().connectToOrigin(address);
+
+            sendStreamOpenToOrigin();
 
             authState = AUTHENTICATING;
             break;
@@ -74,8 +78,9 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
             assumeEventType(event, XMPPEvent.Type.START_STREAM);
             // sendStreamOpen();
             // sendAuthenticatedStreamFeatures();
-            System.out.println(username);
-            System.out.println(password);
+            System.out.println(username + " logged in with password: "
+                    + password);
+
             authState = OPEN;
             break;
         case OPEN:
@@ -83,22 +88,31 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
         }
     }
 
-    private void sendStreamOpen() {
+    private void sendStreamOpenToOrigin() {
         try {
-            toClient.write("<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>"
-                    .getBytes(StandardCharsets.UTF_8));
+            toOrigin.write("<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"example.com\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">"
+                    .getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void sendStreamFeatures() {
+    private void sendStreamOpenToClient() {
+        try {
+            toClient.write("<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>"
+                    .getBytes(UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void sendStreamFeaturesToClient() {
         try {
             toClient.write(("<stream:features>\n"
                     + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
                     + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
                     + "<mechanism>PLAIN</mechanism>\n" + "</mechanisms>\n"
-                    + "</stream:features>").getBytes(StandardCharsets.UTF_8));
+                    + "</stream:features>").getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -115,7 +129,7 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
                     + "</session>\n"
                     + "<ver xmlns=\"urn:xmpp:features:rosterver\"/>\n"
                     + "<c xmlns=\"http://jabber.org/protocol/caps\" node=\"http://prosody.im\" ver=\"ZBWApSGFMsTZkuVThHtyU5xv1Mk=\" hash=\"sha-1\"/>\n"
-                    + "</stream:features>").getBytes(StandardCharsets.UTF_8));
+                    + "</stream:features>").getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -124,7 +138,7 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     private void sendAuthChallenge() {
         try {
             toClient.write("<challenge xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">cmVhbG09ImxvY2FsaG9zdCIsbm9uY2U9IjA4NmQzNTJmLTY3YWMtNDU0MS1iNzA0LTQ1MmQ5ZjViNjRmMiIscW9wPSJhdXRoIixjaGFyc2V0PXV0Zi04LGFsZ29yaXRobT1tZDUtc2Vzcw==</challenge>"
-                    .getBytes(StandardCharsets.UTF_8));
+                    .getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -133,7 +147,7 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     private void sendAuthChallengeResponse() {
         try {
             toClient.write("<challenge xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">cnNwYXV0aD1lZTAwMzkyZDlhYTg2NmYzMDFhM2U0MjI4MzFkYTYwOQ==</challenge>"
-                    .getBytes(StandardCharsets.UTF_8));
+                    .getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -142,7 +156,7 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     private void sendAuthSuccess() {
         try {
             toClient.write("<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>"
-                    .getBytes(StandardCharsets.UTF_8));
+                    .getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

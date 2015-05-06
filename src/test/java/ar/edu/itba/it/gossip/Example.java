@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactorImpl;
-import ar.edu.itba.it.gossip.proxy.tcp.TCPProxy;
+import ar.edu.itba.it.gossip.proxy.xmpp.XMPPProxy;
 
 public class Example {
     public static void main(String[] args) throws IOException {
@@ -12,7 +12,7 @@ public class Example {
         // short originPort = 5222;
 
         TCPReactor reactor = new TCPReactorImpl();
-        reactor.addHandler(new TCPProxy(reactor), proxyPort);
+        reactor.addHandler(new XMPPProxy(reactor), proxyPort);
 
         reactor.start();
     }

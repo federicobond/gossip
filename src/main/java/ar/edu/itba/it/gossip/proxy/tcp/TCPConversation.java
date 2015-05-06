@@ -1,7 +1,5 @@
 package ar.edu.itba.it.gossip.proxy.tcp;
 
-import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -9,28 +7,15 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import javax.xml.stream.XMLStreamException;
-
-import ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler;
-
-class TCPConversation {
+public class TCPConversation {
     private final TCPStream clientToOrigin;
     private final TCPStream originToClient;
+    private Boolean connectingToOrigin = null; // Note: this is completely
+                                               // intentional
 
-    TCPConversation(SocketChannel clientChannel) {
-        try {
-            this.clientToOrigin = new TCPStream(clientChannel, null);
-            this.originToClient = new TCPStream(null, clientChannel);
-
-            TCPStreamHandler clientHandler = new ClientToOriginXMPPStreamHandler(
-                    originToClient.getOutputStream(),
-                    clientToOrigin.getOutputStream());
-            clientToOrigin.setHandler(clientHandler);
-
-            // TODO: set handler for originToClient, etc!
-        } catch (XMLStreamException e) {
-            throw new RuntimeException(e);
-        }
+    protected TCPConversation(SocketChannel clientChannel) {
+        this.clientToOrigin = new TCPStream(clientChannel, null);
+        this.originToClient = new TCPStream(null, clientChannel);
     }
 
     void updateSubscription(Selector selector) throws ClosedChannelException {
@@ -38,13 +23,14 @@ class TCPConversation {
                 | originToClient.getToSubscriptionFlags();
         getClientChannel().register(selector, clientFlags, this);
 
-        if (!isConnectedToOrigin()) {
+        if (getOriginChannel() == null) {
             return;
         }
 
         final int originFlags;
-        if (getOriginChannel() != null) {
+        if (connectingToOrigin) {
             originFlags = SelectionKey.OP_CONNECT;
+            connectingToOrigin = false;
         } else {
             originFlags = originToClient.getFromSubscriptionFlags()
                     | clientToOrigin.getToSubscriptionFlags();
@@ -106,15 +92,32 @@ class TCPConversation {
     void connectToOrigin(SocketChannel originChannel) {
         this.clientToOrigin.setToChannel(originChannel);
         this.originToClient.setFromChannel(originChannel);
+        connectingToOrigin = true;
         // NOTE: the rest will be handled by updateSubscription
     }
 
-    private boolean isConnectedToOrigin() {
-        return getOriginChannel() != null;
+    protected TCPStream getClientToOriginStream() {
+        return clientToOrigin;
     }
 
-    @Override
-    public String toString() {
-        return reflectionToString(this);
+    protected TCPStream getOriginToClientStream() {
+        return originToClient;
+    }
+
+    // FIXME: just for debugging purposes
+    String getBufferName(ByteBuffer buffer) {
+        if (buffer == clientToOrigin.getFromBuffer()) {
+            return "clientToOrigin.from";
+        }
+        if (buffer == clientToOrigin.getToBuffer()) {
+            return "clientToOrigin.to";
+        }
+        if (buffer == originToClient.getFromBuffer()) {
+            return "originToClient.from";
+        }
+        if (buffer == originToClient.getToBuffer()) {
+            return "originToClient.to";
+        }
+        throw new IllegalArgumentException("Unknown buffer");
     }
 }
