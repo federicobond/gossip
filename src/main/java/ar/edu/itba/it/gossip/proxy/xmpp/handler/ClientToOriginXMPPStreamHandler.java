@@ -1,10 +1,10 @@
-package ar.edu.itba.it.gossip.proxy.xmpp;
+package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATED;
-import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATING;
-import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.CONFIRMED;
-import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.NEGOTIATING;
-import static ar.edu.itba.it.gossip.proxy.xmpp.ClientToOriginXMPPStreamHandler.AuthState.OPEN;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATING;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.CONFIRMED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.NEGOTIATING;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.OPEN;
 import static ar.edu.itba.it.gossip.util.Validations.assumeState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -166,13 +166,7 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
         return new InetSocketAddress("localhost", 5222);
     }
 
-    private void assumeEventType(XMPPEvent event, XMPPEvent.Type type) {
-        assumeState(event.getType() == type,
-                "Event type mismatch, got: %s when %s was expected", event,
-                type);
-    }
-
-    enum AuthState {
+    protected enum AuthState {
         INITIAL, NEGOTIATING, AUTHENTICATING, AUTHENTICATED, OPEN, CONFIRMED
     }
 }

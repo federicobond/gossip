@@ -9,6 +9,8 @@ import javax.xml.stream.XMLStreamException;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPConversation;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler;
 
 public class XMPPConversation extends TCPConversation {
 
@@ -18,12 +20,16 @@ public class XMPPConversation extends TCPConversation {
             final TCPStream clientToOrigin = getClientToOriginStream();
             final TCPStream originToClient = getOriginToClientStream();
 
-            TCPStreamHandler clientHandler = new ClientToOriginXMPPStreamHandler(
-                    getOriginToClientStream().getOutputStream(),
-                    getClientToOriginStream().getOutputStream());
-            clientToOrigin.setHandler(clientHandler);
+            TCPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
+                    originToClient.getOutputStream(),
+                    clientToOrigin.getOutputStream());
+            clientToOrigin.setHandler(clientToOriginHandler);
 
             // TODO: set handler for originToClient, etc!
+            TCPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
+                    originToClient.getOutputStream(),
+                    clientToOrigin.getOutputStream());
+            originToClient.setHandler(originToClientHandler);
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
         }

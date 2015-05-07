@@ -10,7 +10,10 @@ import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
 import com.fasterxml.aalto.AsyncXMLInputFactory;
+
+import static ar.edu.itba.it.gossip.util.Validations.assumeState;
 import static com.fasterxml.aalto.AsyncXMLStreamReader.*;
+
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 import com.fasterxml.aalto.stax.InputFactoryImpl;
 
@@ -92,4 +95,10 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     }
 
     public abstract void handle(XMPPEvent event);
+
+    protected void assumeEventType(XMPPEvent event, XMPPEvent.Type type) {
+        assumeState(event.getType() == type,
+                "Event type mismatch, got: %s when %s was expected", event,
+                type);
+    }
 }

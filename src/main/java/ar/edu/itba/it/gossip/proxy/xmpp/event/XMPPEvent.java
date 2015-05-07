@@ -11,6 +11,6 @@ public abstract class XMPPEvent {
     }
 
     public enum Type {
-        START_STREAM, AUTH, RESPONSE
+        START_STREAM, AUTH, RESPONSE, AUTH_MECHANISM, AUTH_FEATURES_END
     }
 }
