@@ -5,7 +5,7 @@ import java.util.Map;
 public class AuthMechanism extends XMPPEvent {
     private final String mechanism;
 
-    public AuthMechanism(Map<String, String> attributes, String body) {
+    AuthMechanism(Map<String, String> attributes, String body) {
         this.mechanism = body;
     }
 
@@ -17,5 +17,4 @@ public class AuthMechanism extends XMPPEvent {
     public Type getType() {
         return Type.AUTH_MECHANISM;
     }
-
 }

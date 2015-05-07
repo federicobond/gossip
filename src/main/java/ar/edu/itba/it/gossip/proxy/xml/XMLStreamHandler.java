@@ -1,5 +1,13 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
+import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+import static com.fasterxml.aalto.AsyncXMLStreamReader.EVENT_INCOMPLETE;
+import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
+import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+
 import java.nio.ByteBuffer;
 
 import javax.xml.stream.XMLStreamException;
@@ -10,10 +18,6 @@ import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
 import com.fasterxml.aalto.AsyncXMLInputFactory;
-
-import static ar.edu.itba.it.gossip.util.Validations.assumeState;
-import static com.fasterxml.aalto.AsyncXMLStreamReader.*;
-
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 import com.fasterxml.aalto.stax.InputFactoryImpl;
 

@@ -1,6 +1,15 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.ELEMENTS;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH_FAILURE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH_FEATURES_END;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH_MECHANISM;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH_MECHANISMS;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH_REGISTER;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.AUTH_SUCCESS;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.RESPONSE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.START_STREAM;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.ELEMENT_STARTED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.INITIAL;
 
@@ -11,11 +20,6 @@ import java.util.Map;
 
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthMechanism;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthFeaturesEnd;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthStanza;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.ResponseStanza;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.StartStreamEvent;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 import ar.edu.itba.it.gossip.util.Validations;
 
@@ -50,14 +54,13 @@ public class StanzaEventHandler implements XMLEventHandler {
 
         switch (name) {
         case "stream":
-            handler.handle(new StartStreamEvent()); // TODO: shouldn't we let
-                                                    // handleEndElement handle
-                                                    // this?
+            handler.handle(XMPPEvent.from(START_STREAM, attributes, body));
+            // TODO: shouldn't we let handleEndElement handle this?
             names.pop();
             state = State.INITIAL;
             break;
         case "features":
-            state = ELEMENTS;
+            state = AUTH_FEATURES;
             break;
         default:
             state = ELEMENT_STARTED;
@@ -76,29 +79,40 @@ public class StanzaEventHandler implements XMLEventHandler {
         final XMPPEvent event;
         switch (name) {
         case "stream":
-            event = new StartStreamEvent();
-            state = INITIAL;
+            event = XMPPEvent.from(START_STREAM, attributes, body);
+            this.state = INITIAL;
             break;
         case "auth":
-            event = new AuthStanza(attributes, body);
-            state = INITIAL;
+            event = XMPPEvent.from(AUTH, attributes, body);
+            this.state = INITIAL;
             break;
         case "response":
-            event = new ResponseStanza(attributes, body);
-            state = INITIAL;
+            event = XMPPEvent.from(RESPONSE, attributes, body);
+            this.state = INITIAL;
             break;
 
         // TODO
         case "register":
+            event = XMPPEvent.from(AUTH_REGISTER, attributes, body);
+            break;
         case "mechanisms":
-            event = null; // to denote nothing happened
+            event = XMPPEvent.from(AUTH_MECHANISMS, attributes, body);
             break;
         case "mechanism":
-            event = new AuthMechanism(attributes, body);
+            event = XMPPEvent.from(AUTH_MECHANISM, attributes, body);
             break;
         case "features":
-            event = new AuthFeaturesEnd();
-            state = INITIAL;
+            event = XMPPEvent.from(AUTH_FEATURES_END, attributes, body);
+            this.state = INITIAL;
+            break;
+        // TODO
+
+        // these DON'T HAPPEN INSIDE AUTH_FEATURES
+        case "success":
+            event = XMPPEvent.from(AUTH_SUCCESS, attributes, body);
+            break;
+        case "failure":
+            event = XMPPEvent.from(AUTH_FAILURE, attributes, body);
             break;
         // TODO
 
@@ -106,14 +120,7 @@ public class StanzaEventHandler implements XMLEventHandler {
             throw new RuntimeException("unknown element: " + name);
         }
 
-        if (state == INITIAL) {
-            names.clear();
-        }
-        body = null;
-
-        if (event != null) {
-            handler.handle(event);
-        }
+        handler.handle(event);
     }
 
     @Override
@@ -125,6 +132,14 @@ public class StanzaEventHandler implements XMLEventHandler {
         }
     }
 
+    private void clearState() {
+        if (state == INITIAL) {
+            names.clear();
+        }
+        body = null;
+        attributes = null; // TODO: check!
+    }
+
     private void assumeState(State state) {
         Validations.assumeState(state == this.state,
                 "State mismatch, got: %s when %s was expected", this.state,
@@ -132,6 +147,6 @@ public class StanzaEventHandler implements XMLEventHandler {
     }
 
     protected enum State {
-        INITIAL, ELEMENT_STARTED, ELEMENTS
+        INITIAL, ELEMENT_STARTED, AUTH_FEATURES
     }
 }

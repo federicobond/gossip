@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPChannelEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
+import ar.edu.itba.it.gossip.util.nio.NIOUtils;
 
 public abstract class TCPProxy implements TCPChannelEventHandler {
     private final TCPReactor reactor;
@@ -43,9 +44,9 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         // FIXME: just for debugging purposes
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
-        System.out.println("Read " + bytesRead + " bytes into "
-                + conversation.getBufferName(buffer) + " through "
-                + channelName + "Channel (" + channel + ")");
+        String bufferName = conversation.getBufferName(buffer);
+        System.out.println("Read " + bytesRead + " bytes into " + bufferName
+                + " through " + channelName + "Channel (" + channel + ")");
         // FIXME: just for debugging purposes
 
         if (bytesRead == -1) { // Did the other end close?
@@ -53,6 +54,13 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
             finish(conversation);
         } else if (bytesRead > 0) {
             buffer.flip();
+
+            // FIXME: just for debugging purposes
+            System.out.println(bufferName + " contents:"
+                    + "\n===================\n" + NIOUtils.peek(buffer)
+                    + "\n===================\n");
+            // FIXME: just for debugging purposes
+
             handler.handleRead(buffer,
                     address -> connectToOrigin(key, conversation, address));
 
@@ -92,11 +100,15 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         int bytesWritten = channel.write(buffer);
 
         // FIXME: just for debugging purposes
+        String bufferName = conversation.getBufferName(buffer);
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
-        System.out.println("Wrote " + bytesWritten + " bytes from "
-                + conversation.getBufferName(buffer) + " through "
-                + channelName + "Channel (" + channel + ")");
+        System.out.println("Wrote " + bytesWritten + " bytes from " + buffer
+                + " through " + channelName + "Channel (" + channel + ")");
+
+        System.out.println(bufferName + " contents:"
+                + "\n===================\n" + NIOUtils.peek(buffer)
+                + "\n===================\n");
         // FIXME: just for debugging purposes
 
         buffer.compact(); // Make room for more data to be read in

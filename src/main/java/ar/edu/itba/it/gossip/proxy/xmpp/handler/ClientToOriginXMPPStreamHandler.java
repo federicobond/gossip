@@ -15,22 +15,24 @@ import java.net.InetSocketAddress;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
+import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthStanza;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     private static final String PLAIN_AUTH = "PLAIN";
 
+    private final XMPPConversation conversation;
     private final OutputStream toClient;
     private final OutputStream toOrigin;
 
-    private String username;
-    private String password;
-
     private AuthState authState = AuthState.INITIAL;
 
-    public ClientToOriginXMPPStreamHandler(final OutputStream toClient,
-            final OutputStream toOrigin) throws XMLStreamException {
+    public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
+            final OutputStream toClient, final OutputStream toOrigin)
+            throws XMLStreamException {
+        this.conversation = conversation;
         this.toClient = toClient;
         this.toOrigin = toOrigin;
 
@@ -51,12 +53,14 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
             AuthStanza auth = (AuthStanza) event;
             assumeState(auth.mechanismMatches(PLAIN_AUTH),
                     "Auth mechanism not supported: %s");
-            username = auth.getUsername();
-            password = auth.getPassword();
-            System.out.println(username
-                    + " is trying to log in with password: " + password);
+            Credentials credentials = auth.getCredentials();
+            conversation.setCredentials(credentials);
+            System.out.println(credentials.getUsername()
+                    + " is trying to log in with password: "
+                    + credentials.getPassword());
 
-            InetSocketAddress address = getOriginAddressForUsername(username);
+            InetSocketAddress address = getOriginAddressForUsername(credentials
+                    .getUsername());
             getConnector().connectToOrigin(address);
 
             sendStreamOpenToOrigin();
@@ -78,8 +82,9 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
             assumeEventType(event, XMPPEvent.Type.START_STREAM);
             // sendStreamOpen();
             // sendAuthenticatedStreamFeatures();
-            System.out.println(username + " logged in with password: "
-                    + password);
+            System.out.println(conversation.getCredentials().getUsername()
+                    + " logged in with password: "
+                    + conversation.getCredentials().getPassword());
 
             authState = OPEN;
             break;
