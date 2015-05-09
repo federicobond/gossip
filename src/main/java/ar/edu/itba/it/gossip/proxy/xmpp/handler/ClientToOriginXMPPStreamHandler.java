@@ -64,31 +64,12 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
             getConnector().connectToOrigin(address);
 
             sendStreamOpenToOrigin();
+            resetStream();
 
-            authState = AUTHENTICATING;
-            break;
-        case AUTHENTICATING:
-            assumeEventType(event, XMPPEvent.Type.RESPONSE);
-            sendAuthChallengeResponse();
             authState = AUTHENTICATED;
             break;
         case AUTHENTICATED:
-            assumeEventType(event, XMPPEvent.Type.RESPONSE);
-            sendAuthSuccess();
-            authState = CONFIRMED;
-            resetStream();
-            break;
-        case CONFIRMED:
             assumeEventType(event, XMPPEvent.Type.START_STREAM);
-            // sendStreamOpen();
-            // sendAuthenticatedStreamFeatures();
-            System.out.println(conversation.getCredentials().getUsername()
-                    + " logged in with password: "
-                    + conversation.getCredentials().getPassword());
-
-            authState = OPEN;
-            break;
-        case OPEN:
             break;
         }
     }

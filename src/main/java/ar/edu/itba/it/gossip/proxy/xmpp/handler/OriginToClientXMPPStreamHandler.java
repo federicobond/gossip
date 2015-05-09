@@ -41,7 +41,7 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
 
     @Override
     public void handle(XMPPEvent event) {
-        switch (state) {
+        switch (state) { // FIXME: State pattern needed here!
         case INITIAL:
             assumeEventType(event, START_STREAM);
             state = AUTH_FEATURES;
@@ -56,6 +56,9 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
                 authMechanisms.add(authMech.getMechanism());
                 break;
             case AUTH_FEATURES_END:
+                // TODO: should probably fail gracefully if PLAIN isn't among
+                // origin's
+                // accepted auth mechanisms
                 sendAuthDataToOrigin();
                 state = EXPECT_AUTH_STATUS;
                 break;
@@ -69,6 +72,7 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
             case AUTH_SUCCESS:
                 state = AUTHENTICATED;
                 sendAuthSuccessToClient();
+                resetStream();
                 break;
             // case AUTH_FAILURE://TODO
             default:

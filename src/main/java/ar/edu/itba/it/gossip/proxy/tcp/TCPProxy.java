@@ -9,7 +9,7 @@ import java.nio.channels.SocketChannel;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPChannelEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
-import ar.edu.itba.it.gossip.util.nio.NIOUtils;
+import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxy implements TCPChannelEventHandler {
     private final TCPReactor reactor;
@@ -57,7 +57,7 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
 
             // FIXME: just for debugging purposes
             System.out.println(bufferName + " contents:"
-                    + "\n===================\n" + NIOUtils.peek(buffer)
+                    + "\n===================\n" + BufferUtils.peek(buffer)
                     + "\n===================\n");
             // FIXME: just for debugging purposes
 
@@ -107,7 +107,7 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
                 + " through " + channelName + "Channel (" + channel + ")");
 
         System.out.println(bufferName + " contents:"
-                + "\n===================\n" + NIOUtils.peek(buffer)
+                + "\n===================\n" + BufferUtils.peek(buffer)
                 + "\n===================\n");
         // FIXME: just for debugging purposes
 

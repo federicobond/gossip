@@ -1,5 +1,6 @@
 package ar.edu.itba.it.gossip.util.nio;
 
+import static java.lang.Math.min;
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
 import java.io.IOException;
@@ -27,11 +28,11 @@ public class ByteBufferInputStream extends InputStream {
             return -1;
         }
 
-        len = Math.min(len, buf.remaining());
+        len = min(len, buf.remaining());
         buf.get(bytes, off, len);
         return len;
     }
-    
+
     @Override
     public String toString() {
         return reflectionToString(this);
