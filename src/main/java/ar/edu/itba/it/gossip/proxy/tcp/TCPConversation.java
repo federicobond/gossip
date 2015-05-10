@@ -7,6 +7,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+
 public class TCPConversation {
     private final TCPStream clientToOrigin;
     private final TCPStream originToClient;

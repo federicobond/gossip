@@ -1,10 +1,8 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATED;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATING;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.CONFIRMED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.LINKED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.NEGOTIATING;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.OPEN;
 import static ar.edu.itba.it.gossip.util.Validations.assumeState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -14,6 +12,7 @@ import java.net.InetSocketAddress;
 
 import javax.xml.stream.XMLStreamException;
 
+import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
@@ -24,17 +23,17 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     private static final String PLAIN_AUTH = "PLAIN";
 
     private final XMPPConversation conversation;
+    private final ByteStream clientToOrigin;
     private final OutputStream toClient;
-    private final OutputStream toOrigin;
 
     private AuthState authState = AuthState.INITIAL;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
-            final OutputStream toClient, final OutputStream toOrigin)
+            final ByteStream clientToOrigin, final OutputStream toClient)
             throws XMLStreamException {
         this.conversation = conversation;
+        this.clientToOrigin = clientToOrigin;
         this.toClient = toClient;
-        this.toOrigin = toOrigin;
 
         setEventHandler(new StanzaEventHandler(this));
     }
@@ -70,14 +69,23 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
             break;
         case AUTHENTICATED:
             assumeEventType(event, XMPPEvent.Type.START_STREAM);
+            sendStreamOpenToOrigin();
+
+            authState = LINKED;
+            break;
+        case LINKED:
+            System.out.println("dasd");
+            clientToOrigin.flush();
             break;
         }
     }
 
     private void sendStreamOpenToOrigin() {
         try {
-            toOrigin.write("<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"example.com\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">"
-                    .getBytes(UTF_8));
+            clientToOrigin
+                    .getOutputStream()
+                    .write("<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"example.com\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">"
+                            .getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -153,6 +161,6 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     }
 
     protected enum AuthState {
-        INITIAL, NEGOTIATING, AUTHENTICATING, AUTHENTICATED, OPEN, CONFIRMED
+        INITIAL, NEGOTIATING, AUTHENTICATING, AUTHENTICATED, OPEN, CONFIRMED, LINKED
     }
 }

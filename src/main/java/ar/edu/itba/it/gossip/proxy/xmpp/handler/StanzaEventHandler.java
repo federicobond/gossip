@@ -21,7 +21,6 @@ import java.util.Map;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
-import ar.edu.itba.it.gossip.util.Validations;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
@@ -55,7 +54,6 @@ public class StanzaEventHandler implements XMLEventHandler {
         switch (name) {
         case "stream":
             handler.handle(XMPPEvent.from(START_STREAM, attributes, body));
-            // TODO: shouldn't we let handleEndElement handle this?
             names.pop();
             state = State.INITIAL;
             break;
@@ -78,10 +76,6 @@ public class StanzaEventHandler implements XMLEventHandler {
 
         final XMPPEvent event;
         switch (name) {
-        case "stream":
-            event = XMPPEvent.from(START_STREAM, attributes, body);
-            this.state = INITIAL;
-            break;
         case "auth":
             event = XMPPEvent.from(AUTH, attributes, body);
             this.state = INITIAL;
@@ -120,6 +114,7 @@ public class StanzaEventHandler implements XMLEventHandler {
             throw new RuntimeException("unknown element: " + name);
         }
 
+        clearState();
         handler.handle(event);
     }
 
@@ -133,17 +128,8 @@ public class StanzaEventHandler implements XMLEventHandler {
     }
 
     private void clearState() {
-        if (state == INITIAL) {
-            names.clear();
-        }
         body = null;
         attributes = null; // TODO: check!
-    }
-
-    private void assumeState(State state) {
-        Validations.assumeState(state == this.state,
-                "State mismatch, got: %s when %s was expected", this.state,
-                state);
     }
 
     protected enum State {

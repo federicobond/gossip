@@ -8,8 +8,8 @@ import java.nio.channels.SocketChannel;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.TCPConversation;
-import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
+import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler;
 
@@ -23,13 +23,17 @@ public class XMPPConversation extends TCPConversation {
             final TCPStream originToClient = getOriginToClientStream();
 
             TCPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
-                    this, originToClient.getOutputStream(),
-                    clientToOrigin.getOutputStream());
+                    this, 
+                    
+                    clientToOrigin.getView(),
+                    originToClient.getOutputStream());
             clientToOrigin.setHandler(clientToOriginHandler);
 
-            // TODO: set handler for originToClient, etc!
             TCPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
-                    this, originToClient.getOutputStream(),
+                    this, 
+                    
+                    
+                    originToClient.getView(),
                     clientToOrigin.getOutputStream());
             originToClient.setHandler(originToClientHandler);
         } catch (XMLStreamException e) {

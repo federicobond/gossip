@@ -1,4 +1,4 @@
-package ar.edu.itba.it.gossip.proxy.tcp;
+package ar.edu.itba.it.gossip.proxy.tcp.stream;
 
 import static ar.edu.itba.it.gossip.util.Validations.assumeNotSet;
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
@@ -9,10 +9,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
+import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferInputStream;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
-public class TCPStream {
+public class TCPStream extends ByteStream {
     private static final int BUF_SIZE = 4 * 1024;
 
     private final Endpoint from;
@@ -20,7 +22,8 @@ public class TCPStream {
 
     private TCPStreamHandler handler;// TODO: check!
 
-    TCPStream(final SocketChannel fromChannel, final SocketChannel toChannel) {
+    public TCPStream(final SocketChannel fromChannel,
+            final SocketChannel toChannel) {
         this.from = new Endpoint(fromChannel);
         this.to = new Endpoint(toChannel);
     }
@@ -65,27 +68,32 @@ public class TCPStream {
         return new ByteBufferOutputStream(getToBuffer());
     }
 
-    int getFromSubscriptionFlags() {
+    public int getFromSubscriptionFlags() {
         return getFromBuffer().hasRemaining() ? SelectionKey.OP_READ : 0;
     }
 
-    int getToSubscriptionFlags() {
+    public int getToSubscriptionFlags() {
         return getToBuffer().position() > 0 ? SelectionKey.OP_WRITE : 0;
     }
 
-    void setToChannel(final SocketChannel channel) {
+    public void setToChannel(final SocketChannel channel) {
         assumeNotSet(getToChannel(), "Channel already set: %s");
         to.channel = channel;
     }
 
-    void setFromChannel(final SocketChannel channel) {
+    public void setFromChannel(final SocketChannel channel) {
         assumeNotSet(getFromChannel(), "Channel already set: %s");
         from.channel = channel;
     }
 
     @Override
-    public String toString() {
-        return reflectionToString(this);
+    // moves data safely from fromBuffer to toBuffer
+    public void flush() {
+        BufferUtils.transfer(getFromBuffer(), getToBuffer());
+    }
+
+    public ByteStream getView() {
+        return new ByteStreamHandle(this);
     }
 
     private static class Endpoint {

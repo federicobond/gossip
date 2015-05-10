@@ -16,11 +16,13 @@ public class ByteBufferOutputStream extends OutputStream {
     @Override
     public void write(int b) throws IOException {
         buf.put((byte) b);
+        //FIXME should probably flip / compact / sth!
     }
 
     @Override
     public void write(byte[] bytes, int off, int len) throws IOException {
         buf.put(bytes, off, len);
+        //FIXME should probably flip / compact / sth!
     }
 
     @Override

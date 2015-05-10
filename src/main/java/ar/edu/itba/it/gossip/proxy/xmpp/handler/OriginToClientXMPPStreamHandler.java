@@ -4,6 +4,7 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.START_STREAM
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTHENTICATED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_STATUS;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.LINKED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 
+import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthMechanism;
@@ -20,7 +22,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
     private final XMPPConversation conversation;
-    private final OutputStream toClient;
+    private final ByteStream originToClient;
     private final OutputStream toOrigin;
 
     private Set<String> authMechanisms;
@@ -28,11 +30,11 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
     private State state = State.INITIAL;
 
     public OriginToClientXMPPStreamHandler(final XMPPConversation conversation,
-            final OutputStream toClient, final OutputStream toOrigin)
+            final ByteStream originToClient, final OutputStream toOrigin)
             throws XMLStreamException {
         this.conversation = conversation;
-        this.toClient = toClient;
         this.toOrigin = toOrigin;
+        this.originToClient = originToClient;
 
         authMechanisms = new HashSet<>();
 
@@ -57,8 +59,7 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
                 break;
             case AUTH_FEATURES_END:
                 // TODO: should probably fail gracefully if PLAIN isn't among
-                // origin's
-                // accepted auth mechanisms
+                // origin's accepted auth mechanisms
                 sendAuthDataToOrigin();
                 state = EXPECT_AUTH_STATUS;
                 break;
@@ -79,7 +80,18 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
                 throw new IllegalStateException("Unexpected event type: "
                         + event.getType());
             }
+            break;
         case AUTHENTICATED:
+            switch (event.getType()) {
+            case START_STREAM:
+                state = LINKED;
+                System.out.println("asd");
+                originToClient.flush();
+                break;
+            default:
+                throw new IllegalStateException("Unexpected event type: "
+                        + event.getType());
+            }
             break;
         }
     }
@@ -96,15 +108,16 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
 
     private void sendAuthSuccessToClient() {
         try {
-            toClient.write("<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>"
-                    .getBytes(UTF_8));
+            originToClient.getOutputStream().write(
+                    "<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>"
+                            .getBytes(UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     protected enum State {
-        INITIAL, AUTH_FEATURES, EXPECT_AUTH_STATUS, AUTHENTICATED
+        INITIAL, AUTH_FEATURES, EXPECT_AUTH_STATUS, AUTHENTICATED, LINKED
     }
 
 }

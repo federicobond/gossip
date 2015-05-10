@@ -45,8 +45,8 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
         String bufferName = conversation.getBufferName(buffer);
-        System.out.println("Read " + bytesRead + " bytes into " + bufferName
-                + " through " + channelName + "Channel (" + channel + ")");
+        System.out.println("Read " + bytesRead + " bytes into '" + bufferName
+                + "' through '" + channelName + "Channel (" + channel + "')");
         // FIXME: just for debugging purposes
 
         if (bytesRead == -1) { // Did the other end close?
@@ -56,7 +56,7 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
             buffer.flip();
 
             // FIXME: just for debugging purposes
-            System.out.println(bufferName + " contents:"
+            System.out.println(bufferName + "'s content: (AFTER READ)"
                     + "\n===================\n" + BufferUtils.peek(buffer)
                     + "\n===================\n");
             // FIXME: just for debugging purposes
@@ -103,10 +103,11 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         String bufferName = conversation.getBufferName(buffer);
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
-        System.out.println("Wrote " + bytesWritten + " bytes from " + buffer
-                + " through " + channelName + "Channel (" + channel + ")");
+        System.out.println("Wrote " + bytesWritten + " bytes from '"
+                + bufferName + "' through '" + channelName + "Channel ("
+                + channel + "')");
 
-        System.out.println(bufferName + " contents:"
+        System.out.println(bufferName + "'s content: (AFTER WRITE)"
                 + "\n===================\n" + BufferUtils.peek(buffer)
                 + "\n===================\n");
         // FIXME: just for debugging purposes

@@ -39,7 +39,7 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     public void handleRead(ByteBuffer buf, DeferredConnector connector) {
         this.connector = connector;
         try {
-            reader.getInputFeeder().feedInput(buf);
+            reader.getInputFeeder().feedInput(buf);//TODO: this should perhaps be a view!
 
             while (reader.hasNext()) {
                 int type = reader.next();
