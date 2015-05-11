@@ -1,4 +1,4 @@
-package ar.edu.itba.it.gossip.tcp;
+package ar.edu.itba.it.gossip.async.tcp;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -8,9 +8,9 @@ public interface TCPReactor {
 
     void stop();
 
-    void addHandler(TCPHandler handler, int listenerPort);
+    void addHandler(TCPChannelEventHandler handler, int listenerPort);
 
-    void subscribe(SocketChannel channel, TCPHandler handler);
+    void subscribe(SocketChannel channel, TCPChannelEventHandler handler);
 
     void unsubscribe(SocketChannel channel);
 }

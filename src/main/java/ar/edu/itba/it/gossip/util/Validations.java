@@ -12,4 +12,10 @@ public abstract class Validations {
             String errorMessageTemplate, Object... errorMessageArgs) {
         Validate.validState(condition, errorMessageTemplate, errorMessageArgs);
     }
+
+    public static void assumeNotSet(Object object, String errorMessageTemplate,
+            Object... errorMessageArgs) {
+        Validate.validState(object == null, errorMessageTemplate, object,
+                errorMessageArgs);
+    }
 }

@@ -1,9 +1,9 @@
-package ar.edu.itba.it.gossip.tcp;
+package ar.edu.itba.it.gossip.async.tcp;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 
-public interface TCPHandler {
+public interface TCPChannelEventHandler {
     void handleAccept(SelectionKey key) throws IOException;
 
     void handleConnect(SelectionKey key) throws IOException;
