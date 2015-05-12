@@ -8,12 +8,16 @@ import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
+import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
@@ -105,4 +109,17 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
                 "Event type mismatch, got: %s when %s was expected", event,
                 type);
     }
+
+    protected void writeTo(ByteStream stream, String payload) {
+        writeTo(stream.getOutputStream(), payload);
+    }
+
+    protected void writeTo(OutputStream stream, String payload) {
+        try {
+            stream.write(payload.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

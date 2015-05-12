@@ -97,23 +97,12 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
     }
 
     private void sendAuthDataToOrigin() {
-        try {
-            String auth = "<auth xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" mechanism=\"PLAIN\">"
-                    + conversation.getCredentials().encode() + "</auth>";
-            toOrigin.write(auth.getBytes(UTF_8));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeTo(toOrigin, "<auth xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" mechanism=\"PLAIN\">"
+                    + conversation.getCredentials().encode() + "</auth>");
     }
 
     private void sendAuthSuccessToClient() {
-        try {
-            originToClient.getOutputStream().write(
-                    "<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>"
-                            .getBytes(UTF_8));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        writeTo(originToClient, "<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>");
     }
 
     protected enum State {
