@@ -101,7 +101,7 @@ public class TCPXMLProxy implements TCPChannelEventHandler {
                 pos = buffer.position();
                 buffer.flip();
                 parser.getInputFeeder().feedInput(buffer);
-                int type = 0;
+                int type;
                 while (true) {
                     type = parser.next();
                     if (type == AsyncXMLStreamReader.EVENT_INCOMPLETE

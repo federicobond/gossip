@@ -82,7 +82,7 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         }
     }
 
-    private void finish(TCPConversation conversation) throws IOException {
+    private void finish(TCPConversation conversation) {
         // Check!
         reactor.unsubscribe(conversation.getClientChannel());
         reactor.unsubscribe(conversation.getOriginChannel());

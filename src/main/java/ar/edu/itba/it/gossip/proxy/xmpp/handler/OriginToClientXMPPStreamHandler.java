@@ -5,9 +5,7 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamH
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_STATUS;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.LINKED;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
