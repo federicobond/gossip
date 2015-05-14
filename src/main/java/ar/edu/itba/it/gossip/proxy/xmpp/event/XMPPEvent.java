@@ -1,19 +1,17 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.event;
 
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
-
-import java.util.Map;
+import ar.edu.itba.it.gossip.proxy.xml.PartialXMLElement;
 
 public abstract class XMPPEvent {
     public abstract XMPPEvent.Type getType();
 
-    public static XMPPEvent from(XMPPEvent.Type type,
-            Map<String, String> attributes, String body) {
+    public static XMPPEvent from(XMPPEvent.Type type, PartialXMLElement element) {
         switch (type) {
         case AUTH:
-            return new AuthStanza(attributes, body);
+            return new AuthStanza(element);
         case AUTH_MECHANISM:
-            return new AuthMechanism(attributes, body);
+            return new AuthMechanism(element);
         default:
             return new GenericXMPPEvent(type);
         }

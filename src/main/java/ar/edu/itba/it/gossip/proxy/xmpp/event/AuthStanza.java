@@ -1,16 +1,15 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.event;
 
-import java.util.Map;
-
+import ar.edu.itba.it.gossip.proxy.xml.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 
 public class AuthStanza extends XMPPEvent {
     private final String mechanism;
     private final Credentials credentials;
 
-    AuthStanza(Map<String, String> attributes, String body) {
-        this.mechanism = attributes.get("mechanism");
-        this.credentials = Credentials.decode(body);
+    AuthStanza(PartialXMLElement element) {
+        this.mechanism = element.getAttributes().get("mechanism");
+        this.credentials = Credentials.decode(element.getBody());
     }
 
     @Override

@@ -1,12 +1,12 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.event;
 
-import java.util.Map;
+import ar.edu.itba.it.gossip.proxy.xml.PartialXMLElement;
 
 public class AuthMechanism extends XMPPEvent {
     private final String mechanism;
 
-    AuthMechanism(Map<String, String> attributes, String body) {
-        this.mechanism = body;
+    AuthMechanism(PartialXMLElement element) {
+        this.mechanism = element.getBody();
     }
 
     public String getMechanism() {

@@ -14,10 +14,9 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.INITIAL;
 
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 
+import ar.edu.itba.it.gossip.proxy.xml.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
@@ -30,8 +29,7 @@ public class StanzaEventHandler implements XMLEventHandler {
 
     private State state = State.INITIAL;
 
-    private String body;
-    private Map<String, String> attributes;
+    private PartialXMLElement element;
 
     public StanzaEventHandler(XMLStreamHandler handler) {
         this.handler = handler;
@@ -48,12 +46,12 @@ public class StanzaEventHandler implements XMLEventHandler {
 
     @Override
     public void handleStartElement(AsyncXMLStreamReader<?> reader) {
-        String name = reader.getLocalName();
+        element = new PartialXMLElement().loadName(reader);
         names.push(name);
 
         switch (name) {
         case "stream":
-            handler.handle(XMPPEvent.from(START_STREAM, attributes, body));
+            handler.handle(XMPPEvent.from(START_STREAM, element));
             names.pop();
             state = State.INITIAL;
             break;
@@ -62,11 +60,7 @@ public class StanzaEventHandler implements XMLEventHandler {
             break;
         default:
             state = ELEMENT_STARTED;
-            attributes = new HashMap<>();
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                attributes.put(reader.getAttributeLocalName(i),
-                        reader.getAttributeValue(i));
-            }
+            element.loadAttributes(reader);
         }
     }
 
@@ -77,36 +71,36 @@ public class StanzaEventHandler implements XMLEventHandler {
         final XMPPEvent event;
         switch (name) {
         case "auth":
-            event = XMPPEvent.from(AUTH, attributes, body);
+            event = XMPPEvent.from(AUTH, element);
             this.state = INITIAL;
             break;
         case "response":
-            event = XMPPEvent.from(RESPONSE, attributes, body);
+            event = XMPPEvent.from(RESPONSE, element);
             this.state = INITIAL;
             break;
 
         // TODO
         case "register":
-            event = XMPPEvent.from(AUTH_REGISTER, attributes, body);
+            event = XMPPEvent.from(AUTH_REGISTER, element);
             break;
         case "mechanisms":
-            event = XMPPEvent.from(AUTH_MECHANISMS, attributes, body);
+            event = XMPPEvent.from(AUTH_MECHANISMS, element);
             break;
         case "mechanism":
-            event = XMPPEvent.from(AUTH_MECHANISM, attributes, body);
+            event = XMPPEvent.from(AUTH_MECHANISM, element);
             break;
         case "features":
-            event = XMPPEvent.from(AUTH_FEATURES_END, attributes, body);
+            event = XMPPEvent.from(AUTH_FEATURES_END, element);
             this.state = INITIAL;
             break;
         // TODO
 
         // these DON'T HAPPEN INSIDE AUTH_FEATURES
         case "success":
-            event = XMPPEvent.from(AUTH_SUCCESS, attributes, body);
+            event = XMPPEvent.from(AUTH_SUCCESS, element);
             break;
         case "failure":
-            event = XMPPEvent.from(AUTH_FAILURE, attributes, body);
+            event = XMPPEvent.from(AUTH_FAILURE, element);
             break;
         // TODO
 
@@ -114,22 +108,13 @@ public class StanzaEventHandler implements XMLEventHandler {
             throw new RuntimeException("unknown element: " + name);
         }
 
-        clearState();
+        element = null;
         handler.handle(event);
     }
 
     @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
-        if (body == null) {
-            body = reader.getText();
-        } else {
-            body = body + reader.getText();
-        }
-    }
-
-    private void clearState() {
-        body = null;
-        attributes = null; // TODO: check!
+        element.appendToBody(reader);
     }
 
     protected enum State {
