@@ -7,10 +7,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import ar.edu.itba.it.gossip.util.XMLUtils;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
@@ -23,7 +24,7 @@ public class PartialXMLElement {
 
     public PartialXMLElement loadName(AsyncXMLStreamReader<?> from) {
         assumeNotEnded();
-        assumeState(getNamePart() == null, "%s already has a name", this);
+        assumeState(!getNamePart().isPresent(), "%s already has a name", this);
 
         parts.add(new NamePart(from.getLocalName())); // TODO: check!
         return this;
@@ -32,17 +33,17 @@ public class PartialXMLElement {
     public PartialXMLElement loadAttributes(AsyncXMLStreamReader<?> from) {
         assumeNotEnded();
         assumePartsExist(NamePart.class);
-        assumeState(getAttributesPart() == null, "%s already has attributes",
-                this);
+        assumeState(!getAttributesPart().isPresent(),
+                "%s already has attributes", this);
 
         AttributesPart attributesPart = new AttributesPart();
-        String localName, value;
         for (int i = 0; i < from.getAttributeCount(); i++) {
-            localName = from.getAttributeLocalName(i); // TODO: check!
-            value = from.getAttributeValue(i);
+            String localName = from.getAttributeLocalName(i); // TODO: check!
+            String value = from.getAttributeValue(i);
             attributesPart.attributes.put(localName, value);
         }
 
+        parts.add(attributesPart);
         return this;
     }
 
@@ -51,8 +52,8 @@ public class PartialXMLElement {
         assumePartsExist(NamePart.class, AttributesPart.class);
 
         BodyPart bodyPart = new BodyPart(from.getText());
-        parts.add(bodyPart);
 
+        parts.add(bodyPart);
         return this;
     }
 
@@ -71,7 +72,6 @@ public class PartialXMLElement {
         assumePartsExist(NamePart.class, AttributesPart.class);
 
         parts.add(new EndPart(getName()));
-
         return this;
     }
 
@@ -79,10 +79,10 @@ public class PartialXMLElement {
         String serialization = new String();
 
         for (Part part : parts) {
-            if (!part.serialized) {
+            if (!part.isSerialized()) {
                 serialization += part.serialize();
-                if (!part.serialized) { // that is, if the part isn't completely
-                                        // serialized yet
+                if (!part.isSerialized()) { // that is, if the part isn't
+                                            // completely serialized yet
                     return serialization;
                 }
             }
@@ -106,7 +106,7 @@ public class PartialXMLElement {
     }
 
     public String getBody() {
-        Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 3);
+        Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
         return bodyParts.map(bodyPart -> bodyPart.text).collect(
                 Collectors.joining());
     }
@@ -116,8 +116,8 @@ public class PartialXMLElement {
                 childPart -> childPart.child).collect(Collectors.toList());
     }
 
-    public boolean areCurrentContentsFullySerialized() {
-        return parts.get(parts.size() - 1).serialized;
+    public boolean isCurrentContentFullySerialized() {
+        return parts.get(parts.size() - 1).isSerialized();
     }
 
     @SafeVarargs
@@ -125,14 +125,15 @@ public class PartialXMLElement {
         List<Class<? extends Part>> partClassesList = Arrays
                 .asList(partClasses);
 
-        Stream<Class<? extends Part>> matches = parts
+        List<Class<? extends Part>> matches = parts
                 .stream()
                 .filter(part -> partClassesList.stream().anyMatch(
                         partClass -> partClass.isInstance(part)))
-                .map(part -> part.getClass());
-        assumeState(matches.count() == partClasses.length,
+                .map(part -> part.getClass()).collect(Collectors.toList());
+
+        assumeState(matches.size() == partClasses.length,
                 "Element expected parts %s to exist, but only %s exist",
-                matches.collect(Collectors.toList()));
+                matches);
     }
 
     private void assumeNotEnded() {
@@ -148,16 +149,18 @@ public class PartialXMLElement {
     }
 
     private Optional<EndPart> getEndPart() {
-        Part lastPart = parts.get(parts.size() - 1);
-        if (lastPart instanceof EndPart) {
-            return Optional.of((EndPart) lastPart);
+        if (!parts.isEmpty()) {
+            Part lastPart = parts.get(parts.size() - 1);
+            if (lastPart instanceof EndPart) {
+                return Optional.of((EndPart) lastPart);
+            }
         }
         return Optional.empty();
     }
 
     private <P extends Part> Optional<P> getPartByIndex(Class<P> partClass,
             int i) {
-        if (parts.size() >= i) {
+        if (!parts.isEmpty() && parts.size() - 1 >= i) {
             return Optional.of(partClass.cast(parts.get(i)));
         }
         return Optional.empty();
@@ -170,14 +173,18 @@ public class PartialXMLElement {
     }
 
     private <P extends Part> Stream<P> getPartsOfClassAsStream(
-            Class<P> partClass, int fromIdx) {
-        return parts.subList(fromIdx, parts.size() - 1).stream()
+            Class<P> partClass, int from) {
+        return parts.subList(from, parts.size()).stream()
                 .filter(part -> partClass.isInstance(part))
                 .map(part -> partClass.cast(part));
     }
 
     private abstract class Part {
         boolean serialized = false;
+
+        boolean isSerialized() {
+            return this.serialized;
+        }
 
         String serialize() {
             String serialization = getSerialization();
@@ -206,11 +213,7 @@ public class PartialXMLElement {
 
         @Override
         String getSerialization() {
-            String serialization = new String();
-            for (Entry<String, String> entry : attributes.entrySet()) {
-                serialization += " " + entry.getKey() + "=" + entry.getValue();
-            }
-            return serialization + ">";
+            return XMLUtils.serializeAttributes(attributes) + ">";
         }
     }
 
@@ -219,12 +222,6 @@ public class PartialXMLElement {
 
         BodyPart(final String text) {
             this.text = text;
-        }
-
-        @Override
-        String serialize() {
-            // TODO Auto-generated method stub
-            return super.serialize();
         }
 
         @Override
@@ -243,8 +240,12 @@ public class PartialXMLElement {
         @Override
         String serialize() {
             String serialization = getSerialization();
-            serialized = child.areCurrentContentsFullySerialized();
             return serialization;
+        }
+
+        @Override
+        boolean isSerialized() {
+            return child.isCurrentContentFullySerialized();
         }
 
         @Override
