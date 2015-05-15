@@ -1,14 +1,17 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
-import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
+import static ar.edu.itba.it.gossip.util.PredicateUtils.isInstanceOfAny;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ar.edu.itba.it.gossip.util.XMLUtils;
@@ -16,10 +19,17 @@ import ar.edu.itba.it.gossip.util.XMLUtils;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public class PartialXMLElement {
+    private Optional<PartialXMLElement> parent;
     private final List<Part> parts;
 
     public PartialXMLElement() {
         this.parts = new LinkedList<>();
+        this.parent = Optional.empty();
+    }
+
+    public PartialXMLElement(final PartialXMLElement parent) {
+        this();
+        parent.addChild(this);
     }
 
     public PartialXMLElement loadName(AsyncXMLStreamReader<?> from) {
@@ -42,7 +52,6 @@ public class PartialXMLElement {
             String value = from.getAttributeValue(i);
             attributesPart.attributes.put(localName, value);
         }
-
         parts.add(attributesPart);
         return this;
     }
@@ -51,19 +60,20 @@ public class PartialXMLElement {
         assumeNotEnded();
         assumePartsExist(NamePart.class, AttributesPart.class);
 
-        BodyPart bodyPart = new BodyPart(from.getText());
-
-        parts.add(bodyPart);
+        parts.add(new BodyPart(from.getText()));
         return this;
     }
 
     public PartialXMLElement addChild(PartialXMLElement child) {
         assumeNotEnded();
         assumePartsExist(NamePart.class, AttributesPart.class);
+        require(!child.isParentOf(this),
+                "%s cannot be a parent and a child of %s", child, this);
+        require(!this.isParentOf(child), "%s is already parent of %s!", this,
+                child);
 
-        ChildPart childPart = new ChildPart(child);
-        parts.add(childPart);
-
+        parts.add(new ChildPart(child));
+        child.parent = Optional.of(this);
         return this;
     }
 
@@ -77,7 +87,6 @@ public class PartialXMLElement {
 
     public String serializeCurrentContent() {
         String serialization = new String();
-
         for (Part part : parts) {
             if (!part.isSerialized()) {
                 serialization += part.serialize();
@@ -87,7 +96,6 @@ public class PartialXMLElement {
                 }
             }
         }
-
         return serialization;
     }
 
@@ -107,33 +115,40 @@ public class PartialXMLElement {
 
     public String getBody() {
         Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
-        return bodyParts.map(bodyPart -> bodyPart.text).collect(
-                Collectors.joining());
+        return bodyParts.map(bodyPart -> bodyPart.text).collect(joining());
     }
 
     public Iterable<PartialXMLElement> getChildren() {
         return getPartsOfClassAsStream(ChildPart.class).map(
-                childPart -> childPart.child).collect(Collectors.toList());
+                childPart -> childPart.child).collect(toList());
+    }
+
+    public Optional<PartialXMLElement> getParent() {
+        return this.parent;
     }
 
     public boolean isCurrentContentFullySerialized() {
-        return parts.get(parts.size() - 1).isSerialized();
+        return last(parts).isSerialized();
+    }
+
+    // NOTE: either directly or indirectly
+    public boolean isParentOf(PartialXMLElement child) {
+        return child != this
+                && child.getParent().isPresent()
+                && getChildrenAsStream().anyMatch(
+                        myChild -> myChild.equals(child)
+                                || myChild.isParentOf(child));
     }
 
     @SafeVarargs
     private final void assumePartsExist(Class<? extends Part>... partClasses) {
-        List<Class<? extends Part>> partClassesList = Arrays
-                .asList(partClasses);
+        List<Class<? extends Part>> matchedClasses = parts.stream()
+                .filter(isInstanceOfAny(partClasses))
+                .map(part -> part.getClass()).collect(toList());
 
-        List<Class<? extends Part>> matches = parts
-                .stream()
-                .filter(part -> partClassesList.stream().anyMatch(
-                        partClass -> partClass.isInstance(part)))
-                .map(part -> part.getClass()).collect(Collectors.toList());
-
-        assumeState(matches.size() == partClasses.length,
+        assumeState(matchedClasses.size() == partClasses.length,
                 "Element expected parts %s to exist, but only %s exist",
-                matches);
+                matchedClasses);
     }
 
     private void assumeNotEnded() {
@@ -148,9 +163,14 @@ public class PartialXMLElement {
         return getPartByIndex(AttributesPart.class, 1);
     }
 
+    private Stream<PartialXMLElement> getChildrenAsStream() {
+        return getPartsOfClassAsStream(ChildPart.class).map(
+                childPart -> childPart.child);
+    }
+
     private Optional<EndPart> getEndPart() {
         if (!parts.isEmpty()) {
-            Part lastPart = parts.get(parts.size() - 1);
+            Part lastPart = last(parts);
             if (lastPart instanceof EndPart) {
                 return Optional.of((EndPart) lastPart);
             }
@@ -257,7 +277,7 @@ public class PartialXMLElement {
     private class EndPart extends Part {
         final String name;
 
-        public EndPart(final String name) {
+        EndPart(final String name) {
             this.name = name;
         }
 

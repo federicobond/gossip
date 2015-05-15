@@ -8,6 +8,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -77,6 +78,8 @@ public class PartialXMLElementTest {
         when(mockReader.getText()).thenReturn(textFragments.get(0),
                 subarray(textFragments, 1));
 
+        when(mockChild.isParentOf(any(PartialXMLElement.class))).thenReturn(false);
+        when(mockChild.getParent()).thenReturn(Optional.empty());
         when(mockChild.serializeCurrentContent()).thenReturn(
                 CHILD_SERIALIZATION);
         when(mockChild.isCurrentContentFullySerialized()).thenReturn(false,

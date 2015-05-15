@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
-import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static com.fasterxml.aalto.AsyncXMLStreamReader.EVENT_INCOMPLETE;
 import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
 import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;

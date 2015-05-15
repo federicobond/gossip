@@ -1,5 +1,7 @@
 package ar.edu.itba.it.gossip.util;
 
+import static ar.edu.itba.it.gossip.util.ValidationUtils.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -9,7 +11,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 public abstract class CollectionUtils {
@@ -93,5 +94,16 @@ public abstract class CollectionUtils {
     public static <K, V> boolean contains(Map<K, V> map, Entry<K, V> entry) {
         V value = map.get(entry.getKey());
         return value != null && value.equals(entry.getValue());
+    }
+
+    @SafeVarargs
+    public static <V> V last(V... values) {
+        require(values.length > 0, "There are no elements in the array");
+        return values[values.length - 1];
+    }
+
+    public static <V> V last(List<V> values) {
+        require(values.size() > 0, "There are no elements in the list");
+        return values.get(values.size() - 1);
     }
 }

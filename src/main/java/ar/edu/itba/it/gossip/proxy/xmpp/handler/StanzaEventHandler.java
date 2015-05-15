@@ -15,6 +15,7 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.handler.StanzaEventHandler.State.
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Optional;
 
 import ar.edu.itba.it.gossip.proxy.xml.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
@@ -25,15 +26,14 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public class StanzaEventHandler implements XMLEventHandler {
     private final XMLStreamHandler handler;
-    private final Deque<String> names;
 
+    private int i = 0;
     private State state = State.INITIAL;
 
     private PartialXMLElement element;
 
     public StanzaEventHandler(XMLStreamHandler handler) {
         this.handler = handler;
-        this.names = new LinkedList<>();
     }
 
     @Override
@@ -46,30 +46,36 @@ public class StanzaEventHandler implements XMLEventHandler {
 
     @Override
     public void handleStartElement(AsyncXMLStreamReader<?> reader) {
-        element = new PartialXMLElement().loadName(reader);
-        names.push(name);
+        final PartialXMLElement newElement;
+        if (element == null) {
+            newElement = new PartialXMLElement();
+        } else {
+            newElement = new PartialXMLElement(element);
+            this.element = newElement;
+        }
 
+        newElement.loadName(reader);
+        String name = newElement.getName();
+
+        //aca habria que llamar al handler padre para que se avive de que esta pasando
         switch (name) {
         case "stream":
-            handler.handle(XMPPEvent.from(START_STREAM, element));
-            names.pop();
-            state = State.INITIAL;
+            handler.handle(XMPPEvent.from(START_STREAM, newElement));
+            state = INITIAL;
             break;
         case "features":
             state = AUTH_FEATURES;
             break;
         default:
             state = ELEMENT_STARTED;
-            element.loadAttributes(reader);
+            newElement.loadAttributes(reader);
         }
     }
 
     @Override
     public void handleEndElement(AsyncXMLStreamReader<?> reader) {
-        String name = names.pop();
-
         final XMPPEvent event;
-        switch (name) {
+        switch (element.getName()) {
         case "auth":
             event = XMPPEvent.from(AUTH, element);
             this.state = INITIAL;
@@ -105,7 +111,7 @@ public class StanzaEventHandler implements XMLEventHandler {
         // TODO
 
         default:
-            throw new RuntimeException("unknown element: " + name);
+            throw new RuntimeException("unknown element: " + element.getName());
         }
 
         element = null;
@@ -114,6 +120,7 @@ public class StanzaEventHandler implements XMLEventHandler {
 
     @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
+        // llamar al handler padre para que mande la orden de appendear
         element.appendToBody(reader);
     }
 

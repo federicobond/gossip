@@ -12,7 +12,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.*;
-import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     private static final String PLAIN_AUTH = "PLAIN";

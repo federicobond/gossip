@@ -2,7 +2,7 @@ package ar.edu.itba.it.gossip.util;
 
 import org.apache.commons.lang3.Validate;
 
-public abstract class Validations {
+public abstract class ValidationUtils {
     public static void require(boolean condition, String errorMessageTemplate,
             Object... errorMessageArgs) {
         Validate.isTrue(condition, errorMessageTemplate, errorMessageArgs);

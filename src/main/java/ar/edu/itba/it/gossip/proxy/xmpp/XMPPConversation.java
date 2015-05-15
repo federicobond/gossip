@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp;
 
-import static ar.edu.itba.it.gossip.util.Validations.assumeNotSet;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
 import java.nio.channels.SocketChannel;

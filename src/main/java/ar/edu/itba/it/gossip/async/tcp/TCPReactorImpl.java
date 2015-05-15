@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.async.tcp;
 
-import static ar.edu.itba.it.gossip.util.Validations.assumeState;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
