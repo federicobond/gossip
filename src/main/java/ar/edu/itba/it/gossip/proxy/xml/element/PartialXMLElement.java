@@ -106,12 +106,12 @@ public class PartialXMLElement {
 
     public String getBody() {
         Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
-        return bodyParts.map(BodyPart::getText).collect(joining());
+        return bodyParts.map(body -> body.getText()).collect(joining());
     }
 
     public Iterable<PartialXMLElement> getChildren() {
-        return getPartsOfClassAsStream(ChildPart.class)
-                .map(ChildPart::getChild).collect(toList());
+        return getPartsOfClassAsStream(ChildPart.class).map(
+                childP -> childP.getChild()).collect(toList());
     }
 
     public Optional<PartialXMLElement> getParent() {
@@ -157,8 +157,8 @@ public class PartialXMLElement {
     }
 
     private Stream<PartialXMLElement> getChildrenAsStream() {
-        return getPartsOfClassAsStream(ChildPart.class)
-                .map(ChildPart::getChild);
+        return getPartsOfClassAsStream(ChildPart.class).map(
+                childP -> childP.getChild());
     }
 
     private Optional<EndPart> getEndPart() {
@@ -181,15 +181,14 @@ public class PartialXMLElement {
 
     private <P extends Part> Stream<P> getPartsOfClassAsStream(
             Class<P> partClass) {
-        return parts.stream().filter(part -> partClass.isInstance(part))
-                .map(part -> partClass.cast(part));
+        return parts.stream().filter(partClass::isInstance)
+                .map(partClass::cast);
     }
 
     private <P extends Part> Stream<P> getPartsOfClassAsStream(
             Class<P> partClass, int from) {
         return parts.subList(from, parts.size()).stream()
-                .filter(isInstanceOf(partClass))
-                .map(part -> partClass.cast(part));
+                .filter(partClass::isInstance).map(partClass::cast);
     }
 
     @Override
