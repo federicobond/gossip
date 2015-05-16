@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.event;
 
-import ar.edu.itba.it.gossip.proxy.xml.PartialXMLElement;
+import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 
 public class AuthMechanism extends XMPPEvent {
     private final String mechanism;

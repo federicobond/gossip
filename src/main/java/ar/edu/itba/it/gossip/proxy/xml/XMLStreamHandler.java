@@ -1,6 +1,5 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
-import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static com.fasterxml.aalto.AsyncXMLStreamReader.EVENT_INCOMPLETE;
 import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
 import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
@@ -18,7 +17,6 @@ import javax.xml.stream.XMLStreamException;
 import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
 import com.fasterxml.aalto.AsyncXMLInputFactory;
@@ -26,12 +24,9 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 import com.fasterxml.aalto.stax.InputFactoryImpl;
 
 public abstract class XMLStreamHandler implements TCPStreamHandler {
-    // private static final XMLOutputFactory OUTPUT_FACTORY = XMLOutputFactory
-    // .newFactory();
     private static final AsyncXMLInputFactory inputFactory = new InputFactoryImpl();
 
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
-
     private XMLEventHandler eventHandler;
     private DeferredConnector connector;
 
@@ -43,7 +38,8 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     public void handleRead(ByteBuffer buf, DeferredConnector connector) {
         this.connector = connector;
         try {
-            reader.getInputFeeder().feedInput(buf);//TODO: this should perhaps be a view!
+            reader.getInputFeeder().feedInput(buf);// TODO: this should perhaps
+                                                   // be a view!
 
             while (reader.hasNext()) {
                 int type = reader.next();
@@ -102,14 +98,6 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         reader.getInputFeeder().endOfInput();
     }
 
-    public abstract void handle(XMPPEvent event);
-
-    protected void assumeEventType(XMPPEvent event, XMPPEvent.Type type) {
-        assumeState(event.getType() == type,
-                "Event type mismatch, got: %s when %s was expected", event,
-                type);
-    }
-
     protected void writeTo(ByteStream stream, String payload) {
         writeTo(stream.getOutputStream(), payload);
     }
@@ -121,5 +109,4 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
             throw new RuntimeException(e);
         }
     }
-
 }

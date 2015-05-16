@@ -1,20 +1,17 @@
-package ar.edu.itba.it.gossip.proxy.xml;
+package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
-import static ar.edu.itba.it.gossip.util.PredicateUtils.isInstanceOfAny;
+import static ar.edu.itba.it.gossip.util.PredicateUtils.*;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import ar.edu.itba.it.gossip.util.XMLUtils;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
@@ -46,13 +43,7 @@ public class PartialXMLElement {
         assumeState(!getAttributesPart().isPresent(),
                 "%s already has attributes", this);
 
-        AttributesPart attributesPart = new AttributesPart();
-        for (int i = 0; i < from.getAttributeCount(); i++) {
-            String localName = from.getAttributeLocalName(i); // TODO: check!
-            String value = from.getAttributeValue(i);
-            attributesPart.attributes.put(localName, value);
-        }
-        parts.add(attributesPart);
+        parts.add(new AttributesPart(from));
         return this;
     }
 
@@ -103,24 +94,24 @@ public class PartialXMLElement {
         Optional<NamePart> namePartOpt = getNamePart();
         assumeState(namePartOpt.isPresent(), "Element's name is not set %s",
                 this);
-        return namePartOpt.get().name;
+        return namePartOpt.get().getName();
     }
 
     public Map<String, String> getAttributes() {
         Optional<AttributesPart> attributesPartOpt = getAttributesPart();
         assumeState(attributesPartOpt.isPresent(),
                 "Element's attributes not set %s", this);
-        return attributesPartOpt.get().attributes;
+        return attributesPartOpt.get().getAttributes();
     }
 
     public String getBody() {
         Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
-        return bodyParts.map(bodyPart -> bodyPart.text).collect(joining());
+        return bodyParts.map(BodyPart::getText).collect(joining());
     }
 
     public Iterable<PartialXMLElement> getChildren() {
-        return getPartsOfClassAsStream(ChildPart.class).map(
-                childPart -> childPart.child).collect(toList());
+        return getPartsOfClassAsStream(ChildPart.class)
+                .map(ChildPart::getChild).collect(toList());
     }
 
     public Optional<PartialXMLElement> getParent() {
@@ -136,7 +127,9 @@ public class PartialXMLElement {
         return child != this
                 && child.getParent().isPresent()
                 && getChildrenAsStream().anyMatch(
-                        myChild -> myChild.equals(child)
+                        myChild -> myChild.equals(child) // TODO:there must be a
+                                                         // less expensive way
+                                                         // to do this
                                 || myChild.isParentOf(child));
     }
 
@@ -164,8 +157,8 @@ public class PartialXMLElement {
     }
 
     private Stream<PartialXMLElement> getChildrenAsStream() {
-        return getPartsOfClassAsStream(ChildPart.class).map(
-                childPart -> childPart.child);
+        return getPartsOfClassAsStream(ChildPart.class)
+                .map(ChildPart::getChild);
     }
 
     private Optional<EndPart> getEndPart() {
@@ -195,95 +188,47 @@ public class PartialXMLElement {
     private <P extends Part> Stream<P> getPartsOfClassAsStream(
             Class<P> partClass, int from) {
         return parts.subList(from, parts.size()).stream()
-                .filter(part -> partClass.isInstance(part))
+                .filter(isInstanceOf(partClass))
                 .map(part -> partClass.cast(part));
     }
 
-    private abstract class Part {
-        boolean serialized = false;
-
-        boolean isSerialized() {
-            return this.serialized;
-        }
-
-        String serialize() {
-            String serialization = getSerialization();
-            this.serialized = true;
-            return serialization;
-        }
-
-        abstract String getSerialization();
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((parent == null) ? 0 : parent.hashCode());
+        result = prime * result + ((parts == null) ? 0 : parts.hashCode());
+        return result;
     }
 
-    private class NamePart extends Part {
-        final String name;
-
-        NamePart(final String name) {
-            this.name = name;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
         }
-
-        @Override
-        String getSerialization() {
-            return "<" + name;
+        if (obj == null) {
+            return false;
         }
-    }
-
-    private class AttributesPart extends Part {
-        final Map<String, String> attributes = new HashMap<>();
-
-        @Override
-        String getSerialization() {
-            return XMLUtils.serializeAttributes(attributes) + ">";
+        if (getClass() != obj.getClass()) {
+            return false;
         }
-    }
-
-    private class BodyPart extends Part {
-        String text;
-
-        BodyPart(final String text) {
-            this.text = text;
+        PartialXMLElement other = (PartialXMLElement) obj;
+        // FIXME: check if there isn't a better way to check equality of
+        // PartialXMLElements
+        if (parent == null) {
+            if (other.parent != null) {
+                return false;
+            }
+        } else if (!parent.equals(other.parent)) {
+            return false;
         }
-
-        @Override
-        String getSerialization() {
-            return text;
+        if (parts == null) {
+            if (other.parts != null) {
+                return false;
+            }
+        } else if (!parts.equals(other.parts)) {
+            return false;
         }
-    }
-
-    private class ChildPart extends Part {
-        final PartialXMLElement child;
-
-        ChildPart(final PartialXMLElement child) {
-            this.child = child;
-        }
-
-        @Override
-        String serialize() {
-            String serialization = getSerialization();
-            return serialization;
-        }
-
-        @Override
-        boolean isSerialized() {
-            return child.isCurrentContentFullySerialized();
-        }
-
-        @Override
-        String getSerialization() {
-            return child.serializeCurrentContent();
-        }
-    }
-
-    private class EndPart extends Part {
-        final String name;
-
-        EndPart(final String name) {
-            this.name = name;
-        }
-
-        @Override
-        String getSerialization() {
-            return "</" + name + ">";
-        }
+        return true;
     }
 }

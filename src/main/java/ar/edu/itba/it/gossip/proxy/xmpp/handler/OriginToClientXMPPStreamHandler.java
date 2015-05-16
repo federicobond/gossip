@@ -1,6 +1,5 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.START_STREAM;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTHENTICATED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_STATUS;
@@ -18,7 +17,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthMechanism;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
-public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
+public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
     private final ByteStream originToClient;
     private final OutputStream toOrigin;
@@ -106,5 +105,4 @@ public class OriginToClientXMPPStreamHandler extends XMLStreamHandler {
     protected enum State {
         INITIAL, AUTH_FEATURES, EXPECT_AUTH_STATUS, AUTHENTICATED, LINKED
     }
-
 }

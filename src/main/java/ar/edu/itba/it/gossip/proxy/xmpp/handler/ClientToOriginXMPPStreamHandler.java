@@ -14,7 +14,7 @@ import java.net.InetSocketAddress;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.*;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
-public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
+public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private static final String PLAIN_AUTH = "PLAIN";
 
     private final XMPPConversation conversation;
@@ -37,13 +37,13 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
     public void handle(XMPPEvent event) {
         switch (authState) {
         case INITIAL:
-            assumeEventType(event, XMPPEvent.Type.START_STREAM);
+            assumeEventType(event, XMPPEvent.Type.STREAM_START);
             sendStreamOpenToClient();
             sendStreamFeaturesToClient();
             authState = NEGOTIATING;
             break;
         case NEGOTIATING:
-            assumeEventType(event, XMPPEvent.Type.AUTH);
+            assumeEventType(event, XMPPEvent.Type.AUTH_CHOICE);
             AuthStanza auth = (AuthStanza) event;
             assumeState(auth.mechanismMatches(PLAIN_AUTH),
                     "Auth mechanism not supported: %s");
@@ -63,7 +63,7 @@ public class ClientToOriginXMPPStreamHandler extends XMLStreamHandler {
             authState = AUTHENTICATED;
             break;
         case AUTHENTICATED:
-            assumeEventType(event, XMPPEvent.Type.START_STREAM);
+            assumeEventType(event, XMPPEvent.Type.STREAM_START);
             sendStreamOpenToOrigin();
 
             authState = LINKED;
