@@ -124,13 +124,12 @@ public class PartialXMLElement {
 
     // NOTE: either directly or indirectly
     public boolean isParentOf(PartialXMLElement child) {
-        return child != this
-                && child.getParent().isPresent()
-                && getChildrenAsStream().anyMatch(
-                        myChild -> myChild.equals(child) // TODO:there must be a
-                                                         // less expensive way
-                                                         // to do this
-                                || myChild.isParentOf(child));
+        return child != this && child.getParent().isPresent()
+                && getChildrenAsStream().anyMatch(myChild ->
+                // TODO: comparing by identity here sounds right (since whatever
+                // contents (other than children) 'child' has are unimportant),
+                // but do check this!
+                        myChild == child || myChild.isParentOf(child));
     }
 
     @SafeVarargs
@@ -189,45 +188,5 @@ public class PartialXMLElement {
             Class<P> partClass, int from) {
         return parts.subList(from, parts.size()).stream()
                 .filter(partClass::isInstance).map(partClass::cast);
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((parent == null) ? 0 : parent.hashCode());
-        result = prime * result + ((parts == null) ? 0 : parts.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        PartialXMLElement other = (PartialXMLElement) obj;
-        // FIXME: check if there isn't a better way to check equality of
-        // PartialXMLElements
-        if (parent == null) {
-            if (other.parent != null) {
-                return false;
-            }
-        } else if (!parent.equals(other.parent)) {
-            return false;
-        }
-        if (parts == null) {
-            if (other.parts != null) {
-                return false;
-            }
-        } else if (!parts.equals(other.parts)) {
-            return false;
-        }
-        return true;
     }
 }
