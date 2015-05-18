@@ -6,6 +6,7 @@ import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
+import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type;
 
 public abstract class XMPPStreamHandler extends XMLStreamHandler {
     protected XMPPStreamHandler() throws XMLStreamException {
@@ -14,7 +15,7 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler {
 
     public abstract void handle(XMPPEvent event);
 
-    protected void assumeEventType(XMPPEvent event, XMPPEvent.Type type) {
+    protected void assumeEventType(XMPPEvent event, Type type) {
         assumeState(event.getType() == type,
                 "Event type mismatch, got: %s when %s was expected", event,
                 type);

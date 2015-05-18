@@ -4,8 +4,6 @@ import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToStrin
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 
 public abstract class XMPPEvent {
-    public abstract XMPPEvent.Type getType();
-
     public static XMPPEvent from(XMPPEvent.Type type, PartialXMLElement element) {
         switch (type) {
         case AUTH_CHOICE:
@@ -13,8 +11,20 @@ public abstract class XMPPEvent {
         case AUTH_MECHANISM:
             return new AuthMechanism(element);
         default:
-            return new GenericXMPPEvent(type);
+            return new GenericXMPPEvent(type, element);
         }
+    }
+
+    private final PartialXMLElement element;
+
+    XMPPEvent(final PartialXMLElement element) {
+        this.element = element;
+    }
+
+    public abstract Type getType();
+
+    public PartialXMLElement getElement() {
+        return element;
     }
 
     @Override
@@ -23,6 +33,6 @@ public abstract class XMPPEvent {
     }
 
     public enum Type {
-        INITIAL, STREAM_START, AUTH_CHOICE, AUTH_FEATURES, AUTH_REGISTER, AUTH_MECHANISMS, AUTH_MECHANISM, AUTH_SUCCESS, AUTH_FAILURE, OTHER
+        STREAM_START, AUTH_CHOICE, AUTH_FEATURES, AUTH_REGISTER, AUTH_MECHANISMS, AUTH_MECHANISM, AUTH_SUCCESS, AUTH_FAILURE, OTHER
     }
 }

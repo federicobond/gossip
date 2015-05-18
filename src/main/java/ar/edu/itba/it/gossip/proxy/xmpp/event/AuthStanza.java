@@ -6,7 +6,8 @@ import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 public class AuthStanza extends XMPPEvent {
     private final Credentials credentials;
 
-    AuthStanza(PartialXMLElement element) {
+    AuthStanza(final PartialXMLElement element) {
+        super(element);
         this.credentials = Credentials.decode(element.getBody());
     }
 

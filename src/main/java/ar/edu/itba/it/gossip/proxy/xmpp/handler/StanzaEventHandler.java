@@ -42,19 +42,34 @@ public class StanzaEventHandler implements XMLEventHandler {
         }
         element.loadName(reader).loadAttributes(reader);
 
+        if (element.getName().equals("stream")) {
+            XMPPEvent event = XMPPEvent.from(STREAM_START, element);
+            handler.handle(event);
+        }
+    }
+
+    @Override
+    public void handleEndElement(AsyncXMLStreamReader<?> reader) {
+        element.end();
+
         XMPPEvent event = XMPPEvent.from(getEventType(element.getName()),
                 element);
         handler.handle(event);
+
+        element = element.getParent().get(); // an element that wasn't open
+                                             // will never be closed, since
+                                             // the underlying stream is a
+                                             // valid XML one
     }
 
     private XMPPEvent.Type getEventType(String name) {
         switch (name) {
-        // client
+        // stanzas from client
         case "auth":
             return AUTH_CHOICE;
-            // client
+        // stanzas from client
 
-            // origin
+        // stanzas from origin
         case "features":
             return AUTH_FEATURES;
         case "register":
@@ -68,68 +83,24 @@ public class StanzaEventHandler implements XMLEventHandler {
             return AUTH_SUCCESS;
         case "failure":
             return AUTH_FAILURE;
-            // origin
+        // stanzas from origin
 
-            // both
+        // stanzas from both
         case "stream":
+            // NOTE: this is here just as a reminder that it should go here once
+            // we deal with XMPP events at their start (and body, and end)
+
             // TODO: verify which stream open this is!
             // (also whether it is the first or second!)
             return STREAM_START;
         default:
             return OTHER;
-            // both
+        // stanzas from both
         }
     }
 
     @Override
-    public void handleEndElement(AsyncXMLStreamReader<?> reader) {
-        // final XMPPEvent event;
-        // switch (element.getName()) {
-        // case "auth":
-        // event = XMPPEvent.from(AUTH, element);
-        // this.state = INITIAL;
-        // break;
-        // case "response":
-        // event = XMPPEvent.from(RESPONSE, element);
-        // this.state = INITIAL;
-        // break;
-        //
-        // // TODO
-        // case "register":
-        // event = XMPPEvent.from(AUTH_REGISTER, element);
-        // break;
-        // case "mechanisms":
-        // event = XMPPEvent.from(AUTH_MECHANISMS, element);
-        // break;
-        // case "mechanism":
-        // event = XMPPEvent.from(AUTH_MECHANISM, element);
-        // break;
-        // case "features":
-        // event = XMPPEvent.from(AUTH_FEATURES_END, element);
-        // this.state = INITIAL;
-        // break;
-        // // TODO
-        //
-        // // these DON'T HAPPEN INSIDE AUTH_FEATURES
-        // case "success":
-        // event = XMPPEvent.from(AUTH_SUCCESS, element);
-        // break;
-        // case "failure":
-        // event = XMPPEvent.from(AUTH_FAILURE, element);
-        // break;
-        // // TODO
-        //
-        // default:
-        // throw new RuntimeException("unknown element: " + element.getName());
-        // }
-
-        // element = null;
-        // handler.handle(event);
-    }
-
-    @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
-        // llamar al handler padre para que mande la orden de appendear
         element.appendToBody(reader);
     }
 }

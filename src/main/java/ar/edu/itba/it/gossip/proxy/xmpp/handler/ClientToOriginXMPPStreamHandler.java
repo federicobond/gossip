@@ -1,27 +1,26 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
-import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthStanza;
 import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
 
 import javax.xml.stream.XMLStreamException;
+
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.*;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.*;
-import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
-    private static final String PLAIN_AUTH = "PLAIN";
-
     private final XMPPConversation conversation;
     private final ByteStream clientToOrigin;
     private final OutputStream toClient;
 
-    private AuthState authState = AuthState.INITIAL;
+    private AuthState authState = INITIAL;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
             final ByteStream clientToOrigin, final OutputStream toClient)
@@ -37,16 +36,14 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     public void handle(XMPPEvent event) {
         switch (authState) {
         case INITIAL:
-            assumeEventType(event, XMPPEvent.Type.STREAM_START);
+            assumeEventType(event, STREAM_START);
             sendStreamOpenToClient();
             sendStreamFeaturesToClient();
             authState = NEGOTIATING;
             break;
         case NEGOTIATING:
-            assumeEventType(event, XMPPEvent.Type.AUTH_CHOICE);
+            assumeEventType(event, AUTH_CHOICE);
             AuthStanza auth = (AuthStanza) event;
-            assumeState(auth.mechanismMatches(PLAIN_AUTH),
-                    "Auth mechanism not supported: %s");
             Credentials credentials = auth.getCredentials();
             conversation.setCredentials(credentials);
             System.out.println(credentials.getUsername()
@@ -63,33 +60,46 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             authState = AUTHENTICATED;
             break;
         case AUTHENTICATED:
-            assumeEventType(event, XMPPEvent.Type.STREAM_START);
+            assumeEventType(event, STREAM_START);
             sendStreamOpenToOrigin();
 
             authState = LINKED;
+            System.out
+                    .println("Client is linked to origin, now messages may pass freely");
             break;
         case LINKED:
-            System.out.println("dasd");
-            clientToOrigin.flush();
+
+            PartialXMLElement element = event.getElement();
+            String currentContent = element.serializeCurrentContent();
+            System.out.println(currentContent);
+            sendToOrigin(currentContent);
+            // clientToOrigin.flush();
             break;
         }
     }
 
     private void sendStreamOpenToOrigin() {
-        // TODO: check "to" attribute. It fails if it does not match upstream host
-        writeTo(clientToOrigin, "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"localhost\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
+        // TODO: check "to" attribute. It fails if it does not match upstream
+        // host
+        sendToOrigin("<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"localhost\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
     }
 
     private void sendStreamOpenToClient() {
-        writeTo(toClient, "<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>");
+        writeTo(toClient,
+                "<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>");
     }
 
     private void sendStreamFeaturesToClient() {
-        writeTo(toClient, "<stream:features>\n"
-                    + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
-                    + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
-                    + "<mechanism>PLAIN</mechanism>\n" + "</mechanisms>\n"
-                    + "</stream:features>");
+        writeTo(toClient,
+                "<stream:features>\n"
+                        + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
+                        + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
+                        + "<mechanism>PLAIN</mechanism>\n" + "</mechanisms>\n"
+                        + "</stream:features>");
+    }
+
+    private void sendToOrigin(String message) {
+        writeTo(clientToOrigin, message);
     }
 
     private InetSocketAddress getOriginAddressForUsername(String username) {
@@ -97,6 +107,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected enum AuthState {
-        INITIAL, NEGOTIATING, AUTHENTICATING, AUTHENTICATED, OPEN, CONFIRMED, LINKED
+        INITIAL, NEGOTIATING, AUTHENTICATED, LINKED
     }
 }

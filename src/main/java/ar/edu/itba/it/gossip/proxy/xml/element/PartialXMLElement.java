@@ -189,4 +189,18 @@ public class PartialXMLElement {
         return parts.subList(from, parts.size()).stream()
                 .filter(partClass::isInstance).map(partClass::cast);
     }
+
+    @Override
+    public String toString() {
+        Stream<Part> serializedParts = parts.stream().filter(
+                part -> part.isSerialized());
+        Stream<Part> unserializedParts = parts.stream().filter(
+                part -> !part.isSerialized());
+
+        return serializedParts.map(part -> part.getSerialization()).collect(
+                joining())
+                + "\n-----Not serialized yet-----\n"
+                + unserializedParts.map(part -> part.getSerialization())
+                        .collect(joining());
+    }
 }
