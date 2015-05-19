@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.STREAM_START;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTHENTICATED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_STATUS;
@@ -16,8 +16,8 @@ import javax.xml.stream.XMLStreamException;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthMechanism;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.AuthMechanism;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 
 public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
@@ -41,20 +41,39 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     @Override
-    public void handle(XMPPEvent event) {
-        switch (state) { // FIXME: State pattern needed here!
+    public void handleStart(PartialXMPPElement element) {
+        switch (state) {
         case INITIAL:
-            assumeEventType(event, STREAM_START);
+            assumeType(element, STREAM_START);
             state = EXPECT_AUTH_FEATURES;
             break;
+        case AUTHENTICATED:
+            assumeType(element, STREAM_START);
+            state = LINKED;
+            System.out
+                    .println("Origin is linked to the client, now messages may pass freely");
+
+            sendDocumentStartToClient();
+            sendToClient(element.getXML().serializeCurrentContent());
+            // NOTE: no break needed here *YET*; as of now they both end up
+            // flushing
+
+            break;
+        default:
+            // do nothing TODO: change this!
+        }
+    }
+
+    @Override
+    public void handleEnd(PartialXMPPElement element) {
+        switch (state) { // FIXME: State pattern needed here!
         case EXPECT_AUTH_FEATURES:
-            switch (event.getType()) {
+            switch (element.getType()) {
             case AUTH_REGISTER:
             case AUTH_MECHANISMS:
                 break;
             case AUTH_MECHANISM:
-                AuthMechanism authMech = (AuthMechanism) event;
-                authMechanisms.add(authMech.getMechanism());
+                authMechanisms.add(((AuthMechanism) element).getMechanism());
                 break;
             case AUTH_FEATURES:
                 // TODO: should probably fail gracefully if PLAIN isn't among
@@ -64,11 +83,11 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
                 break;
             default:
                 throw new IllegalStateException("Unexpected event type: "
-                        + event.getType());
+                        + element.getType());
             }
             break;
         case EXPECT_AUTH_STATUS:
-            switch (event.getType()) {
+            switch (element.getType()) {
             case AUTH_SUCCESS:
                 state = AUTHENTICATED;
                 sendAuthSuccessToClient();
@@ -77,31 +96,28 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             // case AUTH_FAILURE://TODO
             default:
                 throw new IllegalStateException("Unexpected event type: "
-                        + event.getType());
+                        + element.getType());
             }
             break;
-        case AUTHENTICATED:
-            assumeEventType(event, STREAM_START);
-            state = LINKED;
-            System.out
-                    .println("Origin is linked to the client, now messages may pass freely");
-
-            sendDocumentStartToClient();
-            // NOTE: no break needed here *YET*; as of now they both end up
-            // flushing
         case LINKED:
-            PartialXMLElement element = event.getElement();
+            // FIXME: check!
+            PartialXMLElement xmlElement = element.getXML();
 
-            // Optional<PartialXMLElement> parent = element.getParent();
-            // while (parent.isPresent()) {
-            // element = parent.get();
-            // }
-
-            String currentContent = element.serializeCurrentContent();
+            String currentContent = xmlElement.serializeCurrentContent();
             System.out.println(currentContent);
             sendToClient(currentContent);
             // originToClient.flush();
+            break;
+        default:
+            // will never happen
+            throw new IllegalStateException("Unexpected state" + state);
         }
+    }
+
+    @Override
+    public void handleBody(PartialXMPPElement element) {
+        // TODO Auto-generated method stub
+
     }
 
     private void sendAuthDataToOrigin() {
@@ -123,6 +139,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected enum State {
-        INITIAL, EXPECT_AUTH_FEATURES, EXPECT_AUTH_STATUS, AUTHENTICATED, LINKED
+        INITIAL, EXPECT_AUTH_FEATURES, EXPECT_AUTH_STATUS, AUTHENTICATED, LINKED;
     }
 }

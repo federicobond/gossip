@@ -1,19 +1,23 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
-import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
-import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.AuthStanza;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
-
-import javax.xml.stream.XMLStreamException;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.INITIAL;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.LINKED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.NEGOTIATING;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.*;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.*;
+import javax.xml.stream.XMLStreamException;
+
+import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
+import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
+import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
@@ -33,18 +37,33 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     @Override
-    public void handle(XMPPEvent event) {
+    public void handleStart(PartialXMPPElement element) {
         switch (authState) {
         case INITIAL:
-            assumeEventType(event, STREAM_START);
+            assumeType(element, STREAM_START);
             sendStreamOpenToClient();
             sendStreamFeaturesToClient();
             authState = NEGOTIATING;
             break;
+        case AUTHENTICATED:
+            assumeType(element, STREAM_START);
+            sendStreamOpenToOrigin();
+
+            authState = LINKED;
+            System.out
+                    .println("Client is linked to origin, now messages may pass freely");
+            break;
+        default:
+            // do nothing TODO: change this!
+        }
+    }
+
+    @Override
+    public void handleEnd(PartialXMPPElement element) {
+        switch (authState) {
         case NEGOTIATING:
-            assumeEventType(event, AUTH_CHOICE);
-            AuthStanza auth = (AuthStanza) event;
-            Credentials credentials = auth.getCredentials();
+            assumeType(element, AUTH_CHOICE);
+            Credentials credentials = ((Auth) element).getCredentials();
             conversation.setCredentials(credentials);
             System.out.println(credentials.getUsername()
                     + " is trying to log in with password: "
@@ -59,23 +78,23 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
             authState = AUTHENTICATED;
             break;
-        case AUTHENTICATED:
-            assumeEventType(event, STREAM_START);
-            sendStreamOpenToOrigin();
-
-            authState = LINKED;
-            System.out
-                    .println("Client is linked to origin, now messages may pass freely");
-            break;
         case LINKED:
-
-            PartialXMLElement element = event.getElement();
-            String currentContent = element.serializeCurrentContent();
+            // FIXME: check!
+            PartialXMLElement xmlElement = element.getXML();
+            String currentContent = xmlElement.serializeCurrentContent();
             System.out.println(currentContent);
             sendToOrigin(currentContent);
             // clientToOrigin.flush();
             break;
+        default:
+            throw new IllegalStateException("Unexpected state" + authState);
+            // will never happen
         }
+    }
+
+    @Override
+    public void handleBody(PartialXMPPElement element) {
+        // TODO Auto-generated method stub
     }
 
     private void sendStreamOpenToOrigin() {

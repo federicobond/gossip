@@ -22,18 +22,13 @@ public class XMPPConversation extends TCPConversation {
             final TCPStream clientToOrigin = getClientToOriginStream();
             final TCPStream originToClient = getOriginToClientStream();
 
-            TCPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
-                    this, 
-                    
-                    clientToOrigin.getView(),
+            final TCPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
+                    this, clientToOrigin.getView(),
                     originToClient.getOutputStream());
             clientToOrigin.setHandler(clientToOriginHandler);
 
-            TCPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
-                    this, 
-                    
-                    
-                    originToClient.getView(),
+            final TCPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
+                    this, originToClient.getView(),
                     clientToOrigin.getOutputStream());
             originToClient.setHandler(originToClientHandler);
         } catch (XMLStreamException e) {

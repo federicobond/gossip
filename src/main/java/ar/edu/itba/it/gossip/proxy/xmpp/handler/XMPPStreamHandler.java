@@ -5,19 +5,19 @@ import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent;
-import ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type;
+import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 
-public abstract class XMPPStreamHandler extends XMLStreamHandler {
+public abstract class XMPPStreamHandler extends XMLStreamHandler implements
+        XMPPEventHandler {
     protected XMPPStreamHandler() throws XMLStreamException {
         super();
     }
 
-    public abstract void handle(XMPPEvent event);
-
-    protected void assumeEventType(XMPPEvent event, Type type) {
-        assumeState(event.getType() == type,
-                "Event type mismatch, got: %s when %s was expected", event,
+    protected void assumeType(PartialXMPPElement element, Type type) {
+        assumeState(element.getType() == type,
+                "Event type mismatch, got: %s when %s was expected", element,
                 type);
     }
 }

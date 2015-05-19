@@ -1,8 +1,8 @@
-package ar.edu.itba.it.gossip.proxy.xmpp.event;
+package ar.edu.itba.it.gossip.proxy.xmpp.element;
 
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 
-public class AuthMechanism extends XMPPEvent {
+public class AuthMechanism extends PartialXMPPElement {
     private final String mechanism;
 
     AuthMechanism(final PartialXMLElement element) {
@@ -12,10 +12,5 @@ public class AuthMechanism extends XMPPEvent {
 
     public String getMechanism() {
         return mechanism;
-    }
-
-    @Override
-    public Type getType() {
-        return Type.AUTH_MECHANISM;
     }
 }

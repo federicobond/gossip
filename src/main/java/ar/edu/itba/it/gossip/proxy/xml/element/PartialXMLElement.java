@@ -197,8 +197,9 @@ public class PartialXMLElement {
         Stream<Part> unserializedParts = parts.stream().filter(
                 part -> !part.isSerialized());
 
-        return serializedParts.map(part -> part.getSerialization()).collect(
-                joining())
+        return "-----Already serialized-----\n"
+                + serializedParts.map(part -> part.getSerialization()).collect(
+                        joining())
                 + "\n-----Not serialized yet-----\n"
                 + unserializedParts.map(part -> part.getSerialization())
                         .collect(joining());
