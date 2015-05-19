@@ -42,7 +42,7 @@ public class StanzaEventHandler implements XMLEventHandler {
         }
         element.loadName(reader).loadAttributes(reader);
 
-        if (element.getName().equals("stream")) {
+        if (element.getName().equals("stream:stream")) {
             XMPPEvent event = XMPPEvent.from(STREAM_START, element);
             handler.handle(event);
         }
@@ -62,15 +62,15 @@ public class StanzaEventHandler implements XMLEventHandler {
                                              // valid XML one
     }
 
-    private XMPPEvent.Type getEventType(String name) {
+    private XMPPEvent.Type getEventType(final String name) {
         switch (name) {
         // stanzas from client
         case "auth":
             return AUTH_CHOICE;
-        // stanzas from client
+            // stanzas from client
 
-        // stanzas from origin
-        case "features":
+            // stanzas from origin
+        case "stream:features":
             return AUTH_FEATURES;
         case "register":
             return AUTH_REGISTER;
@@ -83,9 +83,9 @@ public class StanzaEventHandler implements XMLEventHandler {
             return AUTH_SUCCESS;
         case "failure":
             return AUTH_FAILURE;
-        // stanzas from origin
+            // stanzas from origin
 
-        // stanzas from both
+            // stanzas from both
         case "stream":
             // NOTE: this is here just as a reminder that it should go here once
             // we deal with XMPP events at their start (and body, and end)
@@ -95,7 +95,7 @@ public class StanzaEventHandler implements XMLEventHandler {
             return STREAM_START;
         default:
             return OTHER;
-        // stanzas from both
+            // stanzas from both
         }
     }
 

@@ -1,7 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
-import static ar.edu.itba.it.gossip.util.PredicateUtils.*;
+import static ar.edu.itba.it.gossip.util.PredicateUtils.isInstanceOfAny;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static java.util.stream.Collectors.joining;
@@ -33,7 +33,7 @@ public class PartialXMLElement {
         assumeNotEnded();
         assumeState(!getNamePart().isPresent(), "%s already has a name", this);
 
-        parts.add(new NamePart(from.getLocalName())); // TODO: check!
+        parts.add(new NamePart(from));
         return this;
     }
 
@@ -51,7 +51,7 @@ public class PartialXMLElement {
         assumeNotEnded();
         assumePartsExist(NamePart.class, AttributesPart.class);
 
-        parts.add(new BodyPart(from.getText()));
+        parts.add(new BodyPart(from));
         return this;
     }
 
@@ -72,7 +72,7 @@ public class PartialXMLElement {
         assumeNotEnded();
         assumePartsExist(NamePart.class, AttributesPart.class);
 
-        parts.add(new EndPart(getName()));
+        parts.add(new EndPart(this.getName()));
         return this;
     }
 

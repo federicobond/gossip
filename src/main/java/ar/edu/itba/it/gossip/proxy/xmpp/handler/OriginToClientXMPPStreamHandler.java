@@ -1,7 +1,11 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.*;
-import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.*;
+import static ar.edu.itba.it.gossip.proxy.xmpp.event.XMPPEvent.Type.STREAM_START;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTHENTICATED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_FEATURES;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_STATUS;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.INITIAL;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.LINKED;
 
 import java.io.OutputStream;
 import java.util.HashSet;
@@ -81,10 +85,18 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             state = LINKED;
             System.out
                     .println("Origin is linked to the client, now messages may pass freely");
-            // NOTE: no break needed here *YET*, as of now they both end up
+
+            sendDocumentStartToClient();
+            // NOTE: no break needed here *YET*; as of now they both end up
             // flushing
         case LINKED:
             PartialXMLElement element = event.getElement();
+
+            // Optional<PartialXMLElement> parent = element.getParent();
+            // while (parent.isPresent()) {
+            // element = parent.get();
+            // }
+
             String currentContent = element.serializeCurrentContent();
             System.out.println(currentContent);
             sendToClient(currentContent);
@@ -100,6 +112,10 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
 
     private void sendAuthSuccessToClient() {
         sendToClient("<success xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\"/>");
+    }
+
+    private void sendDocumentStartToClient() {
+        sendToClient("<?xml version=\"1.0\"?>");
     }
 
     private void sendToClient(String message) {

@@ -4,7 +4,7 @@ import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToStrin
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 
 public abstract class XMPPEvent {
-    public static XMPPEvent from(XMPPEvent.Type type, PartialXMLElement element) {
+    public static XMPPEvent from(Type type, PartialXMLElement element) {
         switch (type) {
         case AUTH_CHOICE:
             return new AuthStanza(element);
