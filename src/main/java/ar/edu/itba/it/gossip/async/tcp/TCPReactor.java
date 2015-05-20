@@ -8,9 +8,9 @@ public interface TCPReactor {
 
     void stop();
 
-    void addHandler(TCPChannelEventHandler handler, int listenerPort);
+    void addHandler(TCPEventHandler handler, int listenerPort);
 
-    void subscribe(SocketChannel channel, TCPChannelEventHandler handler);
+    void subscribe(SocketChannel channel, TCPEventHandler handler);
 
     void unsubscribe(SocketChannel channel);
 }

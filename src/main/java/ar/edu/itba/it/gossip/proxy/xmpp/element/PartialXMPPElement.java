@@ -10,8 +10,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
+import ar.edu.itba.it.gossip.util.PartiallySerializable;
 
-public class PartialXMPPElement {
+public class PartialXMPPElement implements PartiallySerializable {
     public static PartialXMPPElement from(PartialXMLElement element) {
         switch (Type.of(element.getName())) {
         case AUTH_CHOICE:
@@ -37,6 +38,11 @@ public class PartialXMPPElement {
 
     public Type getType() {
         return type;
+    }
+
+    @Override
+    public String serializeCurrentContent() {
+        return xmlElement.serializeCurrentContent();
     }
 
     @Override

@@ -2,25 +2,18 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public class StanzaEventHandler implements XMLEventHandler {
-    private final XMPPStreamHandler handler;
+    private final XMPPEventHandler xmppHandler;
 
     private PartialXMLElement xmlElement;
 
-    public StanzaEventHandler(XMPPStreamHandler handler) {
-        this.handler = handler;
-    }
-
-    @Override
-    public void handleStartDocument(AsyncXMLStreamReader<?> reader) {
-    }
-
-    @Override
-    public void handleEndDocument(AsyncXMLStreamReader<?> reader) {
+    public StanzaEventHandler(final XMPPEventHandler handler) {
+        this.xmppHandler = handler;
     }
 
     @Override
@@ -28,21 +21,18 @@ public class StanzaEventHandler implements XMLEventHandler {
         if (xmlElement == null) {
             xmlElement = new PartialXMLElement();
         } else {
-            PartialXMLElement newElement = new PartialXMLElement(xmlElement);
-            xmlElement = newElement;
+            xmlElement = new PartialXMLElement(xmlElement);
         }
         xmlElement.loadName(reader).loadAttributes(reader);
 
-        if (xmlElement.getName().equals("stream:stream")) { // TODO:remove!
-            handler.handleStart(PartialXMPPElement.from(xmlElement));
-        }
+        xmppHandler.handleStart(PartialXMPPElement.from(xmlElement));
     }
 
     @Override
     public void handleEndElement(AsyncXMLStreamReader<?> reader) {
         xmlElement.end();
 
-        handler.handleEnd(PartialXMPPElement.from(xmlElement));
+        xmppHandler.handleEnd(PartialXMPPElement.from(xmlElement));
 
         xmlElement = xmlElement.getParent().get(); // an element that wasn't
                                                    // open will never be closed,
@@ -53,5 +43,7 @@ public class StanzaEventHandler implements XMLEventHandler {
     @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
         xmlElement.appendToBody(reader);
+
+        xmppHandler.handleBody(PartialXMPPElement.from(xmlElement));
     }
 }

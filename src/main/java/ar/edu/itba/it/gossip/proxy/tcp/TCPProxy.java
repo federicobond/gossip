@@ -7,11 +7,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.async.tcp.TCPChannelEventHandler;
+import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
-public abstract class TCPProxy implements TCPChannelEventHandler {
+public abstract class TCPProxy implements TCPEventHandler {
     private final TCPReactor reactor;
 
     public TCPProxy(TCPReactor reactor) {
@@ -55,11 +55,11 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         } else if (bytesRead > 0) {
             buffer.flip();
 
-            // FIXME: just for debugging purposes
+            // // FIXME: just for debugging purposes
             System.out.println(bufferName + "'s content: (AFTER READ)"
                     + "\n===================\n" + BufferUtils.peek(buffer)
                     + "\n===================\n");
-            // FIXME: just for debugging purposes
+            // // FIXME: just for debugging purposes
 
             handler.handleRead(buffer,
                     address -> connectToOrigin(key, conversation, address));
@@ -99,7 +99,7 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         buffer.flip();
         int bytesWritten = channel.write(buffer);
 
-        // FIXME: just for debugging purposes
+        // // FIXME: just for debugging purposes
         String bufferName = conversation.getBufferName(buffer);
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
@@ -110,7 +110,7 @@ public abstract class TCPProxy implements TCPChannelEventHandler {
         System.out.println(bufferName + "'s content: (AFTER WRITE)"
                 + "\n===================\n" + BufferUtils.peek(buffer)
                 + "\n===================\n");
-        // FIXME: just for debugging purposes
+        // // FIXME: just for debugging purposes
 
         buffer.compact(); // Make room for more data to be read in
 

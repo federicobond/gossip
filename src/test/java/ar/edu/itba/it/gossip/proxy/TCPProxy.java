@@ -9,7 +9,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.async.tcp.TCPChannelEventHandler;
+import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 
 /**
@@ -26,7 +26,7 @@ import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
  * 
  * Si alguno de los buffers tienen algo para escribir se actualiza
  */
-public class TCPProxy implements TCPChannelEventHandler {
+public class TCPProxy implements TCPEventHandler {
     public static final String DEFAULT_HOST = "127.0.0.1";
 
     private final short port;

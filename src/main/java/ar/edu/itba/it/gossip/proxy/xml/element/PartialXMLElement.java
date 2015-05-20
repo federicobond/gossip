@@ -13,9 +13,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import ar.edu.itba.it.gossip.util.PartiallySerializable;
+
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
-public class PartialXMLElement {
+public class PartialXMLElement implements PartiallySerializable {
     private Optional<PartialXMLElement> parent;
     private final List<Part> parts;
 
@@ -76,6 +78,7 @@ public class PartialXMLElement {
         return this;
     }
 
+    @Override
     public String serializeCurrentContent() {
         String serialization = new String();
         for (Part part : parts) {

@@ -25,9 +25,9 @@ import com.fasterxml.aalto.stax.InputFactoryImpl;
 
 public abstract class XMLStreamHandler implements TCPStreamHandler {
     private static final AsyncXMLInputFactory inputFactory = new InputFactoryImpl();
-
+    
+    private XMLEventHandler xmlHandler;
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
-    private XMLEventHandler eventHandler;
     private DeferredConnector connector;
 
     protected XMLStreamHandler() throws XMLStreamException {
@@ -35,29 +35,28 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     }
 
     @Override
-    public void handleRead(ByteBuffer buf, DeferredConnector connector) {
+    public void handleRead(ByteBuffer buf, final DeferredConnector connector) {
         this.connector = connector;
         try {
-            reader.getInputFeeder().feedInput(buf);// TODO: this should perhaps
-                                                   // be a view!
+            reader.getInputFeeder().feedInput(buf);
 
             while (reader.hasNext()) {
                 int type = reader.next();
                 switch (type) {
                 case START_DOCUMENT:
-                    eventHandler.handleStartDocument(reader);
+                    xmlHandler.handleStartDocument(reader);
                     break;
                 case END_DOCUMENT:
-                    eventHandler.handleEndDocument(reader);
+                    xmlHandler.handleEndDocument(reader);
                     break;
                 case START_ELEMENT:
-                    eventHandler.handleStartElement(reader);
+                    xmlHandler.handleStartElement(reader);
                     break;
                 case CHARACTERS:
-                    eventHandler.handleCharacters(reader);
+                    xmlHandler.handleCharacters(reader);
                     break;
                 case END_ELEMENT:
-                    eventHandler.handleEndElement(reader);
+                    xmlHandler.handleEndElement(reader);
                     break;
                 }
                 if (type == EVENT_INCOMPLETE) {
@@ -89,8 +88,8 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         return connector;
     }
 
-    public void setEventHandler(final XMLEventHandler eventHandler) {
-        this.eventHandler = eventHandler;
+    public void setXMLEventHandler(final XMLEventHandler eventHandler) {
+        this.xmlHandler = eventHandler;
     }
 
     @Override

@@ -8,10 +8,12 @@ public class Auth extends PartialXMPPElement {
 
     Auth(final PartialXMLElement element) {
         super(element);
-        this.credentials = Credentials.decode(getXML().getBody());
     }
 
     public Credentials getCredentials() {
+        if (credentials == null) {
+            credentials = Credentials.decode(getXML().getBody());
+        }
         return credentials;
     }
 }

@@ -11,7 +11,7 @@ import java.nio.channels.SocketChannel;
 
 import javax.xml.stream.XMLStreamException;
 
-import ar.edu.itba.it.gossip.async.tcp.TCPChannelEventHandler;
+import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
@@ -19,7 +19,7 @@ import com.fasterxml.aalto.AsyncXMLInputFactory;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 import com.fasterxml.aalto.stax.InputFactoryImpl;
 
-public class TCPXMLProxy implements TCPChannelEventHandler {
+public class TCPXMLProxy implements TCPEventHandler {
     public static final String DEFAULT_HOST = "127.0.0.1";
 
     private final short port;

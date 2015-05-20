@@ -33,7 +33,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         this.clientToOrigin = clientToOrigin;
         this.toClient = toClient;
 
-        setEventHandler(new StanzaEventHandler(this));
+        setXMLEventHandler(new StanzaEventHandler(this));
     }
 
     @Override
@@ -48,13 +48,22 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         case AUTHENTICATED:
             assumeType(element, STREAM_START);
             sendStreamOpenToOrigin();
-
             authState = LINKED;
             System.out
                     .println("Client is linked to origin, now messages may pass freely");
             break;
+        case LINKED:
+            sendToOrigin(element);
+            break;
         default:
             // do nothing TODO: change this!
+        }
+    }
+
+    @Override
+    public void handleBody(PartialXMPPElement element) {
+        if (authState == LINKED) {
+            sendToOrigin(element);
         }
     }
 
@@ -79,22 +88,12 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             authState = AUTHENTICATED;
             break;
         case LINKED:
-            // FIXME: check!
-            PartialXMLElement xmlElement = element.getXML();
-            String currentContent = xmlElement.serializeCurrentContent();
-            System.out.println(currentContent);
-            sendToOrigin(currentContent);
-            // clientToOrigin.flush();
+            sendToOrigin(element);
             break;
         default:
-            throw new IllegalStateException("Unexpected state" + authState);
             // will never happen
+            throw new IllegalStateException("Unexpected state" + authState);
         }
-    }
-
-    @Override
-    public void handleBody(PartialXMPPElement element) {
-        // TODO Auto-generated method stub
     }
 
     private void sendStreamOpenToOrigin() {
@@ -104,17 +103,25 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     private void sendStreamOpenToClient() {
-        writeTo(toClient,
-                "<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>");
+        sendToClient("<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>");
     }
 
     private void sendStreamFeaturesToClient() {
-        writeTo(toClient,
-                "<stream:features>\n"
-                        + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
-                        + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
-                        + "<mechanism>PLAIN</mechanism>\n" + "</mechanisms>\n"
-                        + "</stream:features>");
+        sendToClient("<stream:features>\n"
+                + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
+                + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
+                + "<mechanism>PLAIN</mechanism>\n" + "</mechanisms>\n"
+                + "</stream:features>");
+    }
+
+    private void sendToClient(String message) {
+        writeTo(toClient, message);
+    }
+
+    private void sendToOrigin(PartialXMPPElement element) {
+        String currentContent = element.serializeCurrentContent();
+        System.out.println("C2O sending to origin: " + currentContent);
+        sendToOrigin(currentContent);
     }
 
     private void sendToOrigin(String message) {

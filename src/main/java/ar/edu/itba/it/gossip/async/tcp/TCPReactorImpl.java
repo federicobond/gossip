@@ -24,11 +24,11 @@ public class TCPReactorImpl implements TCPReactor {
 
     private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
 
-    private final Map<Integer, TCPChannelEventHandler> handlersByListenerPort = new HashMap<>();
+    private final Map<Integer, TCPEventHandler> handlersByListenerPort = new HashMap<>();
 
     // Since SocketChannels don't implement hashcode and equals, compare them by
     // identity
-    private final Map<SocketChannel, TCPChannelEventHandler> handlersByChannel = new IdentityHashMap<>();
+    private final Map<SocketChannel, TCPEventHandler> handlersByChannel = new IdentityHashMap<>();
 
     private boolean running = false;
     private String hostname;
@@ -42,12 +42,12 @@ public class TCPReactorImpl implements TCPReactor {
     }
 
     @Override
-    public void addHandler(TCPChannelEventHandler handler, int listenerPort) {
+    public void addHandler(TCPEventHandler handler, int listenerPort) {
         this.handlersByListenerPort.put(listenerPort, handler);
     }
 
     @Override
-    public void subscribe(SocketChannel channel, TCPChannelEventHandler handler) {
+    public void subscribe(SocketChannel channel, TCPEventHandler handler) {
         // TODO: shouldn't we be checking for collisions here?
         handlersByChannel.put(channel, handler);
         logger.info("Subscribed channel {} to handler {}", channel, handler);
@@ -102,7 +102,7 @@ public class TCPReactorImpl implements TCPReactor {
         listenerChannel.configureBlocking(false);
         listenerChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-        TCPChannelEventHandler handler = handlersByListenerPort.get(port);
+        TCPEventHandler handler = handlersByListenerPort.get(port);
         logger.info("Subscribed handler {} as listener on port {}", handler,
                 port);
     }
@@ -111,7 +111,7 @@ public class TCPReactorImpl implements TCPReactor {
             throws IOException {
         while (keyIter.hasNext()) {
             SelectionKey key = keyIter.next();
-            TCPChannelEventHandler handler = getHandlerForChannel(key.channel());
+            TCPEventHandler handler = getHandlerForChannel(key.channel());
 
             if (handler != null) {
                 if (key.isValid() && key.isAcceptable()) {
@@ -141,7 +141,7 @@ public class TCPReactorImpl implements TCPReactor {
         }
     }
 
-    private TCPChannelEventHandler getHandlerForChannel(
+    private TCPEventHandler getHandlerForChannel(
             SelectableChannel channel) throws IOException {
         if (channel instanceof SocketChannel) {
             SocketChannel socketChannel = (SocketChannel) channel;

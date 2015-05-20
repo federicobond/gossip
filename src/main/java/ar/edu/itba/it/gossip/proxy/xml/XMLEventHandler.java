@@ -3,9 +3,9 @@ package ar.edu.itba.it.gossip.proxy.xml;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public interface XMLEventHandler {
-    void handleStartDocument(AsyncXMLStreamReader<?> reader);
+    default void handleStartDocument(AsyncXMLStreamReader<?> reader) {}
 
-    void handleEndDocument(AsyncXMLStreamReader<?> reader);
+    default void handleEndDocument(AsyncXMLStreamReader<?> reader) {}
 
     void handleStartElement(AsyncXMLStreamReader<?> reader);
 

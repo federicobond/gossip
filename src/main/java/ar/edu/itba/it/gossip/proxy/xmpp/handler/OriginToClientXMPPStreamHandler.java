@@ -37,7 +37,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
 
         authMechanisms = new HashSet<>();
 
-        setEventHandler(new StanzaEventHandler(this));
+        setXMLEventHandler(new StanzaEventHandler(this));
     }
 
     @Override
@@ -54,13 +54,19 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
                     .println("Origin is linked to the client, now messages may pass freely");
 
             sendDocumentStartToClient();
-            sendToClient(element.getXML().serializeCurrentContent());
-            // NOTE: no break needed here *YET*; as of now they both end up
-            // flushing
-
+            // no break here, send things through
+        case LINKED:
+            sendToClient(element);
             break;
         default:
             // do nothing TODO: change this!
+        }
+    }
+
+    @Override
+    public void handleBody(PartialXMPPElement element) {
+        if (state == LINKED) {
+            sendToClient(element);
         }
     }
 
@@ -76,8 +82,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
                 authMechanisms.add(((AuthMechanism) element).getMechanism());
                 break;
             case AUTH_FEATURES:
-                // TODO: should probably fail gracefully if PLAIN isn't among
-                // origin's accepted auth mechanisms
                 sendAuthDataToOrigin();
                 state = EXPECT_AUTH_STATUS;
                 break;
@@ -100,24 +104,12 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             }
             break;
         case LINKED:
-            // FIXME: check!
-            PartialXMLElement xmlElement = element.getXML();
-
-            String currentContent = xmlElement.serializeCurrentContent();
-            System.out.println(currentContent);
-            sendToClient(currentContent);
-            // originToClient.flush();
+            sendToClient(element);
             break;
         default:
             // will never happen
             throw new IllegalStateException("Unexpected state" + state);
         }
-    }
-
-    @Override
-    public void handleBody(PartialXMPPElement element) {
-        // TODO Auto-generated method stub
-
     }
 
     private void sendAuthDataToOrigin() {
@@ -132,6 +124,12 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
 
     private void sendDocumentStartToClient() {
         sendToClient("<?xml version=\"1.0\"?>");
+    }
+
+    private void sendToClient(PartialXMPPElement element) {
+        String currentContent = element.serializeCurrentContent();
+        System.out.println("O2C sending to client: " + currentContent);
+        sendToClient(currentContent);
     }
 
     private void sendToClient(String message) {
