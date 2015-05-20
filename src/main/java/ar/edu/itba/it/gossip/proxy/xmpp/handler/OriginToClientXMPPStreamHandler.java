@@ -14,7 +14,6 @@ import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
-import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.AuthMechanism;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
@@ -36,8 +35,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         this.originToClient = originToClient;
 
         authMechanisms = new HashSet<>();
-
-        setXMLEventHandler(new StanzaEventHandler(this));
     }
 
     @Override

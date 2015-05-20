@@ -13,7 +13,6 @@ import java.net.InetSocketAddress;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
-import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
@@ -32,8 +31,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         this.conversation = conversation;
         this.clientToOrigin = clientToOrigin;
         this.toClient = toClient;
-
-        setXMLEventHandler(new StanzaEventHandler(this));
     }
 
     @Override
