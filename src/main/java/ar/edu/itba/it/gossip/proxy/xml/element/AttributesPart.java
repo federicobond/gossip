@@ -32,9 +32,14 @@ class AttributesPart extends Part {
         return unmodifiableMap(attributes);
     }
 
+    Map<String, String> getNamespaces() {
+        return namespaces;
+    }
+
     @Override
     String getSerialization() {
         return serializeNamespaces(namespaces)
                 + serializeAttributes(attributes) + ">";
     }
+
 }

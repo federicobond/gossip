@@ -2,10 +2,11 @@ package ar.edu.itba.it.gossip.util;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,11 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 
 public abstract class CollectionUtils {
+    @SafeVarargs
+    public static <V> List<V> unmodifiableList(V... values) {
+        return Collections.unmodifiableList(asList(values));
+    }
+
     public static <K, V> Pair<K, V> pair(K key, V value) {
         return Pair.of(key, value);
     }
@@ -54,6 +60,14 @@ public abstract class CollectionUtils {
 
     public static String[] subarray(List<String> list, int from) {
         return subarray(list, from, list.size());
+    }
+
+    public static <V> V[] subarray(V[] type, List<V> list, int from, int to) {
+        return list.subList(from, to).toArray(type);
+    }
+
+    public static <V> V[] subarray(V[] type, List<V> list, int from) {
+        return subarray(type, list, from, list.size());
     }
 
     public static <K, V> Pair<List<K>, List<V>> unzip(

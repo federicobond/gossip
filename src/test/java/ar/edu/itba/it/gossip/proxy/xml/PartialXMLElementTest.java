@@ -1,24 +1,26 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
-import static ar.edu.itba.it.gossip.util.CollectionUtils.asMap;
-import static ar.edu.itba.it.gossip.util.CollectionUtils.contentsAreEqual;
+import ar.edu.itba.it.gossip.util.CollectionUtils;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.*;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.pair;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.subarray;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.unmodifiableList;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.unzip;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeAttributes;
+import static ar.edu.itba.it.gossip.util.XMLUtils.serializeNamespaces;
 import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.xml.namespace.QName;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
@@ -35,15 +37,19 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public class PartialXMLElementTest {
     private static final String NAME = "stream:stream";
 
-    private static final List<Pair<String, String>> ATTRIBUTES = unmodifiableList(asList(
-            pair("xmlns:stream", "'http://etherx.jabber.org/streams'"),
+    private static final List<Pair<String, String>> ATTRIBUTES = unmodifiableList(
             pair("version", "'1.0'"), pair("from", "'localhost'"),
             pair("id", "'b5332dc6-14e9-478e-a77b-b287eac44140'"),
-            pair("xml:lang", "'en'"), pair("xmlns", "'jabber:client'")));
+            pair("xml:lang", "'en'"));
     private static final String ATTRIBUTES_SERIALIZATION = serializeAttributes(asMap(ATTRIBUTES));
 
+    private static final List<Pair<String, String>> NAMESPACES = unmodifiableList(
+            pair("xmlns:stream", "'http://etherx.jabber.org/streams'"),
+            pair("xmlns", "'jabber:client'"));
+    private static final String NAMESPACES_SERIALIZATION = serializeNamespaces(asMap(NAMESPACES));
+
     private static final String START_TAG = "<" + NAME
-            + ATTRIBUTES_SERIALIZATION + ">";
+            + NAMESPACES_SERIALIZATION + ATTRIBUTES_SERIALIZATION + ">";
 
     private static final List<String> FRAGMENTED_BODY_TEXT = asList("Some ",
             "random text", " here just for testing purposes!");
@@ -68,29 +74,11 @@ public class PartialXMLElementTest {
     public void setUp() {
         assert mockReader != null;
 
-        when(mockReader.getLocalName()).thenReturn(NAME);
-
-        when(mockReader.getAttributeCount()).thenReturn(ATTRIBUTES.size());
-        Pair<List<String>, List<String>> localNamesAndValues = unzip(ATTRIBUTES);
-
-        List<String> localNames = localNamesAndValues.getLeft();
-        when(mockReader.getAttributeLocalName(anyInt())).thenReturn(
-                localNames.get(0), subarray(localNames, 1));
-
-        List<String> values = localNamesAndValues.getRight();
-        when(mockReader.getAttributeValue(anyInt())).thenReturn(values.get(0),
-                subarray(values, 1));
-
-        when(mockReader.getText()).thenReturn(FRAGMENTED_BODY_TEXT.get(0),
-                subarray(FRAGMENTED_BODY_TEXT, 1));
-
-        when(mockChild.isParentOf(any(PartialXMLElement.class))).thenReturn(
-                false);
-        when(mockChild.getParent()).thenReturn(Optional.empty());
-        when(mockChild.serializeCurrentContent()).thenReturn(
-                CHILD_SERIALIZATION);
-        when(mockChild.isCurrentContentFullySerialized()).thenReturn(false,
-                true);
+        setUpTestName();
+        setUpTestAttributes();
+        setUpTestNamespaces();
+        setUpTestBody();
+        setUpTestChild();
 
         sut = new PartialXMLElement();
     }
@@ -113,10 +101,11 @@ public class PartialXMLElementTest {
     }
 
     @Test
-    public void testLoadingAttributes() {
+    public void testLoadingAttributesAndNamespaces() {
         sut.loadName(mockReader);
         sut.loadAttributes(mockReader);
 
+        assertTrue(contentsAreEqual(NAMESPACES, sut.getNamespaces()));
         assertTrue(contentsAreEqual(ATTRIBUTES, sut.getAttributes()));
     }
 
@@ -178,7 +167,7 @@ public class PartialXMLElementTest {
         assertEquals("<" + NAME, sut.serializeCurrentContent());
 
         sut.loadAttributes(mockReader);
-        assertEquals(ATTRIBUTES_SERIALIZATION + ">",
+        assertEquals(NAMESPACES_SERIALIZATION + ATTRIBUTES_SERIALIZATION + ">",
                 sut.serializeCurrentContent());
 
         appendTextToBodyInFragments();
@@ -189,6 +178,65 @@ public class PartialXMLElementTest {
 
         sut.end();
         assertEquals(END_TAG, sut.serializeCurrentContent());
+    }
+
+    private void setUpTestName() {
+        QName mockQname = asQName(NAME);
+        when(mockReader.getName()).thenReturn(mockQname);
+    }
+
+    private void setUpTestAttributes() {
+        when(mockReader.getAttributeCount()).thenReturn(ATTRIBUTES.size());
+        Pair<List<String>, List<String>> namesAndValues = unzip(ATTRIBUTES);
+
+        List<QName> qnames = namesAndValues.getLeft().stream()
+                .map(PartialXMLElementTest::asQName).collect(toList());
+        when(mockReader.getAttributeName(anyInt())).thenReturn(qnames.get(0),
+                subarray(new QName[0], qnames, 1));
+
+        List<String> values = namesAndValues.getRight();
+        when(mockReader.getAttributeValue(anyInt())).thenReturn(values.get(0),
+                subarray(values, 1));
+    }
+
+    private void setUpTestNamespaces() {
+        when(mockReader.getNamespaceCount()).thenReturn(NAMESPACES.size());
+        Pair<List<String>, List<String>> prefixesAndURIs = unzip(NAMESPACES);
+
+        List<String> prefixes = prefixesAndURIs.getLeft();
+        when(mockReader.getNamespacePrefix(anyInt())).thenReturn(
+                prefixes.get(0), subarray(prefixes, 1));
+
+        List<String> localParts = prefixesAndURIs.getRight();
+        when(mockReader.getNamespaceURI(anyInt())).thenReturn(
+                localParts.get(0), subarray(localParts, 1));
+    }
+
+    private void setUpTestBody() {
+        when(mockReader.getText()).thenReturn(FRAGMENTED_BODY_TEXT.get(0),
+                subarray(FRAGMENTED_BODY_TEXT, 1));
+    }
+
+    private void setUpTestChild() {
+        when(mockChild.isParentOf(any(PartialXMLElement.class))).thenReturn(
+                false);
+        when(mockChild.getParent()).thenReturn(Optional.empty());
+        when(mockChild.serializeCurrentContent()).thenReturn(
+                CHILD_SERIALIZATION);
+        when(mockChild.isCurrentContentFullySerialized()).thenReturn(false,
+                true);
+    }
+
+    private static QName asQName(String qnameStr) {
+        QName qnameMock = mock(QName.class);
+
+        String[] parts = qnameStr.split(":");
+        String prefix = parts.length > 1 ? parts[0] : "";
+        String localPart = last(parts);
+
+        when(qnameMock.getPrefix()).thenReturn(prefix);
+        when(qnameMock.getLocalPart()).thenReturn(localPart);
+        return qnameMock;
     }
 
     private void appendTextToBodyInFragments() {

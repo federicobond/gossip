@@ -106,7 +106,15 @@ public class PartialXMLElement implements PartiallySerializable {
                 "Element's attributes not set %s", this);
         return attributesPartOpt.get().getAttributes();
     }
+    
 
+    public Map<String, String> getNamespaces() {
+        Optional<AttributesPart> attributesPartOpt = getAttributesPart();
+        assumeState(attributesPartOpt.isPresent(),
+                "Element's namespaces not set %s", this);
+        return attributesPartOpt.get().getNamespaces();
+    }
+    
     public String getBody() {
         Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
         return bodyParts.map(body -> body.getText()).collect(joining());
