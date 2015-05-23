@@ -19,7 +19,7 @@ public class ByteBufferInputStream extends InputStream {
         if (!buf.hasRemaining()) {
             return -1;
         }
-        //FIXME should probably flip / compact / sth!
+        // FIXME should probably flip / compact / sth!
         return buf.get() & 0xFF;
     }
 
@@ -31,7 +31,7 @@ public class ByteBufferInputStream extends InputStream {
 
         len = min(len, buf.remaining());
         buf.get(bytes, off, len);
-        //FIXME should probably flip / compact / sth!
+        // FIXME should probably flip / compact / sth!
         return len;
     }
 

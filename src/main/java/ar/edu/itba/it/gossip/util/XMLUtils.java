@@ -36,6 +36,6 @@ public abstract class XMLUtils {
     }
 
     private static String serializeKeyValue(String key, String value) {
-        return key + "='" + value + "'";
+        return key + "=\"" + value + "\"";
     }
 }

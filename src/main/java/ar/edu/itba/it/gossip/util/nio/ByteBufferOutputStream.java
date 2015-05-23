@@ -16,13 +16,21 @@ public class ByteBufferOutputStream extends OutputStream {
     @Override
     public void write(int b) throws IOException {
         buf.put((byte) b);
-        //FIXME should probably flip / compact / sth!
+        // FIXME should probably flip / compact / sth!
     }
 
     @Override
     public void write(byte[] bytes, int off, int len) throws IOException {
         buf.put(bytes, off, len);
-        //FIXME should probably flip / compact / sth!
+        // FIXME should probably flip / compact / sth!
+    }
+
+    // FIXME: just here for testing purposes
+    public void printBuffer(boolean bytes, boolean flip, boolean escape) {
+        BufferUtils.printContent(buf, flip, escape);
+        if (bytes) {
+            BufferUtils.printContentAsBytes(buf, flip);
+        }
     }
 
     @Override

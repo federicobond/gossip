@@ -2,8 +2,12 @@ package ar.edu.itba.it.gossip.util.nio;
 
 import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.lang3.ArrayUtils.subarray;
 
 import java.nio.ByteBuffer;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 public abstract class BufferUtils {
     /*
@@ -39,11 +43,31 @@ public abstract class BufferUtils {
     // FIXME: JUST FOR DEBUGGING PURPOSES!
     public static String peek(ByteBuffer buffer) {
         byte[] bytes = buffer.array();
-        // TODO: check!
-        try {
-            return new String(bytes, buffer.position(), buffer.limit(), UTF_8);
-        } catch (StringIndexOutOfBoundsException ex) {
-            return ex.toString();
+        return new String(bytes, buffer.position(), buffer.limit()
+                - buffer.position(), UTF_8);
+    }
+
+    public static void printContentAsBytes(ByteBuffer buffer, boolean flip) {
+        ByteBuffer clone = buffer.duplicate();
+        if (flip) {
+            clone.flip();
         }
+        byte[] bytes = clone.array();
+        System.out.println("======(bytes)======\n"
+                + ArrayUtils.toString(subarray(bytes, buffer.position(),
+                        buffer.limit() - buffer.position()))
+                + "\n======(bytes)======");
+    }
+
+    public static void printContent(ByteBuffer buffer, boolean flip,
+            boolean escape) {
+        ByteBuffer clone = buffer.duplicate();
+        if (flip) {
+            clone.flip();
+        }
+        String str = peek(clone);
+        String escaped = escape ? StringEscapeUtils.escapeJava(str) : str;
+        System.out.println("======(string)======\n" + escaped
+                + "\n======(string)======");
     }
 }

@@ -10,11 +10,10 @@ class ChildPart extends Part {
     PartialXMLElement getChild() {
         return child;
     }
-    
+
     @Override
     String serialize() {
-        String serialization = getSerialization();
-        return serialization;
+        return getSerialization();
     }
 
     @Override

@@ -5,14 +5,14 @@ import static ar.edu.itba.it.gossip.util.XMLUtils.serializeNamespaces;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeQName;
 import static java.util.Collections.unmodifiableMap;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 class AttributesPart extends Part {
-    private final Map<String, String> namespaces = new HashMap<>();
-    private final Map<String, String> attributes = new HashMap<>();
+    private final Map<String, String> namespaces = new LinkedHashMap<>();
+    private final Map<String, String> attributes = new LinkedHashMap<>();
 
     AttributesPart(AsyncXMLStreamReader<?> from) {
         for (int i = 0; i < from.getNamespaceCount(); i++) {
@@ -33,7 +33,7 @@ class AttributesPart extends Part {
     }
 
     Map<String, String> getNamespaces() {
-        return namespaces;
+        return unmodifiableMap(namespaces);
     }
 
     @Override
@@ -41,5 +41,4 @@ class AttributesPart extends Part {
         return serializeNamespaces(namespaces)
                 + serializeAttributes(attributes) + ">";
     }
-
 }

@@ -42,7 +42,9 @@ public class PartialXMPPElement implements PartiallySerializable {
 
     @Override
     public String serializeCurrentContent() {
-        return xmlElement.serializeCurrentContent();
+        String serialization = xmlElement.serializeCurrentContent();
+        
+        return serialization;
     }
 
     @Override

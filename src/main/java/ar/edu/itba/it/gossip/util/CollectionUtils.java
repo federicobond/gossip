@@ -2,18 +2,16 @@ package ar.edu.itba.it.gossip.util;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
+import static java.util.Collections.unmodifiableMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -27,25 +25,13 @@ public abstract class CollectionUtils {
         return Pair.of(key, value);
     }
 
-    public static <K, V> Map<K, V> mapBy(Stream<V> values, Function<V, K> f) {
-        Map<K, V> map = new HashMap<>();
-        values.forEach(value -> {
-            K key = f.apply(value);
-            require(!map.containsKey(key),
-                    "Function %s generates repeated keys for %s (key=%s)", f,
-                    values, key);
-            map.put(key, value);
-        });
-        return unmodifiableMap(map);
-    }
-
     @SafeVarargs
     public static <K, V> Map<K, V> asMap(Pair<K, V>... pairs) {
         return asMap(asList(pairs));
     }
 
     public static <K, V> Map<K, V> asMap(Collection<Pair<K, V>> pairs) {
-        Map<K, V> map = new HashMap<>();
+        Map<K, V> map = new LinkedHashMap<>();
         for (Pair<K, V> pair : pairs) {
             K key = pair.getKey();
             require(!map.containsKey(key), "Repeated key: %s", key);

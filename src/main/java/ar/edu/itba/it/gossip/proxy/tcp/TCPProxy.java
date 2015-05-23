@@ -55,11 +55,11 @@ public abstract class TCPProxy implements TCPEventHandler {
         } else if (bytesRead > 0) {
             buffer.flip();
 
-            // // FIXME: just for debugging purposes
-            System.out.println(bufferName + "'s content: (AFTER READ)"
+            // FIXME: just for debugging purposes
+            System.out.println(bufferName + "'s content: (JUST READ)"
                     + "\n===================\n" + BufferUtils.peek(buffer)
                     + "\n===================\n");
-            // // FIXME: just for debugging purposes
+            // FIXME: just for debugging purposes
 
             handler.handleRead(buffer,
                     address -> connectToOrigin(key, conversation, address));
@@ -96,21 +96,30 @@ public abstract class TCPProxy implements TCPEventHandler {
 
         ByteBuffer buffer = conversation.getWriteBufferFor(channel);
 
-        buffer.flip();
-        int bytesWritten = channel.write(buffer);
-
-        // // FIXME: just for debugging purposes
+        // FIXME: just for debugging purposes
         String bufferName = conversation.getBufferName(buffer);
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
+        // FIXME: just for debugging purposes
+
+        buffer.flip();
+//        // FIXME: just for debugging purposes
+//        System.out.println(bufferName + "'s content: (BEFORE WRITE)"
+//                + "\n===================\n" + BufferUtils.peek(buffer)
+//                + "\n===================\n");
+//        // FIXME: just for debugging purposes
+
+        int bytesWritten = channel.write(buffer);
+
         System.out.println("Wrote " + bytesWritten + " bytes from '"
                 + bufferName + "' through '" + channelName + "Channel ("
                 + channel + "')");
 
+        // FIXME: just for debugging purposes
         System.out.println(bufferName + "'s content: (AFTER WRITE)"
                 + "\n===================\n" + BufferUtils.peek(buffer)
                 + "\n===================\n");
-        // // FIXME: just for debugging purposes
+        // FIXME: just for debugging purposes
 
         buffer.compact(); // Make room for more data to be read in
 

@@ -2,28 +2,32 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.AUTHENTICATED;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.INITIAL;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.LINKED;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.AuthState.NEGOTIATING;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.EXPECT_CREDENTIALS;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.INITIAL;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.LINKED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.VALIDATING_CREDENTIALS;
 
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
     private final ByteStream clientToOrigin;
     private final OutputStream toClient;
 
-    private AuthState authState = INITIAL;
+    private State state = INITIAL;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
             final ByteStream clientToOrigin, final OutputStream toClient)
@@ -35,20 +39,24 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     @Override
     public void handleStart(PartialXMPPElement element) {
-        switch (authState) {
+        switch (state) {
         case INITIAL:
             assumeType(element, STREAM_START);
             sendStreamOpenToClient();
             sendStreamFeaturesToClient();
-            authState = NEGOTIATING;
+            state = EXPECT_CREDENTIALS;
             break;
-        case AUTHENTICATED:
+        case VALIDATING_CREDENTIALS:
+            // FIXME: do check that the credentials were actually valid! (the
+            // code here is just assuming the client will behave and wait for an
+            // auth <success>).
             assumeType(element, STREAM_START);
-            sendStreamOpenToOrigin();
-            authState = LINKED;
+            state = LINKED;
             System.out
                     .println("Client is linked to origin, now messages may pass freely");
-            break;
+
+            sendDocumentStartToOrigin();
+            // no break here, send things through
         case LINKED:
             sendToOrigin(element);
             break;
@@ -59,15 +67,15 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     @Override
     public void handleBody(PartialXMPPElement element) {
-        if (authState == LINKED) {
+        if (state == LINKED) {
             sendToOrigin(element);
         }
     }
 
     @Override
     public void handleEnd(PartialXMPPElement element) {
-        switch (authState) {
-        case NEGOTIATING:
+        switch (state) {
+        case EXPECT_CREDENTIALS:
             assumeType(element, AUTH_CHOICE);
             Credentials credentials = ((Auth) element).getCredentials();
             conversation.setCredentials(credentials);
@@ -82,14 +90,14 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             sendStreamOpenToOrigin();
             resetStream();
 
-            authState = AUTHENTICATED;
+            state = VALIDATING_CREDENTIALS;
             break;
         case LINKED:
             sendToOrigin(element);
             break;
         default:
             // will never happen
-            throw new IllegalStateException("Unexpected state" + authState);
+            throw new IllegalStateException("Unexpected state" + state);
         }
     }
 
@@ -116,9 +124,16 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     private void sendToOrigin(PartialXMPPElement element) {
+        System.out.println("\n<C2O sending to origin>");
         String currentContent = element.serializeCurrentContent();
-        System.out.println("C2O sending to origin: " + currentContent);
+        System.out.println("Message:\n'"
+                + StringEscapeUtils.escapeJava(currentContent) + "' (string) "
+                + ArrayUtils.toString(currentContent.getBytes()));
         sendToOrigin(currentContent);
+        System.out.println("\nOutgoing buffer afterwards:");
+        ((ByteBufferOutputStream) clientToOrigin.getOutputStream())
+                .printBuffer(false, true, true);
+        System.out.println("</C2O sending to origin>\n");
     }
 
     private void sendToOrigin(String message) {
@@ -129,7 +144,11 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         return new InetSocketAddress("localhost", 5222);
     }
 
-    protected enum AuthState {
-        INITIAL, NEGOTIATING, AUTHENTICATED, LINKED
+    private void sendDocumentStartToOrigin() {
+        sendToOrigin("<?xml version=\"1.0\"?>");
+    }
+
+    protected enum State {
+        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED
     }
 }

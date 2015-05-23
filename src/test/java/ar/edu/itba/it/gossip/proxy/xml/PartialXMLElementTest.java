@@ -1,7 +1,8 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
-import ar.edu.itba.it.gossip.util.CollectionUtils;
-import static ar.edu.itba.it.gossip.util.CollectionUtils.*;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.asMap;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.contentsAreEqual;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.pair;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.subarray;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.unmodifiableList;
@@ -9,16 +10,19 @@ import static ar.edu.itba.it.gossip.util.CollectionUtils.unzip;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeAttributes;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeNamespaces;
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.xml.namespace.QName;
 
