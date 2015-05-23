@@ -43,7 +43,7 @@ public class PartialXMPPElement implements PartiallySerializable {
     @Override
     public String serializeCurrentContent() {
         String serialization = xmlElement.serializeCurrentContent();
-        
+
         return serialization;
     }
 
@@ -67,7 +67,7 @@ public class PartialXMPPElement implements PartiallySerializable {
             Map<String, Type> typesMap = new HashMap<>();
             for (Type type : values()) {
                 if (type.name.isPresent()) {
-                    assumeState(!typesMap.containsKey(type.name),
+                    assumeState(!typesMap.containsKey(type.name.get()),
                             "Name %s is repeated");
                     typesMap.put(type.name.get(), type);
                 }

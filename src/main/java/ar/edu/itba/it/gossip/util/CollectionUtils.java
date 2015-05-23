@@ -58,8 +58,8 @@ public abstract class CollectionUtils {
 
     public static <K, V> Pair<List<K>, List<V>> unzip(
             List<Pair<K, V>> zippedList) {
-        List<K> keys = new ArrayList<K>(zippedList.size());
-        List<V> values = new ArrayList<V>(zippedList.size());
+        List<K> keys = new ArrayList<>(zippedList.size());
+        List<V> values = new ArrayList<>(zippedList.size());
 
         for (Pair<K, V> zippedPair : zippedList) {
             keys.add(zippedPair.getKey());
