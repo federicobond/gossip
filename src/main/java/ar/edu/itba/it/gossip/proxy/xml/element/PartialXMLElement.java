@@ -2,8 +2,7 @@ package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
 import static ar.edu.itba.it.gossip.util.PredicateUtils.isInstanceOfAny;
-import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
-import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.*;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -11,6 +10,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import ar.edu.itba.it.gossip.util.PartiallySerializable;
@@ -20,6 +20,7 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public class PartialXMLElement implements PartiallySerializable {
     private Optional<PartialXMLElement> parent;
     private final List<Part> parts;
+    private Function<String, String> bodyTransformation;
 
     public PartialXMLElement() {
         this.parts = new LinkedList<>();
@@ -65,7 +66,11 @@ public class PartialXMLElement implements PartiallySerializable {
         require(!this.isParentOf(child), "%s is already parent of %s!", this,
                 child);
 
-        parts.add(new ChildPart(child));
+        ChildPart childPart = new ChildPart(child);
+        if (bodyTransformation != null) {
+            childPart.setBodyTransformation(bodyTransformation);
+        }
+        parts.add(childPart);
         child.parent = Optional.of(this);
         return this;
     }
@@ -78,19 +83,36 @@ public class PartialXMLElement implements PartiallySerializable {
         return this;
     }
 
+    public void setBodyTransformation(
+            final Function<String, String> bodyTransformation) {
+        require(bodyTransformation != null);
+        assumeNotSet(this.bodyTransformation,
+                "Body transformation is already set: %s", bodyTransformation);
+        this.bodyTransformation = bodyTransformation;
+        getChildren().forEach(
+                childP -> childP.setBodyTransformation(bodyTransformation));
+    }
+
     @Override
     public String serializeCurrentContent() {
         String serialization = new String();
         for (Part part : parts) {
             if (!part.isSerialized()) {
-                serialization += part.serialize();
-                if (!part.isSerialized()) { // that is, if the part isn't
-                                            // completely serialized yet
+                serialization += getSerialization(part);
+                if (!part.isSerialized()) { // that is, if the part still isn't
+                                            // completely serialized
                     return serialization;
                 }
             }
         }
         return serialization;
+    }
+
+    private String getSerialization(Part part) {
+        if (part instanceof BodyPart && bodyTransformation != null) {
+            return bodyTransformation.apply(part.serialize());
+        }
+        return part.serialize();
     }
 
     public String getName() {
@@ -106,7 +128,6 @@ public class PartialXMLElement implements PartiallySerializable {
                 "Element's attributes not set %s", this);
         return attributesPartOpt.get().getAttributes();
     }
-    
 
     public Map<String, String> getNamespaces() {
         Optional<AttributesPart> attributesPartOpt = getAttributesPart();
@@ -114,7 +135,7 @@ public class PartialXMLElement implements PartiallySerializable {
                 "Element's namespaces not set %s", this);
         return attributesPartOpt.get().getNamespaces();
     }
-    
+
     public String getBody() {
         Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
         return bodyParts.map(body -> body.getText()).collect(joining());
@@ -131,6 +152,10 @@ public class PartialXMLElement implements PartiallySerializable {
 
     public boolean isCurrentContentFullySerialized() {
         return last(parts).isSerialized();
+    }
+
+    public boolean isBodyBeingTransformed() {
+        return bodyTransformation != null;
     }
 
     // NOTE: either directly or indirectly

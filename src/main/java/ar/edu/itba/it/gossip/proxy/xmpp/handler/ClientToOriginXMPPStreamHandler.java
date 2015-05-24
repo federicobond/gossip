@@ -1,6 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.EXPECT_CREDENTIALS;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.INITIAL;
@@ -19,6 +20,7 @@ import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
@@ -58,6 +60,9 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             sendDocumentStartToOrigin();
             // fall through
         case LINKED:
+            if (element.getType() == MESSAGE) {
+                ((Message) element).enableLeetConversion();
+            }
             sendToOrigin(element);
             break;
         default:
@@ -68,6 +73,12 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     @Override
     public void handleBody(PartialXMPPElement element) {
         if (state == LINKED) {
+            if (element.getType() == MESSAGE) { // this is here just in case
+                                                // leet conversion was enabled
+                                                // by the admin after the
+                                                // message's start tag
+                ((Message) element).enableLeetConversion();
+            }
             sendToOrigin(element);
         }
     }

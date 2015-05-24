@@ -25,7 +25,7 @@ public class PartialXMPPElement implements PartiallySerializable {
     private final PartialXMLElement xmlElement;
     private final Type type;
 
-    PartialXMPPElement(final PartialXMLElement xmlElement) {
+    protected PartialXMPPElement(final PartialXMLElement xmlElement) {
         this.xmlElement = xmlElement;
         this.type = Type.of(xmlElement.getName());
     }
@@ -54,7 +54,7 @@ public class PartialXMPPElement implements PartiallySerializable {
         STREAM_START("stream:stream"), AUTH_CHOICE("auth"), AUTH_FEATURES(
                 "stream:features"), AUTH_REGISTER("register"), AUTH_MECHANISMS(
                 "mechanisms"), AUTH_MECHANISM("mechanism"), AUTH_SUCCESS(
-                "success"), AUTH_FAILURE("failure"), OTHER;
+                "success"), AUTH_FAILURE("failure"), MESSAGE("message"), OTHER;
 
         private static final Map<String, Type> typesByName;
 
