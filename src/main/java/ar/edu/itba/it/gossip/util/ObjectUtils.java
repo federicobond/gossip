@@ -9,8 +9,8 @@ public abstract class ObjectUtils {
         return Objects.hash(objects);
     }
 
-    public static boolean areEqual(Object a, Object b) {
-        return Objects.equals(a, b);
+    public static boolean areEqual(Object obj1, Object obj2) {
+        return Objects.equals(obj1, obj2);
     }
 
     public static ToStringBuilder toStringBuilder(Object obj) {
