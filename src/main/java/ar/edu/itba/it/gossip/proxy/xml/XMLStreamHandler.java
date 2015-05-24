@@ -25,7 +25,7 @@ import com.fasterxml.aalto.stax.InputFactoryImpl;
 
 public abstract class XMLStreamHandler implements TCPStreamHandler {
     private static final AsyncXMLInputFactory inputFactory = new InputFactoryImpl();
-    
+
     private XMLEventHandler xmlHandler;
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
     private DeferredConnector connector;
@@ -70,7 +70,7 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         }
     }
 
-    public void resetStream() {
+    protected void resetStream() {
         try {
             reader.close();
             reader = newReader();

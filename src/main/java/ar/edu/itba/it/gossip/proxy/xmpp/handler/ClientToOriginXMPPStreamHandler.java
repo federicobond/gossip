@@ -82,10 +82,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             System.out.println(credentials.getUsername()
                     + " is trying to log in with password: "
                     + credentials.getPassword());
-
-            InetSocketAddress address = getOriginAddressForUsername(credentials
-                    .getUsername());
-            getConnector().connectToOrigin(address);
+            connectToOrigin();
 
             sendStreamOpenToOrigin();
             resetStream();
@@ -99,6 +96,13 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             // will never happen
             throw new IllegalStateException("Unexpected state" + state);
         }
+    }
+
+    protected void connectToOrigin() {
+        Credentials credentials = conversation.getCredentials();
+        InetSocketAddress address = getOriginAddressForUsername(credentials
+                .getUsername());
+        getConnector().connectToOrigin(address);
     }
 
     private void sendStreamOpenToOrigin() {
@@ -123,7 +127,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         writeTo(toClient, message);
     }
 
-    private void sendToOrigin(PartialXMPPElement element) {
+    protected void sendToOrigin(PartialXMPPElement element) {
         System.out.println("\n<C2O sending to origin>");
         String currentContent = element.serializeCurrentContent();
         System.out.println("Message:\n'"
@@ -136,7 +140,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         System.out.println("</C2O sending to origin>\n");
     }
 
-    private void sendToOrigin(String message) {
+    protected void sendToOrigin(String message) {
         writeTo(clientToOrigin, message);
     }
 
