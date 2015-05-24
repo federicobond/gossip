@@ -56,7 +56,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                     .println("Client is linked to origin, now messages may pass freely");
 
             sendDocumentStartToOrigin();
-            // no break here, send things through
+            // fall through
         case LINKED:
             sendToOrigin(element);
             break;

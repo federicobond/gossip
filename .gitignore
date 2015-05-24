@@ -17,6 +17,7 @@ hs_err_pid*
 *.iml
 
 # Eclipse files
+.checkstyle
 .classpath
 .project
 .settings
