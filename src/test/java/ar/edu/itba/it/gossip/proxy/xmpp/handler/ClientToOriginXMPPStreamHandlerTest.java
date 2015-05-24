@@ -1,11 +1,10 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.OTHER;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandlerTestUtils.contents;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandlerTestUtils.xmppElement;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,7 +25,6 @@ import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClientToOriginXMPPStreamHandlerTest {
@@ -51,6 +49,8 @@ public class ClientToOriginXMPPStreamHandlerTest {
             + " to=\"localhost\""
             + " xml:lang=\"en\""
             + " xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">";
+    private static final Credentials credentials = new Credentials(
+            "testUsername", "testPassword");
 
     @Mock
     private XMPPConversation conversation;
@@ -59,9 +59,6 @@ public class ClientToOriginXMPPStreamHandlerTest {
     private ByteStream clientToOrigin;
     private ByteArrayOutputStream toOrigin;
     private ByteArrayOutputStream toClient;
-
-    private Credentials credentials = new Credentials("testUsername",
-            "testPassword");
 
     private TestClientToOriginXMPPStreamHandler sut;
 
@@ -120,7 +117,7 @@ public class ClientToOriginXMPPStreamHandlerTest {
     }
 
     @Test
-    public void testMessagesSentFreelyAfterSecondStreamStart() {
+    public void testMessagesSentThroughAfterSecondStreamStart() {
         sut.handleStart(xmppElement(STREAM_START));
         toClient.reset();
 
@@ -151,27 +148,8 @@ public class ClientToOriginXMPPStreamHandlerTest {
         assertEquals(startTag + body + endTag, contents(toOrigin));
     }
 
-    private String contents(ByteArrayOutputStream outputStream) {
-        return new String(outputStream.toByteArray(), UTF_8);
-    }
-
     private Auth auth() {
-        Auth mockAuth = mock(Auth.class);
-        when(mockAuth.getType()).thenReturn(AUTH_CHOICE);
-        when(mockAuth.getCredentials()).thenReturn(credentials);
-        return mockAuth;
-    }
-
-    private PartialXMPPElement xmppElement(Type type) {
-        PartialXMPPElement mockElement = mock(PartialXMPPElement.class);
-        when(mockElement.getType()).thenReturn(type);
-        return mockElement;
-    }
-
-    private PartialXMPPElement xmppElement(Type type, String serialization) {
-        PartialXMPPElement mockElement = xmppElement(type);
-        when(mockElement.serializeCurrentContent()).thenReturn(serialization);
-        return mockElement;
+        return XMPPStreamHandlerTestUtils.auth(credentials);
     }
 
     // class needed for method overrides
@@ -206,8 +184,7 @@ public class ClientToOriginXMPPStreamHandlerTest {
                                                                   // from the
                                                                   // original
                                                                   // method
-            String currentContent = element.serializeCurrentContent();
-            sendToOrigin(currentContent);
+            sendToOrigin(element.serializeCurrentContent());
         }
     }
 }

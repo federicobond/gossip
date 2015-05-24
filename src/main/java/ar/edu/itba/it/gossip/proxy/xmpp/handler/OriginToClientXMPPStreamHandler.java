@@ -8,8 +8,6 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamH
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.VALIDATING_CREDENTIALS;
 
 import java.io.OutputStream;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -18,7 +16,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.AuthMechanism;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
@@ -26,8 +23,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
     private final ByteStream originToClient;
     private final OutputStream toOrigin;
-
-    private Set<String> authMechanisms;
 
     private State state = INITIAL;
 
@@ -37,8 +32,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         this.conversation = conversation;
         this.toOrigin = toOrigin;
         this.originToClient = originToClient;
-
-        authMechanisms = new HashSet<>();
     }
 
     @Override
@@ -78,9 +71,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             switch (element.getType()) {
             case AUTH_REGISTER:
             case AUTH_MECHANISMS:
-                break;
             case AUTH_MECHANISM:
-                authMechanisms.add(((AuthMechanism) element).getMechanism());
                 break;
             case AUTH_FEATURES:
                 sendAuthDataToOrigin();// FIXME: send the actual auth here!
@@ -113,7 +104,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         }
     }
 
-    private void sendAuthDataToOrigin() {
+    protected void sendAuthDataToOrigin() {
         writeTo(toOrigin,
                 "<auth xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\" mechanism=\"PLAIN\">"
                         + conversation.getCredentials().encode() + "</auth>");
@@ -123,7 +114,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         sendToClient("<?xml version=\"1.0\"?>");
     }
 
-    private void sendToClient(PartialXMPPElement element) {
+    protected void sendToClient(PartialXMPPElement element) {
         System.out.println("\n<O2C sending to client>");
         String currentContent = element.serializeCurrentContent();
         System.out.println("Message:\n'"
@@ -136,7 +127,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         System.out.println("</O2C sending to client>\n");
     }
 
-    private void sendToClient(String message) {
+    protected void sendToClient(String message) {
         writeTo(originToClient, message);
     }
 

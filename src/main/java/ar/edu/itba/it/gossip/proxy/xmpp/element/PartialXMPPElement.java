@@ -17,8 +17,6 @@ public class PartialXMPPElement implements PartiallySerializable {
         switch (Type.of(element.getName())) {
         case AUTH_CHOICE:
             return new Auth(element);
-        case AUTH_MECHANISM:
-            return new AuthMechanism(element);
         default:
             return new PartialXMPPElement(element);
         }
