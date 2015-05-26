@@ -7,9 +7,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.Conversation;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 
-public class TCPConversation {
+public class TCPConversation implements Conversation {
     private final TCPStream clientToOrigin;
     private final TCPStream originToClient;
     private Boolean connectingToOrigin = null; // Note: this is completely
@@ -20,7 +21,7 @@ public class TCPConversation {
         this.originToClient = new TCPStream(null, clientChannel);
     }
 
-    void updateSubscription(Selector selector) throws ClosedChannelException {
+    public void updateSubscription(Selector selector) throws ClosedChannelException {
         int clientFlags = clientToOrigin.getFromSubscriptionFlags()
                 | originToClient.getToSubscriptionFlags();
         getClientChannel().register(selector, clientFlags, this);
@@ -72,7 +73,7 @@ public class TCPConversation {
         throw new IllegalArgumentException("Unknown socket");
     }
 
-    void closeChannels() {
+    public void closeChannels() {
         try {
             try {
                 getClientChannel().close();
@@ -98,16 +99,16 @@ public class TCPConversation {
         // NOTE: the rest will be handled by updateSubscription
     }
 
-    protected TCPStream getClientToOriginStream() {
+    public TCPStream getClientToOriginStream() {
         return clientToOrigin;
     }
 
-    protected TCPStream getOriginToClientStream() {
+    public TCPStream getOriginToClientStream() {
         return originToClient;
     }
 
     // FIXME: just for debugging purposes
-    String getBufferName(ByteBuffer buffer) {
+    public String getBufferName(ByteBuffer buffer) {
         if (buffer == clientToOrigin.getFromBuffer()) {
             return "clientToOrigin.from";
         }
