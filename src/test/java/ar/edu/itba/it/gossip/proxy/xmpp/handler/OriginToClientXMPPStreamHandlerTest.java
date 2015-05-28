@@ -1,5 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_FAILURE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_MECHANISM;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_MECHANISMS;
@@ -70,6 +71,46 @@ public class OriginToClientXMPPStreamHandlerTest {
         mockOriginsFirstConversationStart();
 
         assertEquals(FAKE_AUTH, contents(toOrigin));
+    }
+
+    @Test
+    public void testSendFailureThroughOnAuthFailure() {
+        mockOriginsFirstConversationStart();
+        toOrigin.reset();
+
+        String[] serializations = { "failure serialization start",
+                "not authorized serialization", "text serialization start",
+                "text serialization", "text serialization end",
+                "failure serialization end" };
+        PartialXMPPElement failure = xmppElement(AUTH_FAILURE,
+                serializations[0], serializations[5]);
+        PartialXMPPElement notAuthorized = xmppElement(OTHER, serializations[1]);
+        PartialXMPPElement text = xmppElement(OTHER, serializations[2],
+                serializations[3], serializations[4]);
+
+        sut.handleStart(failure);
+        assertEquals(serializations[0], contents(toClient));
+        toClient.reset();
+
+        sut.handleEnd(notAuthorized);
+        assertEquals(serializations[1], contents(toClient));
+        toClient.reset();
+
+        sut.handleStart(text);
+        assertEquals(serializations[2], contents(toClient));
+        toClient.reset();
+
+        sut.handleBody(text);
+        assertEquals(serializations[3], contents(toClient));
+        toClient.reset();
+
+        sut.handleEnd(text);
+        assertEquals(serializations[4], contents(toClient));
+        toClient.reset();
+
+        sut.handleEnd(failure);
+        assertEquals(serializations[5], contents(toClient));
+        toClient.reset();
     }
 
     @Test

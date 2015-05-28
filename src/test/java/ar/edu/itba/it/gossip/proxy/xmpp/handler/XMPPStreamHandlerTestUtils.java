@@ -30,9 +30,11 @@ abstract class XMPPStreamHandlerTestUtils {
         return mockElement;
     }
 
-    static PartialXMPPElement xmppElement(Type type, String serialization) {
+    static PartialXMPPElement xmppElement(Type type, String serialization0,
+            String... serializations) {
         PartialXMPPElement mockElement = xmppElement(type);
-        when(mockElement.serializeCurrentContent()).thenReturn(serialization);
+        when(mockElement.serializeCurrentContent()).thenReturn(serialization0,
+                serializations);
         return mockElement;
     }
 }
