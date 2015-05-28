@@ -15,7 +15,7 @@ public class XMPPProxyAdmin extends TCPProxy {
 	}
 
 	@Override
-	protected TCPConversation instanceConversation(SocketChannel clientChannel) {
+	protected AdminTCPConversation instanceConversation(SocketChannel clientChannel) {
 		return new AdminProtocolConversation(clientChannel);
 	}
 	

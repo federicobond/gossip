@@ -7,6 +7,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.Conversation;
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 
@@ -26,7 +27,7 @@ public abstract class TCPProxy implements TCPEventHandler {
 
         reactor.subscribe(clientChannel, this);
 
-        TCPConversation conversation = instanceConversation(clientChannel);
+        Conversation conversation = instanceConversation(clientChannel);
         conversation.updateSubscription(key.selector());
     }
 
@@ -143,6 +144,6 @@ public abstract class TCPProxy implements TCPEventHandler {
         }
     }
 
-    protected abstract TCPConversation instanceConversation(
+    protected abstract Conversation instanceConversation(
             SocketChannel clientChannel);
 }
