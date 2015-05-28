@@ -1,7 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTHENTICATED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.*;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.*;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_FEATURES;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.INITIAL;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.LINKED;
@@ -48,19 +48,38 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
                     .println("Origin is linked to the client, now messages may pass freely");
 
             sendDocumentStartToClient();
-            // fall through
+            sendToClient(element);
+            break;
+        case VALIDATING_CREDENTIALS:
+            if (element.getType() == AUTH_FAILURE) {
+                state = AUTH_FAILED;
+                sendToClient(element);
+            }
+            break;
         case LINKED:
             sendToClient(element);
             break;
         default:
-            // do nothing TODO: change this!
+            switch (state) {
+            case AUTH_FAILED:
+            case LINKED:
+                sendToClient(element);
+                break;
+            default:
+                // do nothing TODO: change this!
+            }
         }
     }
 
     @Override
     public void handleBody(PartialXMPPElement element) {
-        if (state == LINKED) {
+        switch (state) {
+        case AUTH_FAILED:
+        case LINKED:
             sendToClient(element);
+            break;
+        default:
+            break;
         }
     }
 
@@ -87,13 +106,18 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             case AUTH_SUCCESS:
                 state = AUTHENTICATED;
                 sendToClient(element);
-                resetStream();
+                resetStream(); // TODO: check!
                 break;
-            // case AUTH_FAILURE://TODO
+            case AUTH_FAILURE:// TODO
+                sendToClient(element);
+                break;
             default:
                 throw new IllegalStateException("Unexpected event type: "
                         + element.getType());
             }
+            break;
+        case AUTH_FAILED:
+            sendToClient(element);
             break;
         case LINKED:
             sendToClient(element);
@@ -132,6 +156,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected enum State {
-        INITIAL, EXPECT_AUTH_FEATURES, VALIDATING_CREDENTIALS, AUTHENTICATED, LINKED;
+        INITIAL, EXPECT_AUTH_FEATURES, VALIDATING_CREDENTIALS, AUTHENTICATED, LINKED, AUTH_FAILED;
     }
 }
