@@ -141,8 +141,8 @@ public class TCPReactorImpl implements TCPReactor {
         }
     }
 
-    private TCPEventHandler getHandlerForChannel(
-            SelectableChannel channel) throws IOException {
+    private TCPEventHandler getHandlerForChannel(SelectableChannel channel)
+            throws IOException {
         if (channel instanceof SocketChannel) {
             SocketChannel socketChannel = (SocketChannel) channel;
             return handlersByChannel.get(socketChannel);

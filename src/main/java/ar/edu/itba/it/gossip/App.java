@@ -11,8 +11,8 @@ public class App {
     public static void main(String[] args) throws IOException {
         TCPReactor reactor = new TCPReactorImpl("localhost");
         
-        short proxyPort = 5050;
-        short adminPort = 5051;
+        short proxyPort = 9998;
+        short adminPort = 9999;
         
         reactor.addHandler(new XMPPProxy(reactor), proxyPort); 
         reactor.addHandler(new XMPPProxyAdmin(reactor), adminPort);

@@ -7,7 +7,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.Conversation;
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 
@@ -27,13 +26,14 @@ public abstract class TCPProxy implements TCPEventHandler {
 
         reactor.subscribe(clientChannel, this);
 
-        Conversation conversation = instanceConversation(clientChannel);
+        ProxiedTCPConversation conversation = instanceConversation(clientChannel);
         conversation.updateSubscription(key.selector());
     }
 
     @Override
     public void handleRead(final SelectionKey key) throws IOException {
-        TCPConversation conversation = (TCPConversation) key.attachment();
+        ProxiedTCPConversation conversation = (ProxiedTCPConversation) key
+                .attachment();
         SocketChannel channel = (SocketChannel) key.channel();
 
         ByteBuffer buffer = conversation.getReadBufferFor(channel);
@@ -69,7 +69,7 @@ public abstract class TCPProxy implements TCPEventHandler {
     }
 
     private void connectToOrigin(SelectionKey key,
-            TCPConversation conversation, InetSocketAddress address) {
+            ProxiedTCPConversation conversation, InetSocketAddress address) {
         try {
             SocketChannel origin = SocketChannel.open();
             origin.configureBlocking(false);
@@ -82,7 +82,7 @@ public abstract class TCPProxy implements TCPEventHandler {
         }
     }
 
-    private void finish(TCPConversation conversation) {
+    private void finish(ProxiedTCPConversation conversation) {
         // Check!
         reactor.unsubscribe(conversation.getClientChannel());
         reactor.unsubscribe(conversation.getOriginChannel());
@@ -91,7 +91,8 @@ public abstract class TCPProxy implements TCPEventHandler {
 
     @Override
     public void handleWrite(final SelectionKey key) throws IOException {
-        TCPConversation conversation = (TCPConversation) key.attachment();
+        ProxiedTCPConversation conversation = (ProxiedTCPConversation) key
+                .attachment();
         SocketChannel channel = (SocketChannel) key.channel();
 
         ByteBuffer buffer = conversation.getWriteBufferFor(channel);
@@ -103,11 +104,11 @@ public abstract class TCPProxy implements TCPEventHandler {
         // FIXME: just for debugging purposes
 
         buffer.flip();
-//        // FIXME: just for debugging purposes
-//        System.out.println(bufferName + "'s content: (BEFORE WRITE)"
-//                + "\n===================\n" + BufferUtils.peek(buffer)
-//                + "\n===================\n");
-//        // FIXME: just for debugging purposes
+        // // FIXME: just for debugging purposes
+        // System.out.println(bufferName + "'s content: (BEFORE WRITE)"
+        // + "\n===================\n" + BufferUtils.peek(buffer)
+        // + "\n===================\n");
+        // // FIXME: just for debugging purposes
 
         int bytesWritten = channel.write(buffer);
 
@@ -128,7 +129,8 @@ public abstract class TCPProxy implements TCPEventHandler {
 
     @Override
     public void handleConnect(final SelectionKey key) throws IOException {
-        TCPConversation conversation = (TCPConversation) key.attachment();
+        ProxiedTCPConversation conversation = (ProxiedTCPConversation) key
+                .attachment();
 
         SocketChannel originChannel = (SocketChannel) key.channel();
         try {
@@ -144,6 +146,6 @@ public abstract class TCPProxy implements TCPEventHandler {
         }
     }
 
-    protected abstract Conversation instanceConversation(
+    protected abstract ProxiedTCPConversation instanceConversation(
             SocketChannel clientChannel);
 }

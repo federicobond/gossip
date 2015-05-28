@@ -7,16 +7,16 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.Conversation;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
-public class TCPConversation implements Conversation {
+public class ProxiedTCPConversation implements TCPConversation {
     private final TCPStream clientToOrigin;
     private final TCPStream originToClient;
     private Boolean connectingToOrigin = null; // Note: this is completely
                                                // intentional
 
-    protected TCPConversation(SocketChannel clientChannel) {
+    protected ProxiedTCPConversation(SocketChannel clientChannel) {
         this.clientToOrigin = new TCPStream(clientChannel, null);
         this.originToClient = new TCPStream(null, clientChannel);
     }
