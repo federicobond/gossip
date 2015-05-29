@@ -5,6 +5,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.XMPPLeetTransformation;
 
 public class Message extends PartialXMPPElement {
     private static final XMPPLeetTransformation LEET_TRANSFORMATION = new XMPPLeetTransformation();
+    private static final String RECEIVER_ATTRIBUTE = "to";
 
     Message(PartialXMLElement element) {
         super(element);
@@ -17,8 +18,7 @@ public class Message extends PartialXMPPElement {
         }
     }
 
-    @Override
-    public String serializeCurrentContent() {
-        return super.serializeCurrentContent();
+    public String getReceiver() {
+        return getXML().getAttributes().get(RECEIVER_ATTRIBUTE);
     }
 }

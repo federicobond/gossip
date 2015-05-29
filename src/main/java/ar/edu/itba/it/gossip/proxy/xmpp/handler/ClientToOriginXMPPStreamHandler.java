@@ -5,7 +5,7 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.M
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.EXPECT_CREDENTIALS;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.INITIAL;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.LINKED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.*;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.VALIDATING_CREDENTIALS;
 
 import java.io.OutputStream;
@@ -23,6 +23,8 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
+
+import static ar.edu.itba.it.gossip.util.ValidationUtils.*;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
@@ -54,32 +56,69 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             // auth <success>).
             assumeType(element, STREAM_START);
             state = LINKED;
-            System.out
-                    .println("Client is linked to origin, now messages may pass freely");
+            System.out.println("Client is linked to origin,"
+                    + " now messages may pass freely");
 
             sendDocumentStartToOrigin();
             // fall through
         case LINKED:
             if (element.getType() == MESSAGE) {
-                ((Message) element).enableLeetConversion();
+                Message message = (Message) element;
+                if (isMutingCurrentUser()) {
+                    sendMutedNotificationToClient(message);
+                    state = IN_MUTED_MESSAGE;
+                    return;
+                }
+                message.enableLeetConversion();
+                // fall through
             }
             sendToOrigin(element);
             break;
+        case IN_MUTED_MESSAGE:
+            // TODO: discard the message's contents
+            break;
+        case MUTED:
+            if (element.getType() == MESSAGE) {
+                sendMutedNotificationToClient((Message) element); // TODO:
+                                                                  // remove
+                                                                  // this, since
+                                                                  // it is also
+                                                                  // sending
+                                                                  // messages to
+                                                                  // the user
+                                                                  // when they
+                                                                  // start or
+                                                                  // stop
+                                                                  // typing
+                state = IN_MUTED_MESSAGE;
+                return;
+            }
+            // TODO: allow this! sendToOrigin(element);
+            break;
         default:
-            // do nothing TODO: change this!
+            // do nothing, just buffer element's contents
         }
     }
 
     @Override
     public void handleBody(PartialXMPPElement element) {
-        if (state == LINKED) {
-            if (element.getType() == MESSAGE) { // this is here just in case
-                                                // leet conversion was enabled
-                                                // by the admin after the
-                                                // message's start tag
+        switch (state) {
+        case LINKED:
+            // this is here just in case leet conversion was enabled by the
+            // admin after the message's start tag
+            if (element.getType() == MESSAGE) {
                 ((Message) element).enableLeetConversion();
             }
             sendToOrigin(element);
+            break;
+        case IN_MUTED_MESSAGE:
+            // TODO: discard element's contents
+            break;
+        case MUTED:
+            // TODO: allow this! sendToOrigin(element);
+            break;
+        default:
+            // do nothing, just buffer element's contents
         }
     }
 
@@ -103,8 +142,27 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         case LINKED:
             sendToOrigin(element);
             break;
+        case IN_MUTED_MESSAGE:
+            // TODO: discard element's contents
+            if (element.getType() == MESSAGE) {
+                // TODO: discard element's contents
+                if (!isMutingCurrentUser()) {
+                    // TODO: this assumes that messages cannot be embedded into
+                    // other messages or anything like that! If that were the
+                    // case,
+                    // this *will fail*
+                    state = LINKED;
+                    // TODO: send the poor guy a message that he can start
+                    // talking again!
+                } else {
+                    state = MUTED;
+                }
+            }
+            break;
+        case MUTED:
+            // TODO: allow this! sendToOrigin(element);
+            break;
         default:
-            // will never happen
             throw new IllegalStateException("Unexpected state" + state);
         }
     }
@@ -138,6 +196,20 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         writeTo(toClient, message);
     }
 
+    private void sendMutedNotificationToClient(Message message) {
+        // TODO: check if this shouldn't be a custom error!
+        sendToClient("<message type=\"chat\" from=\""
+                + message.getReceiver()
+                + "\" to=\""
+                + getCurrentUser()
+                + "\">"
+                + "<body>"
+                + "You have been muted, you will not be able to talk to other users"
+                + "</body>"
+                + "<active xmlns=\"http://jabber.org/protocol/chatstates\"/>"
+                + "</message>");
+    }
+
     protected void sendToOrigin(PartialXMPPElement element) {
         System.out.println("\n<C2O sending to origin>");
         String currentContent = element.serializeCurrentContent();
@@ -155,6 +227,15 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         writeTo(clientToOrigin, message);
     }
 
+    private String getCurrentUser() {
+        return conversation.getCredentials().getUsername();
+    }
+
+    private boolean isMutingCurrentUser() {
+        // TODO: change this!
+        return getCurrentUser().contains("mute");
+    }
+
     private InetSocketAddress getOriginAddressForUsername(String username) {
         return new InetSocketAddress("localhost", 5222);
     }
@@ -164,6 +245,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected enum State {
-        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED
+        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED, MUTED, IN_MUTED_MESSAGE
     }
 }
