@@ -1,9 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.OTHER;
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandlerTestUtils.contents;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandlerTestUtils.xmppElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,7 +25,8 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ClientToOriginXMPPStreamHandlerTest {
+public class ClientToOriginXMPPStreamHandlerTest extends
+        AbstractXMPPStreamHandlerTest {
     private static final String DOCUMENT_START = "<?xml version=\"1.0\"?>";
     private static final String FAKE_STREAM_START_FOR_CLIENT = "<stream:stream "
             + "xmlns:stream='http://etherx.jabber.org/streams'"
@@ -84,12 +83,10 @@ public class ClientToOriginXMPPStreamHandlerTest {
 
     @Test
     public void testSetCredentialsAndStartConversationWithOriginOnAuthEnd() {
-        sut.handleStart(xmppElement(STREAM_START));
+        startStream();
         toClient.reset();
 
-        Auth auth = auth();
-        sut.handleStart(auth);
-        sut.handleEnd(auth);
+        sendAuth();
 
         verify(conversation, times(1)).setCredentials(credentials);
         assertEquals(1, sut.connectionAttempts);
@@ -100,17 +97,14 @@ public class ClientToOriginXMPPStreamHandlerTest {
 
     @Test
     public void testSendDocumentStartAndOriginalStreamStartToOriginOnSecondStreamStart() {
-        sut.handleStart(xmppElement(STREAM_START));
+        startStream();
         toClient.reset();
 
-        Auth auth = auth();
-        sut.handleStart(auth);
-        sut.handleEnd(auth);
+        sendAuth();
         toOrigin.reset();
 
         String clientStreamStartSerialization = "serialization of client's stream start";
-        sut.handleStart(xmppElement(STREAM_START,
-                clientStreamStartSerialization));
+        startStream(clientStreamStartSerialization);
 
         assertEquals(DOCUMENT_START + clientStreamStartSerialization,
                 contents(toOrigin));
@@ -118,17 +112,13 @@ public class ClientToOriginXMPPStreamHandlerTest {
 
     @Test
     public void testMessagesSentThroughAfterSecondStreamStart() {
-        sut.handleStart(xmppElement(STREAM_START));
+        startStream();
         toClient.reset();
 
-        Auth auth = auth();
-        sut.handleStart(auth);
-        sut.handleEnd(auth);
+        sendAuth();
         toOrigin.reset();
 
-        String clientStreamStartSerialization = "serialization of client's stream start";
-        sut.handleStart(xmppElement(STREAM_START,
-                clientStreamStartSerialization));
+        startStream("serialization of client's stream start");
         toOrigin.reset();
 
         assertMessageIsSentThroughToOrigin("<a>", "some text", "</a>");
@@ -136,20 +126,21 @@ public class ClientToOriginXMPPStreamHandlerTest {
         assertMessageIsSentThroughToOrigin("<b>", "some other text", "</b>");
     }
 
+    private void sendAuth() {
+        Auth auth = auth(credentials);
+        sut.handleStart(auth);
+        sut.handleEnd(auth);
+    }
+
     private void assertMessageIsSentThroughToOrigin(String startTag,
             String body, String endTag) {
-        PartialXMPPElement element = xmppElement(OTHER);
-        when(element.serializeCurrentContent()).thenReturn(startTag, body,
-                endTag);
-
-        sut.handleStart(element);
-        sut.handleBody(element);
-        sut.handleEnd(element);
+        sendComplete(OTHER, startTag, body, endTag);
         assertEquals(startTag + body + endTag, contents(toOrigin));
     }
 
-    private Auth auth() {
-        return XMPPStreamHandlerTestUtils.auth(credentials);
+    @Override
+    protected XMPPStreamHandler getHandler() {
+        return sut;
     }
 
     // class needed for method overrides

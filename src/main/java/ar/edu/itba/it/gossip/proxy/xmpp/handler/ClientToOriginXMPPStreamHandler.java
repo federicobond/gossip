@@ -93,7 +93,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                 state = IN_MUTED_MESSAGE;
                 return;
             }
-            // TODO: allow this! sendToOrigin(element);
+            sendToOrigin(element);
             break;
         default:
             // do nothing, just buffer element's contents
@@ -115,7 +115,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             // TODO: discard element's contents
             break;
         case MUTED:
-            // TODO: allow this! sendToOrigin(element);
+            sendToOrigin(element);
             break;
         default:
             // do nothing, just buffer element's contents
@@ -160,7 +160,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             }
             break;
         case MUTED:
-            // TODO: allow this! sendToOrigin(element);
+            sendToOrigin(element);
             break;
         default:
             throw new IllegalStateException("Unexpected state" + state);

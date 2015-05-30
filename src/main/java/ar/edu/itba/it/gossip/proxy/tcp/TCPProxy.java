@@ -56,9 +56,9 @@ public abstract class TCPProxy implements TCPEventHandler {
             buffer.flip();
 
             // FIXME: just for debugging purposes
-            System.out.println(bufferName + "'s content: (JUST READ)"
-                    + "\n===================\n" + BufferUtils.peek(buffer)
-                    + "\n===================\n");
+//            System.out.println(bufferName + "'s content: (JUST READ)"
+//                    + "\n===================\n" + BufferUtils.peek(buffer)
+//                    + "\n===================\n");
             // FIXME: just for debugging purposes
 
             handler.handleRead(buffer,
@@ -116,9 +116,9 @@ public abstract class TCPProxy implements TCPEventHandler {
                 + channel + "')");
 
         // FIXME: just for debugging purposes
-        System.out.println(bufferName + "'s content: (AFTER WRITE)"
-                + "\n===================\n" + BufferUtils.peek(buffer)
-                + "\n===================\n");
+//        System.out.println(bufferName + "'s content: (AFTER WRITE)"
+//                + "\n===================\n" + BufferUtils.peek(buffer)
+//                + "\n===================\n");
         // FIXME: just for debugging purposes
 
         buffer.compact(); // Make room for more data to be read in

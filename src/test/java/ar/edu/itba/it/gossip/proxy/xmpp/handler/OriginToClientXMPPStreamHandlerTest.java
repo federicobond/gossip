@@ -8,8 +8,6 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.A
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_SUCCESS;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.OTHER;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandlerTestUtils.contents;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandlerTestUtils.xmppElement;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
@@ -29,12 +27,12 @@ import org.mockito.runners.MockitoJUnitRunner;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 
 @RunWith(MockitoJUnitRunner.class)
-public class OriginToClientXMPPStreamHandlerTest {
+public class OriginToClientXMPPStreamHandlerTest extends
+        AbstractXMPPStreamHandlerTest {
     private static final String DOCUMENT_START = "<?xml version=\"1.0\"?>";
 
     private static final Credentials credentials = new Credentials(
@@ -68,14 +66,14 @@ public class OriginToClientXMPPStreamHandlerTest {
 
     @Test
     public void testAuthSentOnConversationStart() {
-        mockOriginsFirstConversationStart();
+        sendOriginsFirstStart();
 
         assertEquals(FAKE_AUTH, contents(toOrigin));
     }
 
     @Test
     public void testSendFailureThroughOnAuthFailure() {
-        mockOriginsFirstConversationStart();
+        sendOriginsFirstStart();
         toOrigin.reset();
 
         String[] serializations = { "failure serialization start",
@@ -115,48 +113,39 @@ public class OriginToClientXMPPStreamHandlerTest {
 
     @Test
     public void testSendSuccessAndResetStreamThroughOnAuthSuccess() {
-        mockOriginsFirstConversationStart();
+        sendOriginsFirstStart();
         toOrigin.reset();
 
         String successSerialization = "success serialization";
-        PartialXMPPElement success = xmppElement(AUTH_SUCCESS,
-                successSerialization);
-        sut.handleStart(success);
-        sut.handleEnd(success);
+        sendAuthSuccess(successSerialization);
+
         assertEquals(successSerialization, contents(toClient));
         assertEquals(1, sut.streamResets);
     }
 
     @Test
     public void testSendStartDocumentAndOriginalStreamStartOnSecondStreamStart() {
-        mockOriginsFirstConversationStart();
+        sendOriginsFirstStart();
         toOrigin.reset();
 
-        PartialXMPPElement success = xmppElement(AUTH_SUCCESS,
-                "success serialization");
-        sut.handleStart(success);
-        sut.handleEnd(success);
-
+        sendAuthSuccess();
         toClient.reset();
 
         String streamStartSerialization = "start serialization";
-        sut.handleStart(xmppElement(STREAM_START, streamStartSerialization));
+        startStream(streamStartSerialization);
         assertEquals(DOCUMENT_START + streamStartSerialization,
                 contents(toClient));
     }
 
     @Test
     public void testMessagesSentThroughAfterSecondStreamStart() {
-        mockOriginsFirstConversationStart();
+        sendOriginsFirstStart();
         toOrigin.reset();
 
-        PartialXMPPElement success = xmppElement(AUTH_SUCCESS,
-                "success serialization");
-        sut.handleStart(success);
-        sut.handleEnd(success);
+        sendAuthSuccess();
         toClient.reset();
 
-        sut.handleStart(xmppElement(STREAM_START, "start serialization"));
+        startStream();
         toClient.reset();
 
         assertElementIsSentThroughToClient(OTHER, "<a>", "some body for a",
@@ -167,47 +156,39 @@ public class OriginToClientXMPPStreamHandlerTest {
                 "</b>");
     }
 
+    private void sendOriginsFirstStart() {
+        sut.handleStart(xmppElement(STREAM_START));
+        // features
+        sut.handleStart(xmppElement(AUTH_FEATURES));
+        // register
+        sendComplete(AUTH_REGISTER, "", "");
+        // mechanisms
+        sut.handleStart(xmppElement(AUTH_MECHANISMS));
+        sendComplete(AUTH_MECHANISM, "", "");
+        sendComplete(AUTH_MECHANISM, "", "");
+        sut.handleEnd(xmppElement(AUTH_MECHANISMS));
+        sut.handleEnd(xmppElement(AUTH_FEATURES));
+    }
+
+    private void sendAuthSuccess(String serialization) {
+        sendComplete(AUTH_SUCCESS, serialization);
+    }
+
+    private void sendAuthSuccess() {
+        sendAuthSuccess("");
+    }
+
     private void assertElementIsSentThroughToClient(Type type, String startTag,
             String... rest) {
-        PartialXMPPElement element = xmppElement(type);
-        when(element.serializeCurrentContent()).thenReturn(startTag, rest);
-
-        sut.handleStart(element);
-        if (rest.length > 0) {
-            for (int i = 0; i < rest.length - 1; i++) {
-                sut.handleBody(element);
-            }
-            if (rest.length > 0) {
-                sut.handleEnd(element);
-            }
-        }
+        sendComplete(type, startTag, rest);
 
         String serialization = startTag + stream(rest).collect(joining());
         assertEquals(serialization, contents(toClient));
     }
 
-    private Auth auth() {
-        return XMPPStreamHandlerTestUtils.auth(credentials);
-    }
-
-    private void mockOriginsFirstConversationStart() {
-        sut.handleStart(xmppElement(STREAM_START));
-
-        sut.handleStart(xmppElement(AUTH_FEATURES));
-
-        // register
-        sut.handleStart(xmppElement(AUTH_REGISTER));
-        sut.handleEnd(xmppElement(AUTH_REGISTER));
-
-        // mechanisms
-        sut.handleStart(xmppElement(AUTH_MECHANISMS));
-        sut.handleStart(xmppElement(AUTH_MECHANISM));
-        sut.handleEnd(xmppElement(AUTH_MECHANISM));
-        sut.handleStart(xmppElement(AUTH_MECHANISM));
-        sut.handleEnd(xmppElement(AUTH_MECHANISM));
-        sut.handleEnd(xmppElement(AUTH_MECHANISMS));
-
-        sut.handleEnd(xmppElement(AUTH_FEATURES));
+    @Override
+    protected XMPPStreamHandler getHandler() {
+        return sut;
     }
 
     // class needed for method overrides
