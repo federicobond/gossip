@@ -1,7 +1,8 @@
 package ar.edu.itba.it.gossip.proxy.xml.element;
 
+import static org.apache.commons.lang3.StringEscapeUtils.escapeXml10;
+
 import com.fasterxml.aalto.AsyncXMLStreamReader;
-import static org.apache.commons.lang3.StringEscapeUtils.*;
 
 class BodyPart extends Part {
     private final String text;

@@ -5,7 +5,9 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.M
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.EXPECT_CREDENTIALS;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.INITIAL;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.*;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.IN_MUTED_MESSAGE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.LINKED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.MUTED;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.VALIDATING_CREDENTIALS;
 
 import java.io.OutputStream;
@@ -23,8 +25,6 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
-
-import static ar.edu.itba.it.gossip.util.ValidationUtils.*;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
@@ -75,11 +75,13 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             sendToOrigin(element);
             break;
         case IN_MUTED_MESSAGE:
-            // TODO: discard the message's contents
+            element.consumeCurrentContent();
             break;
         case MUTED:
             if (element.getType() == MESSAGE) {
                 sendMutedNotificationToClient((Message) element); // TODO:
+                                                                  // probably
+                                                                  // should
                                                                   // remove
                                                                   // this, since
                                                                   // it is also
@@ -112,7 +114,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             sendToOrigin(element);
             break;
         case IN_MUTED_MESSAGE:
-            // TODO: discard element's contents
+            element.consumeCurrentContent();
             break;
         case MUTED:
             sendToOrigin(element);
@@ -143,9 +145,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             sendToOrigin(element);
             break;
         case IN_MUTED_MESSAGE:
-            // TODO: discard element's contents
+            element.consumeCurrentContent();
             if (element.getType() == MESSAGE) {
-                // TODO: discard element's contents
                 if (!isMutingCurrentUser()) {
                     // TODO: this assumes that messages cannot be embedded into
                     // other messages or anything like that! If that were the

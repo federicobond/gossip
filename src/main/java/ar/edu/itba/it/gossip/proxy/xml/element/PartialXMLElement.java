@@ -2,7 +2,9 @@ package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
 import static ar.edu.itba.it.gossip.util.PredicateUtils.isInstanceOfAny;
-import static ar.edu.itba.it.gossip.util.ValidationUtils.*;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -251,7 +253,7 @@ public class PartialXMLElement implements PartiallySerializable {
         Stream<Part> unserializedParts = parts.stream().filter(
                 part -> !part.isSerialized());
 
-        return "-----Already serialized-----\n"
+        return "\n-----Already serialized-----\n"
                 + getSerialization(serializedParts)
                 + "\n-----Not serialized yet-----\n"
                 + getSerialization(unserializedParts);

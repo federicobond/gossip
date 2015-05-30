@@ -1,6 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.*;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.mock;

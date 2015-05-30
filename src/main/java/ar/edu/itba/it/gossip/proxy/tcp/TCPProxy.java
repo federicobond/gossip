@@ -9,7 +9,6 @@ import java.nio.channels.SocketChannel;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
-import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxy implements TCPEventHandler {
     private final TCPReactor reactor;
