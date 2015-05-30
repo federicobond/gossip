@@ -231,7 +231,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         return conversation.getCredentials().getUsername();
     }
 
-    private boolean isMutingCurrentUser() {
+    protected boolean isMutingCurrentUser() {
         // TODO: change this!
         return getCurrentUser().contains("mute");
     }

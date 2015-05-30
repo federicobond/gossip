@@ -1,8 +1,8 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
-import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.*;
-import static org.junit.Assert.assertEquals;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.OTHER;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +22,7 @@ import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -48,8 +49,23 @@ public class ClientToOriginXMPPStreamHandlerTest extends
             + " to=\"localhost\""
             + " xml:lang=\"en\""
             + " xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">";
-    private static final Credentials credentials = new Credentials(
-            "testUsername", "testPassword");
+
+    private static final String CURRENT_USER = "testUsername";
+    private static final String MSG_RECEIVER = "testReceiver";
+
+    private static final String MUTED_NOTIFICATION = "<message type=\"chat\" from=\""
+            + MSG_RECEIVER
+            + "\" to=\""
+            + CURRENT_USER
+            + "\">"
+            + "<body>"
+            + "You have been muted, you will not be able to talk to other users"
+            + "</body>"
+            + "<active xmlns=\"http://jabber.org/protocol/chatstates\"/>"
+            + "</message>";
+
+    private static final Credentials CREDENTIALS = new Credentials(
+            CURRENT_USER, "testPassword");
 
     @Mock
     private XMPPConversation conversation;
@@ -63,7 +79,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
 
     @Before
     public void setUp() throws XMLStreamException {
-        when(conversation.getCredentials()).thenReturn(credentials);
+        when(conversation.getCredentials()).thenReturn(CREDENTIALS);
 
         toOrigin = new ByteArrayOutputStream();
         when(clientToOrigin.getOutputStream()).thenReturn(toOrigin);
@@ -88,7 +104,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
 
         sendAuth();
 
-        verify(conversation, times(1)).setCredentials(credentials);
+        verify(conversation, times(1)).setCredentials(CREDENTIALS);
         assertEquals(1, sut.connectionAttempts);
         assertEquals(1, sut.streamResets);
         assertEquals(DOCUMENT_START + FAKE_STREAM_START_FOR_ORIGIN,
@@ -121,21 +137,87 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         startStream("serialization of client's stream start");
         toOrigin.reset();
 
-        assertMessageIsSentThroughToOrigin("<a>", "some text", "</a>");
+        assertElementIsSentThroughToOrigin("<a>", "some text", "</a>");
         toOrigin.reset();
-        assertMessageIsSentThroughToOrigin("<b>", "some other text", "</b>");
+        assertElementIsSentThroughToOrigin("<b>", "some other text", "</b>");
+    }
+
+    @Test
+    public void testClientIsNotifiedAndMessagesAreNotSentThroughOnMutedCurrentUser() {
+        startStream();
+        toClient.reset();
+
+        sendAuth();
+        toOrigin.reset();
+
+        startStream("serialization of client's stream start");
+        toOrigin.reset();
+
+        sut.mutingUser = true;
+        Message message = message(MSG_RECEIVER, "<message>", "message body",
+                "</message>");
+
+        sut.handleStart(message);
+        assertEquals(MUTED_NOTIFICATION, contents(toClient));
+        assertNothingWasSentThrough(toOrigin);
+        toClient.reset();
+
+        sut.handleBody(message);
+        assertNothingWasSentThrough(toOrigin);
+        assertNothingWasSentThrough(toClient);
+
+        sut.handleEnd(message);
+        assertNothingWasSentThrough(toOrigin);
+        assertNothingWasSentThrough(toClient);
+    }
+
+    @Test
+    public void testOnlyMessagesAreNotSentThroughOnMutedCurrentUser() {
+        startStream();
+        toClient.reset();
+
+        sendAuth();
+        toOrigin.reset();
+
+        startStream("serialization of client's stream start");
+        toOrigin.reset();
+
+        sut.mutingUser = true;
+        sendMessage("<message>", "message 1", "</message>");
+        toClient.reset();
+
+        assertElementIsSentThroughToOrigin("<a>", "some body", "</a>");
+        toOrigin.reset();
+        assertElementIsSentThroughToOrigin("<b>", "some body", "</b>");
+        toOrigin.reset();
+
+        sendMessage("<message>", "message 2", "</message>");
+        assertNothingWasSentThrough(toOrigin);
+
+        assertElementIsSentThroughToOrigin("<c>", "some body", "</c>");
+    }
+
+    private void sendMessage(String serialization0, String... serializations) {
+        Message message = message(MSG_RECEIVER, serialization0, serializations);
+        sut.handleStart(message);
+        sut.handleBody(message);
+        sut.handleEnd(message);
     }
 
     private void sendAuth() {
-        Auth auth = auth(credentials);
+        Auth auth = auth(CREDENTIALS);
         sut.handleStart(auth);
         sut.handleEnd(auth);
     }
 
-    private void assertMessageIsSentThroughToOrigin(String startTag,
+    private void assertElementIsSentThroughToOrigin(String startTag,
             String body, String endTag) {
         sendComplete(OTHER, startTag, body, endTag);
         assertEquals(startTag + body + endTag, contents(toOrigin));
+    }
+
+    private void assertNothingWasSentThrough(ByteArrayOutputStream stream) {
+        assertTrue(contents(stream).isEmpty());
     }
 
     @Override
@@ -148,6 +230,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
             ClientToOriginXMPPStreamHandler {
         int connectionAttempts = 0;
         int streamResets = 0;
+        boolean mutingUser = false;
 
         TestClientToOriginXMPPStreamHandler(XMPPConversation conversation,
                 ByteStream clientToOrigin, OutputStream toClient)
@@ -163,6 +246,11 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         @Override
         protected void resetStream() { // stub
             streamResets++;
+        }
+
+        @Override
+        protected boolean isMutingCurrentUser() {
+            return mutingUser;
         }
 
         @Override
