@@ -15,7 +15,7 @@ class ChildPart extends Part {
 
     @Override
     String serialize() {
-        return getSerialization();
+        return child.serializeCurrentContent();
     }
 
     @Override
@@ -25,7 +25,7 @@ class ChildPart extends Part {
 
     @Override
     String getSerialization() {
-        return child.serializeCurrentContent();
+        return child.getSerialization();
     }
 
     void setBodyTransformation(Function<String, String> transformation) {

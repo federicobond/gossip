@@ -98,7 +98,7 @@ public class PartialXMLElement implements PartiallySerializable {
         String serialization = new String();
         for (Part part : parts) {
             if (!part.isSerialized()) {
-                serialization += getSerialization(part);
+                serialization += serialize(part);
                 if (!part.isSerialized()) { // that is, if the part still isn't
                                             // completely serialized
                     return serialization;
@@ -108,7 +108,7 @@ public class PartialXMLElement implements PartiallySerializable {
         return serialization;
     }
 
-    private String getSerialization(Part part) {
+    private String serialize(Part part) {
         if (part instanceof BodyPart && bodyTransformation != null) {
             return bodyTransformation.apply(part.serialize());
         }
@@ -226,6 +226,24 @@ public class PartialXMLElement implements PartiallySerializable {
                 .filter(partClass::isInstance).map(partClass::cast);
     }
 
+    String getSerialization() { // TODO: test method! remove this later
+        return getSerialization(parts.stream().filter(
+                part -> !part.isSerialized()));
+    }
+
+    private String getSerialization(Stream<Part> parts) { // TODO: test method!
+                                                          // remove this later
+        return parts.map(part -> getSerialization(part)).collect(joining());
+    }
+
+    private String getSerialization(Part part) { // TODO: test method! remove
+                                                 // this later
+        if (part instanceof BodyPart && bodyTransformation != null) {
+            return bodyTransformation.apply(part.getSerialization());
+        }
+        return part.getSerialization();
+    }
+
     @Override
     public String toString() {
         Stream<Part> serializedParts = parts.stream().filter(
@@ -234,10 +252,8 @@ public class PartialXMLElement implements PartiallySerializable {
                 part -> !part.isSerialized());
 
         return "-----Already serialized-----\n"
-                + serializedParts.map(part -> part.getSerialization()).collect(
-                        joining())
+                + getSerialization(serializedParts)
                 + "\n-----Not serialized yet-----\n"
-                + unserializedParts.map(part -> part.getSerialization())
-                        .collect(joining());
+                + getSerialization(unserializedParts);
     }
 }
