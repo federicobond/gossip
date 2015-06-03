@@ -6,7 +6,6 @@ import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
-import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
@@ -16,7 +15,7 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         XMPPEventHandler, XMLEventHandler {
 
-    private PartialXMLElement xmlElement;
+    private PartialXMPPElement xmppElement;
 
     protected XMPPStreamHandler() throws XMLStreamException {
         setXMLEventHandler(this);
@@ -24,33 +23,34 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
 
     @Override
     public void handleStartElement(AsyncXMLStreamReader<?> reader) {
-        if (xmlElement == null) {
-            xmlElement = new PartialXMLElement();
+        if (xmppElement == null) {
+            xmppElement = PartialXMPPElement.from(reader);
         } else {
-            xmlElement = new PartialXMLElement(xmlElement);
+            PartialXMPPElement newXMPPElement = PartialXMPPElement.from(reader);
+            this.xmppElement.addChild(newXMPPElement);
+            this.xmppElement = newXMPPElement;
         }
-        xmlElement.loadName(reader).loadAttributes(reader);
-
-        handleStart(PartialXMPPElement.from(xmlElement));
+        handleStart(xmppElement);
     }
 
     @Override
     public void handleEndElement(AsyncXMLStreamReader<?> reader) {
-        xmlElement.end();
+        xmppElement.end();
 
-        handleEnd(PartialXMPPElement.from(xmlElement));
+        handleEnd(xmppElement);
 
-        xmlElement = xmlElement.getParent().get(); // an element that wasn't
-                                                   // open will never be closed,
-                                                   // since the underlying
-                                                   // stream is a valid XML one
+        xmppElement = xmppElement.getParent().get(); // an element that wasn't
+                                                     // open will never be
+                                                     // closed, since the
+                                                     // underlying stream is a
+                                                     // valid XML one
     }
 
     @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
-        xmlElement.appendToBody(reader);
+        xmppElement.appendToBody(reader);
 
-        handleBody(PartialXMPPElement.from(xmlElement));
+        handleBody(xmppElement);
     }
 
     protected void assumeType(PartialXMPPElement element, Type type) {

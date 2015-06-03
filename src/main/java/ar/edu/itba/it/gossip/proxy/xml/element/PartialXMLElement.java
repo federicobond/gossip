@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import ar.edu.itba.it.gossip.util.PartiallySerializable;
@@ -23,15 +24,11 @@ public class PartialXMLElement implements PartiallySerializable {
     private Optional<PartialXMLElement> parent;
     private final List<Part> parts;
     private Function<String, String> bodyTransformation;
+//    private Predicate<Class<? extends Part>> partIsgnorable;
 
     public PartialXMLElement() {
         this.parts = new LinkedList<>();
         this.parent = Optional.empty();
-    }
-
-    public PartialXMLElement(final PartialXMLElement parent) {
-        this();
-        parent.addChild(this);
     }
 
     public PartialXMLElement loadName(AsyncXMLStreamReader<?> from) {
@@ -148,7 +145,7 @@ public class PartialXMLElement implements PartiallySerializable {
                 childP -> childP.getChild()).collect(toList());
     }
 
-    public Optional<PartialXMLElement> getParent() {
+    public Optional<? extends PartialXMLElement> getParent() {
         return this.parent;
     }
 

@@ -2,6 +2,7 @@ package ar.edu.itba.it.gossip.proxy.xmpp.element;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
+import static ar.edu.itba.it.gossip.util.XMLUtils.serializeQName;
 import static java.util.Collections.unmodifiableMap;
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
@@ -9,31 +10,33 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.aalto.AsyncXMLStreamReader;
+
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.util.PartiallySerializable;
 
-public class PartialXMPPElement implements PartiallySerializable {
-    public static PartialXMPPElement from(PartialXMLElement element) {
-        switch (Type.of(element.getName())) {
+public class PartialXMPPElement extends PartialXMLElement implements
+        PartiallySerializable {
+    public static PartialXMPPElement from(AsyncXMLStreamReader<?> reader) {
+        String name = serializeQName(reader.getName());
+
+        switch (Type.of(name)) {
         case AUTH_CHOICE:
-            return new Auth(element);
+            return new Auth(reader);
         case MESSAGE:
-            return new Message(element);
+            return new Message(reader);
         default:
-            return new PartialXMPPElement(element);
+            return new PartialXMPPElement(reader);
         }
     }
 
-    private final PartialXMLElement xmlElement;
     private final Type type;
 
-    protected PartialXMPPElement(final PartialXMLElement xmlElement) {
-        this.xmlElement = xmlElement;
-        this.type = Type.of(xmlElement.getName());
-    }
+    protected PartialXMPPElement(AsyncXMLStreamReader<?> reader) {
+        loadName(reader);
+        loadAttributes(reader);
 
-    public PartialXMLElement getXML() {
-        return xmlElement;
+        this.type = Type.of(getName());
     }
 
     public Type getType() {
@@ -41,10 +44,11 @@ public class PartialXMPPElement implements PartiallySerializable {
     }
 
     @Override
-    public String serializeCurrentContent() {
-        String serialization = xmlElement.serializeCurrentContent();
-
-        return serialization;
+    public Optional<PartialXMPPElement> getParent() {
+        // NOTE: mapping with getClass()::cast wouldn't be appropriate here
+        // since parents could be instances of *any* subtype of
+        // PartialXMPPElement
+        return super.getParent().map(PartialXMPPElement.class::cast);
     }
 
     @Override
