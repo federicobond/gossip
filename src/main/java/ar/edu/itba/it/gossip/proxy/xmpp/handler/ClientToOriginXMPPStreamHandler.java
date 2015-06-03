@@ -91,7 +91,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                                                                   // when they
                                                                   // start or
                                                                   // stop
-                                                                  // typing
+                                                                  // typingmonitor
                 state = IN_MUTED_MESSAGE;
                 return;
             }

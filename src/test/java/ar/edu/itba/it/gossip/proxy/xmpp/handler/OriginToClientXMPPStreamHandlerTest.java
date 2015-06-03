@@ -187,7 +187,7 @@ public class OriginToClientXMPPStreamHandlerTest extends
     }
 
     @Override
-    protected XMPPStreamHandler getHandler() {
+    protected XMPPStreamHandler getSUT() {
         return sut;
     }
 

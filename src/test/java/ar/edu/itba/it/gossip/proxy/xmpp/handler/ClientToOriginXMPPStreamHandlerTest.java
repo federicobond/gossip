@@ -103,7 +103,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         startStream();
         toClient.reset();
 
-        sendAuth();
+        sendAuthAsClient();
 
         verify(conversation, times(1)).setCredentials(CREDENTIALS);
         assertEquals(1, sut.connectionAttempts);
@@ -117,7 +117,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         startStream();
         toClient.reset();
 
-        sendAuth();
+        sendAuthAsClient();
         toOrigin.reset();
 
         String clientStreamStartSerialization = "serialization of client's stream start";
@@ -132,15 +132,15 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         startStream();
         toClient.reset();
 
-        sendAuth();
+        sendAuthAsClient();
         toOrigin.reset();
 
         startStream("serialization of client's stream start");
         toOrigin.reset();
 
-        assertElementIsSentThroughToOrigin("<a>", "some text", "</a>");
+        assertElementIsSentThrough("<a>", "some text", "</a>");
         toOrigin.reset();
-        assertElementIsSentThroughToOrigin("<b>", "some other text", "</b>");
+        assertElementIsSentThrough("<b>", "some other text", "</b>");
     }
 
     @Test
@@ -148,7 +148,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         startStream();
         toClient.reset();
 
-        sendAuth();
+        sendAuthAsClient();
         toOrigin.reset();
 
         startStream("serialization of client's stream start");
@@ -177,42 +177,43 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         startStream();
         toClient.reset();
 
-        sendAuth();
+        sendAuthAsClient();
         toOrigin.reset();
 
         startStream("serialization of client's stream start");
         toOrigin.reset();
 
         sut.mutingUser = true;
-        sendMessage("<message>", "message 1", "</message>");
+        sendMessageAsClient("<message>", "message 1", "</message>");
         toClient.reset();
 
-        assertElementIsSentThroughToOrigin("<a>", "some body", "</a>");
+        assertElementIsSentThrough("<a>", "some body", "</a>");
         toOrigin.reset();
-        assertElementIsSentThroughToOrigin("<b>", "some body", "</b>");
+        assertElementIsSentThrough("<b>", "some body", "</b>");
         toOrigin.reset();
 
-        sendMessage("<message>", "message 2", "</message>");
+        sendMessageAsClient("<message>", "message 2", "</message>");
         assertNothingWasSentThrough(toOrigin);
 
-        assertElementIsSentThroughToOrigin("<c>", "some body", "</c>");
+        assertElementIsSentThrough("<c>", "some body", "</c>");
     }
 
-    private void sendMessage(String serialization0, String... serializations) {
+    private void sendMessageAsClient(String serialization0,
+            String... serializations) {
         Message message = message(MSG_RECEIVER, serialization0, serializations);
         sut.handleStart(message);
         sut.handleBody(message);
         sut.handleEnd(message);
     }
 
-    private void sendAuth() {
+    private void sendAuthAsClient() {
         Auth auth = auth(CREDENTIALS);
         sut.handleStart(auth);
         sut.handleEnd(auth);
     }
 
-    private void assertElementIsSentThroughToOrigin(String startTag,
-            String body, String endTag) {
+    private void assertElementIsSentThrough(String startTag, String body,
+            String endTag) {
         sendComplete(OTHER, startTag, body, endTag);
         assertEquals(startTag + body + endTag, contents(toOrigin));
     }
@@ -222,7 +223,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
     }
 
     @Override
-    protected XMPPStreamHandler getHandler() {
+    protected XMPPStreamHandler getSUT() {
         return sut;
     }
 

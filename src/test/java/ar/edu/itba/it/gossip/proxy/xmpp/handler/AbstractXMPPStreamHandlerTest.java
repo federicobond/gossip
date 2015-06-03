@@ -16,14 +16,14 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 
 abstract class AbstractXMPPStreamHandlerTest {
-    protected abstract XMPPStreamHandler getHandler();
+    protected abstract XMPPStreamHandler getSUT();
 
     protected void startStream() {
         startStream("");
     }
 
     protected void startStream(String serialization) {
-        getHandler().handleStart(xmppElement(STREAM_START, serialization));
+        getSUT().handleStart(xmppElement(STREAM_START, serialization));
     }
 
     protected String contents(ByteArrayOutputStream outputStream) {
@@ -76,15 +76,15 @@ abstract class AbstractXMPPStreamHandlerTest {
         PartialXMPPElement element = xmppElement(type, serialization0,
                 serializations);
 
-        getHandler().handleStart(element);
+        getSUT().handleStart(element);
 
         int end = ends ? serializations.length - 1 : serializations.length;
         for (int i = 0; i < end; i++) {
-            getHandler().handleBody(element);
+            getSUT().handleBody(element);
         }
 
         if (ends) {
-            getHandler().handleEnd(element);
+            getSUT().handleEnd(element);
         }
     }
 }

@@ -4,8 +4,8 @@ import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPLeetTransformation;
 
 public class Message extends PartialXMPPElement {
-    private static final XMPPLeetTransformation LEET_TRANSFORMATION = new XMPPLeetTransformation();
     private static final String RECEIVER_ATTRIBUTE = "to";
+    private static final XMPPLeetTransformation LEET_TRANSFORMATION = new XMPPLeetTransformation();
 
     Message(PartialXMLElement element) {
         super(element);
@@ -14,7 +14,7 @@ public class Message extends PartialXMPPElement {
     public void enableLeetConversion() {
         PartialXMLElement xmlElement = getXML();
         if (!xmlElement.isBodyBeingTransformed()) {
-            getXML().setBodyTransformation(LEET_TRANSFORMATION);
+            xmlElement.setBodyTransformation(LEET_TRANSFORMATION);
         }
     }
 
