@@ -3,7 +3,6 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.OTHER;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,7 +22,6 @@ import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -52,18 +50,6 @@ public class ClientToOriginXMPPStreamHandlerTest extends
             + " xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">";
 
     private static final String CURRENT_USER = "testUsername";
-    private static final String MSG_RECEIVER = "testReceiver";
-
-    private static final String MUTED_NOTIFICATION = "<message type=\"chat\" from=\""
-            + MSG_RECEIVER
-            + "\" to=\""
-            + CURRENT_USER
-            + "\">"
-            + "<body>"
-            + "You have been muted, you will not be able to talk to other users"
-            + "</body>"
-            + "<active xmlns=\"http://jabber.org/protocol/chatstates\"/>"
-            + "</message>";
 
     private static final Credentials CREDENTIALS = new Credentials(
             CURRENT_USER, "testPassword");
@@ -143,69 +129,6 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         assertElementIsSentThrough("<b>", "some other text", "</b>");
     }
 
-    @Test
-    public void testClientIsNotifiedAndMessagesAreNotSentThroughOnMutedCurrentUser() {
-        startStream();
-        toClient.reset();
-
-        sendAuthAsClient();
-        toOrigin.reset();
-
-        startStream("serialization of client's stream start");
-        toOrigin.reset();
-
-        sut.mutingUser = true;
-        Message message = message(MSG_RECEIVER, "<message>", "message body",
-                "</message>");
-
-        sut.handleStart(message);
-        assertEquals(MUTED_NOTIFICATION, contents(toClient));
-        assertNothingWasSentThrough(toOrigin);
-        toClient.reset();
-
-        sut.handleBody(message);
-        assertNothingWasSentThrough(toOrigin);
-        assertNothingWasSentThrough(toClient);
-
-        sut.handleEnd(message);
-        assertNothingWasSentThrough(toOrigin);
-        assertNothingWasSentThrough(toClient);
-    }
-
-    @Test
-    public void testOnlyMessagesAreNotSentThroughOnMutedCurrentUser() {
-        startStream();
-        toClient.reset();
-
-        sendAuthAsClient();
-        toOrigin.reset();
-
-        startStream("serialization of client's stream start");
-        toOrigin.reset();
-
-        sut.mutingUser = true;
-        sendMessageAsClient("<message>", "message 1", "</message>");
-        toClient.reset();
-
-        assertElementIsSentThrough("<a>", "some body", "</a>");
-        toOrigin.reset();
-        assertElementIsSentThrough("<b>", "some body", "</b>");
-        toOrigin.reset();
-
-        sendMessageAsClient("<message>", "message 2", "</message>");
-        assertNothingWasSentThrough(toOrigin);
-
-        assertElementIsSentThrough("<c>", "some body", "</c>");
-    }
-
-    private void sendMessageAsClient(String serialization0,
-            String... serializations) {
-        Message message = message(MSG_RECEIVER, serialization0, serializations);
-        sut.handleStart(message);
-        sut.handleBody(message);
-        sut.handleEnd(message);
-    }
-
     private void sendAuthAsClient() {
         Auth auth = auth(CREDENTIALS);
         sut.handleStart(auth);
@@ -216,10 +139,6 @@ public class ClientToOriginXMPPStreamHandlerTest extends
             String endTag) {
         sendComplete(OTHER, startTag, body, endTag);
         assertEquals(startTag + body + endTag, contents(toOrigin));
-    }
-
-    private void assertNothingWasSentThrough(ByteArrayOutputStream stream) {
-        assertTrue(contents(stream).isEmpty());
     }
 
     @Override
