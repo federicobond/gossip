@@ -33,6 +33,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final OutputStream toClient;
 
     private State state = INITIAL;
+    private boolean clientNotifiedOfMute;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
             final ByteStream clientToOrigin, final OutputStream toClient)
@@ -65,6 +66,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         case LINKED:
             if (element.getType() == MESSAGE) {
                 if (isMutingCurrentUser()) {
+                    clientNotifiedOfMute = false;
                     state = MUTED_IN_MESSAGE;
                 } else {
                     // TODO: check config to see if leet conversion should be
@@ -79,12 +81,11 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             switch (element.getType()) {
             case BODY:
             case SUBJECT:
-                Message message = (Message) element.getParent().get();
-                sendMutedNotificationToClient(message);// TODO: don't
-                                                       // send this
-                                                       // twice on
-                                                       // email-like
-                                                       // messages!
+                if (!clientNotifiedOfMute) {
+                    Message message = (Message) element.getParent().get();
+                    sendMutedNotificationToClient(message);
+                    clientNotifiedOfMute = true;
+                }
                 element.consumeCurrentContent();
                 break;
             case COMPOSING:
@@ -98,6 +99,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             break;
         case MUTED_OUTSIDE_MESSAGE:
             if (element.getType() == MESSAGE) {
+                clientNotifiedOfMute = false;
                 state = MUTED_IN_MESSAGE;
             }
             sendToOrigin(element);
