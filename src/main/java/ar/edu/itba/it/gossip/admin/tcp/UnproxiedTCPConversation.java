@@ -21,7 +21,9 @@ public class UnproxiedTCPConversation implements TCPConversation {
     public void updateSubscription(Selector selector)
             throws ClosedChannelException {
         int streamFlags = stream.getFromSubscriptionFlags();
+        int streamToFlags = stream.getToSubscriptionFlags();
         stream.getFromChannel().register(selector, streamFlags, this);
+        stream.getToChannel().register(selector, streamToFlags, this);
     }
 
     @Override
