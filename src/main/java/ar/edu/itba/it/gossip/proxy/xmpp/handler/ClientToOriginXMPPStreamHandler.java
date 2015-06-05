@@ -5,9 +5,9 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.M
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.EXPECT_CREDENTIALS;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.INITIAL;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.IN_MUTED_MESSAGE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.LINKED;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.MUTED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.MUTED_IN_MESSAGE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.MUTED_OUTSIDE_MESSAGE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler.State.VALIDATING_CREDENTIALS;
 
 import java.io.OutputStream;
@@ -23,6 +23,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.MutableChatState;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
@@ -63,37 +64,41 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             // fall through
         case LINKED:
             if (element.getType() == MESSAGE) {
-                Message message = (Message) element;
                 if (isMutingCurrentUser()) {
-                    sendMutedNotificationToClient(message);
-                    state = IN_MUTED_MESSAGE;
-                    return;
+                    state = MUTED_IN_MESSAGE;
+                } else {
+                    // TODO: check config to see if leet conversion should be
+                    // enabled
+                    ((Message) element).enableLeetConversion();
                 }
-                message.enableLeetConversion();
                 // fall through
             }
             sendToOrigin(element);
             break;
-        case IN_MUTED_MESSAGE:
-            element.consumeCurrentContent();
+        case MUTED_IN_MESSAGE:
+            switch (element.getType()) {
+            case BODY:
+            case SUBJECT:
+                Message message = (Message) element.getParent().get();
+                sendMutedNotificationToClient(message);// TODO: don't
+                                                       // send this
+                                                       // twice on
+                                                       // email-like
+                                                       // messages!
+                element.consumeCurrentContent();
+                break;
+            case COMPOSING:
+            case PAUSED:
+                ((MutableChatState) element).mute();
+                // fall through
+            default:
+                sendToOrigin(element);
+                break;
+            }
             break;
-        case MUTED:
+        case MUTED_OUTSIDE_MESSAGE:
             if (element.getType() == MESSAGE) {
-                sendMutedNotificationToClient((Message) element); // TODO:
-                                                                  // probably
-                                                                  // should
-                                                                  // remove
-                                                                  // this, since
-                                                                  // it is also
-                                                                  // sending
-                                                                  // messages to
-                                                                  // the user
-                                                                  // when they
-                                                                  // start or
-                                                                  // stop
-                                                                  // typingmonitor
-                state = IN_MUTED_MESSAGE;
-                return;
+                state = MUTED_IN_MESSAGE;
             }
             sendToOrigin(element);
             break;
@@ -113,10 +118,19 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             }
             sendToOrigin(element);
             break;
-        case IN_MUTED_MESSAGE:
-            element.consumeCurrentContent();
+        case MUTED_IN_MESSAGE:
+            switch (element.getType()) {
+            case SUBJECT:
+            case BODY:
+            case MESSAGE:// you are muted, don't try and send text in message
+                         // tags =)
+                element.consumeCurrentContent();
+                break;
+            default:
+                sendToOrigin(element);
+            }
             break;
-        case MUTED:
+        case MUTED_OUTSIDE_MESSAGE:
             sendToOrigin(element);
             break;
         default:
@@ -144,23 +158,28 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         case LINKED:
             sendToOrigin(element);
             break;
-        case IN_MUTED_MESSAGE:
-            element.consumeCurrentContent();
-            if (element.getType() == MESSAGE) {
+        case MUTED_IN_MESSAGE:
+            switch (element.getType()) {
+            case SUBJECT:
+            case BODY:
+                element.consumeCurrentContent();
+                break;
+            case MESSAGE:
                 if (!isMutingCurrentUser()) {
                     // TODO: this assumes that messages cannot be embedded into
                     // other messages or anything like that! If that were the
-                    // case,
-                    // this *will fail*
+                    // case, this *will* fail
                     state = LINKED;
-                    // TODO: send the poor guy a message that he can start
-                    // talking again!
+                    sendUnmutedNotificationToClient((Message) element);
                 } else {
-                    state = MUTED;
+                    state = MUTED_OUTSIDE_MESSAGE;
                 }
+                // fall through
+            default:
+                sendToOrigin(element);
             }
             break;
-        case MUTED:
+        case MUTED_OUTSIDE_MESSAGE:
             sendToOrigin(element);
             break;
         default:
@@ -198,16 +217,18 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     private void sendMutedNotificationToClient(Message message) {
-        // TODO: check if this shouldn't be a custom error!
-        sendToClient("<message type=\"chat\" from=\""
-                + message.getReceiver()
-                + "\" to=\""
-                + getCurrentUser()
-                + "\">"
-                + "<body>"
-                + "You have been muted, you will not be able to talk to other users"
-                + "</body>"
-                + "<active xmlns=\"http://jabber.org/protocol/chatstates\"/>"
+        sendNotificationToClient(message.getReceiver(),
+                "You have been muted, you will not be able to talk to other users");
+    }
+
+    private void sendUnmutedNotificationToClient(Message message) {
+        sendNotificationToClient(message.getReceiver(),
+                "You are free to talk again");
+    }
+
+    private void sendNotificationToClient(String from, String text) {
+        sendToClient("<message type=\"chat\" from=\"" + from + "\" to=\""
+                + getCurrentUser() + "\">" + "<body>" + text + "</body>"
                 + "</message>");
     }
 
@@ -246,6 +267,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected enum State {
-        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED, MUTED, IN_MUTED_MESSAGE
+        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED, MUTED_OUTSIDE_MESSAGE, MUTED_IN_MESSAGE
     }
 }

@@ -10,15 +10,15 @@ public class XMPPLeetTransformation implements Function<String, String> {
         String transformedXML = "";
 
         for (int i = 0; i < originalXML.length(); i++) {
-            char c = originalXML.charAt(i);
-            transformedXML += transform(c);
+            char originalChar = originalXML.charAt(i);
+            transformedXML += transform(originalChar);
         }
 
         return transformedXML;
     }
 
-    private String transform(char c) {
-        switch (c) {
+    private String transform(char originalChar) {
+        switch (originalChar) {
         case 'a':
             return "4";
         case 'e':
@@ -30,7 +30,7 @@ public class XMPPLeetTransformation implements Function<String, String> {
         case 'c':
             return ESCAPED_LT;
         default:
-            return String.valueOf(c);
+            return String.valueOf(originalChar);
         }
     }
 }

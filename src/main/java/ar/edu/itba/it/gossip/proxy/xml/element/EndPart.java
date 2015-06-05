@@ -1,7 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xml.element;
 
-class EndPart extends Part {
-    final String name;
+public class EndPart extends Part {
+    private String name;
 
     EndPart(final String name) {
         this.name = name;
@@ -10,5 +10,9 @@ class EndPart extends Part {
     @Override
     String getSerialization() {
         return "</" + name + ">";
+    }
+
+    public void setName(String newName) {
+        this.name = newName;
     }
 }

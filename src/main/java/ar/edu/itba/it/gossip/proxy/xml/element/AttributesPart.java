@@ -10,7 +10,7 @@ import java.util.Map;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
-class AttributesPart extends Part {
+public class AttributesPart extends Part {
     private final Map<String, String> namespaces = new LinkedHashMap<>();
     private final Map<String, String> attributes = new LinkedHashMap<>();
 

@@ -4,7 +4,7 @@ import static org.apache.commons.lang3.StringEscapeUtils.escapeXml10;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
-class BodyPart extends Part {
+public class BodyPart extends Part {
     private final String text;
 
     BodyPart(final AsyncXMLStreamReader<?> from) {

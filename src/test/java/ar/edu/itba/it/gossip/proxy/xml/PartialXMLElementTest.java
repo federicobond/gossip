@@ -1,11 +1,11 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.asMap;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.asPair;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.asUnmodifiableList;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.contentsAreEqual;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
-import static ar.edu.itba.it.gossip.util.CollectionUtils.pair;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.subarray;
-import static ar.edu.itba.it.gossip.util.CollectionUtils.unmodifiableList;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.unzip;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeAttributes;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeNamespaces;
@@ -41,15 +41,15 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public class PartialXMLElementTest {
     private static final String NAME = "stream:stream";
 
-    private static final List<Pair<String, String>> ATTRIBUTES = unmodifiableList(
-            pair("version", "'1.0'"), pair("from", "'localhost'"),
-            pair("id", "'b5332dc6-14e9-478e-a77b-b287eac44140'"),
-            pair("xml:lang", "'en'"));
+    private static final List<Pair<String, String>> ATTRIBUTES = asUnmodifiableList(
+            asPair("version", "'1.0'"), asPair("from", "'localhost'"),
+            asPair("id", "'b5332dc6-14e9-478e-a77b-b287eac44140'"),
+            asPair("xml:lang", "'en'"));
     private static final String ATTRIBUTES_SERIALIZATION = serializeAttributes(asMap(ATTRIBUTES));
 
-    private static final List<Pair<String, String>> NAMESPACES = unmodifiableList(
-            pair("xmlns:stream", "'http://etherx.jabber.org/streams'"),
-            pair("xmlns", "'jabber:client'"));
+    private static final List<Pair<String, String>> NAMESPACES = asUnmodifiableList(
+            asPair("xmlns:stream", "'http://etherx.jabber.org/streams'"),
+            asPair("xmlns", "'jabber:client'"));
     private static final String NAMESPACES_SERIALIZATION = serializeNamespaces(asMap(NAMESPACES));
 
     private static final String START_TAG = "<" + NAME

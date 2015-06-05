@@ -4,16 +4,15 @@ import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static ar.edu.itba.it.gossip.util.XMLUtils.serializeQName;
 import static java.util.Collections.unmodifiableMap;
-import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.aalto.AsyncXMLStreamReader;
-
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.util.PartiallySerializable;
+
+import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public class PartialXMPPElement extends PartialXMLElement implements
         PartiallySerializable {
@@ -25,6 +24,9 @@ public class PartialXMPPElement extends PartialXMLElement implements
             return new Auth(reader);
         case MESSAGE:
             return new Message(reader);
+        case COMPOSING:
+        case PAUSED:
+            return new MutableChatState(reader);
         default:
             return new PartialXMPPElement(reader);
         }
@@ -51,16 +53,13 @@ public class PartialXMPPElement extends PartialXMLElement implements
         return super.getParent().map(PartialXMPPElement.class::cast);
     }
 
-    @Override
-    public String toString() {
-        return reflectionToString(this);
-    }
-
     public enum Type {
         STREAM_START("stream:stream"), AUTH_CHOICE("auth"), AUTH_FEATURES(
                 "stream:features"), AUTH_REGISTER("register"), AUTH_MECHANISMS(
                 "mechanisms"), AUTH_MECHANISM("mechanism"), AUTH_SUCCESS(
-                "success"), AUTH_FAILURE("failure"), MESSAGE("message"), OTHER;
+                "success"), AUTH_FAILURE("failure"), MESSAGE("message"), SUBJECT(
+                "subject"), BODY("body"), COMPOSING("composing"), PAUSED(
+                "paused"), OTHER;
 
         private static final Map<String, Type> typesByName;
 
@@ -68,7 +67,7 @@ public class PartialXMPPElement extends PartialXMLElement implements
             // NOTE: This is here solely because of the really limited access to
             // static fields Java enums have
 
-            Map<String, Type> typesMap = new HashMap<>();
+            Map<String, Type> typesMap = new HashMap<>(values().length);
             for (Type type : values()) {
                 if (type.name.isPresent()) {
                     assumeState(!typesMap.containsKey(type.name.get()),

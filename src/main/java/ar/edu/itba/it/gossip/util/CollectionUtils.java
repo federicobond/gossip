@@ -7,6 +7,7 @@ import static java.util.Collections.unmodifiableMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,16 +17,25 @@ import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
 public abstract class CollectionUtils {
-    @SafeVarargs
-    public static <V> List<V> unmodifiableList(V... values) {
+    @SuppressWarnings("unchecked")
+    public static <V> Set<V> asUnmodifiableSet(V... values) {
+        Set<V> set = new HashSet<V>();
+        for (V value : values) {
+            set.add(value);
+        }
+        return Collections.unmodifiableSet(set);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <V> List<V> asUnmodifiableList(V... values) {
         return Collections.unmodifiableList(asList(values));
     }
 
-    public static <K, V> Pair<K, V> pair(K key, V value) {
+    public static <K, V> Pair<K, V> asPair(K key, V value) {
         return Pair.of(key, value);
     }
 
-    @SafeVarargs
+    @SuppressWarnings("unchecked")
     public static <K, V> Map<K, V> asMap(Pair<K, V>... pairs) {
         return asMap(asList(pairs));
     }

@@ -4,8 +4,8 @@ import static ar.edu.itba.it.gossip.util.XMLUtils.serializeQName;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
-class NamePart extends Part {
-    private final String name;
+public class NamePart extends Part {
+    private String name;
 
     NamePart(final AsyncXMLStreamReader<?> from) {
         this.name = serializeQName(from.getName());
@@ -13,6 +13,10 @@ class NamePart extends Part {
 
     String getName() {
         return name;
+    }
+
+    void setName(final String newName) {
+        this.name = newName;
     }
 
     @Override

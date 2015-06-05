@@ -24,7 +24,6 @@ public class PartialXMLElement implements PartiallySerializable {
     private Optional<PartialXMLElement> parent;
     private final List<Part> parts;
     private Function<String, String> bodyTransformation;
-//    private Predicate<Class<? extends Part>> partIsgnorable;
 
     public PartialXMLElement() {
         this.parts = new LinkedList<>();
@@ -92,6 +91,10 @@ public class PartialXMLElement implements PartiallySerializable {
                 childP -> childP.setBodyTransformation(bodyTransformation));
     }
 
+    protected void removeParts(final Predicate<? super Part> pred) {
+        parts.removeIf(pred);
+    }
+
     @Override
     public String serializeCurrentContent() {
         String serialization = new String();
@@ -107,7 +110,7 @@ public class PartialXMLElement implements PartiallySerializable {
         return serialization;
     }
 
-    private String serialize(Part part) {
+    protected String serialize(Part part) {
         if (part instanceof BodyPart && bodyTransformation != null) {
             return bodyTransformation.apply(part.serialize());
         }
@@ -119,6 +122,18 @@ public class PartialXMLElement implements PartiallySerializable {
         assumeState(namePartOpt.isPresent(), "Element's name is not set %s",
                 this);
         return namePartOpt.get().getName();
+    }
+
+    protected void modifyName(String newName) {
+        Optional<NamePart> namePartOpt = getNamePart();
+        assumeState(namePartOpt.isPresent(), "Element's name is not set %s",
+                this);
+        namePartOpt.get().setName(newName);
+        Optional<EndPart> endPartOpt = getEndPart();
+        if (endPartOpt.isPresent()) {
+            endPartOpt.get().setName(newName);
+        }
+        // NOTE: it is ok not to fail, 'this' may have an end (yet)!
     }
 
     public Map<String, String> getAttributes() {
@@ -140,7 +155,7 @@ public class PartialXMLElement implements PartiallySerializable {
         return bodyParts.map(body -> body.getText()).collect(joining());
     }
 
-    public Iterable<PartialXMLElement> getChildren() {
+    public Iterable<? extends PartialXMLElement> getChildren() {
         return getPartsOfClassAsStream(ChildPart.class).map(
                 childP -> childP.getChild()).collect(toList());
     }

@@ -2,14 +2,14 @@ package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import java.util.function.Function;
 
-class ChildPart extends Part {
+public class ChildPart extends Part {
     private final PartialXMLElement child;
 
     ChildPart(final PartialXMLElement child) {
         this.child = child;
     }
 
-    PartialXMLElement getChild() {
+    public PartialXMLElement getChild() {
         return child;
     }
 
