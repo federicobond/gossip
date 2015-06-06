@@ -35,8 +35,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	private final InputStream fromClient; // Maybe it's a ByteStream
 	private final OutputStream toClient;
 
-	private StringBuffer user;
-	private StringBuffer pass;
+	private String user;
+	private String pass;
 
 	public AdminStreamHandler(AdminConversation conversation,
 			InputStream fromClient, OutputStream toClient)
@@ -45,8 +45,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		this.conversation = conversation;
 		this.fromClient = fromClient;
 		this.toClient = toClient;
-		this.user = new StringBuffer();
-		this.pass = new StringBuffer();
+		this.user = new String();
+		this.pass = new String();
 	}
 
 	@Override
@@ -99,38 +99,25 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	@Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
 	    xmlElement.appendToBody(reader);
-
-	    switch (state) {
-	    case EXPECT_USER:
-	        break;
-	    case READ_USER:
-	        user.append(xmlElement.getBody());
-	        break;
-	    case READ_PASS:
-	        pass.append(xmlElement.getBody());
-	        break;
-	    default:
-	        sendFail();
-	        resetStream();
-            break;
-	    }
     }
 
 	public void handleEnd(PartialAdminElement element) {
         switch (state) {
         case READ_USER:
+            user = xmlElement.getBody();
             assumeType(element, USER); // Check if this works
             state = State.EXPECT_PASS;
             sendSuccess();
             break;
         case READ_PASS:
             assumeType(element, PASS); // Check if this works
+            pass = xmlElement.getBody();
             // Validate user and pass and change state depending on success
             if(user.equals("admin") && pass.equals("1234")){
                 state = State.LOGGED_IN;
                 sendSuccess();
             }else{
-                state = State.INITIAL;
+                state = State.EXPECT_USER;
                 sendFail();
             }
             break;
@@ -146,21 +133,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 "Event type mismatch, got: %s when %s was expected", element,
                 type);
     }
-
-	
-
-	protected void sendToOrigin(PartialAdminElement element) {
-//		System.out.println("\n<C2O sending to origin>");
-//		String currentContent = element.serializeCurrentContent();
-//		System.out.println("Message:\n'"
-//				+ StringEscapeUtils.escapeJava(currentContent) + "' (string) "
-//				+ ArrayUtils.toString(currentContent.getBytes()));
-//		sendToOrigin(currentContent);
-//		System.out.println("\nOutgoing buffer afterwards:");
-//		((ByteBufferOutputStream) clientToOrigin.getOutputStream())
-//				.printBuffer(false, true, true);
-//		System.out.println("</C2O sending to origin>\n");
-	}
 	
 	protected void sendToOrigin(String message) {
     //    writeTo(clientToOrigin, message);
