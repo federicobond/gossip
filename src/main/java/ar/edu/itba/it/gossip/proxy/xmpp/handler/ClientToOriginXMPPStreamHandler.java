@@ -113,7 +113,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             sendToOrigin(element);
             break;
         default:
-            // do nothing, just buffer element's contents
+            // TODO: check! should NEVER happen!
         }
     }
 
@@ -145,6 +145,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             break;
         default:
             // do nothing, just buffer element's contents
+            // TODO: check for potential floods!
         }
     }
 
