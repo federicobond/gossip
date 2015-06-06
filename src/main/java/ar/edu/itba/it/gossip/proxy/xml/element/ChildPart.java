@@ -23,11 +23,6 @@ public class ChildPart extends Part {
         return child.isCurrentContentFullySerialized();
     }
 
-    @Override
-    String getSerialization() {
-        return child.getSerialization();
-    }
-
     void setBodyTransformation(Function<String, String> transformation) {
         this.child.setBodyTransformation(transformation);
     }

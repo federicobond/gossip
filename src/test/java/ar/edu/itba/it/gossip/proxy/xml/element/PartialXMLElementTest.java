@@ -168,11 +168,10 @@ public class PartialXMLElementTest {
     @Test
     public void testSerializationDoesNotRepeatParts() {
         sut.loadName(mockReader);
-        assertEquals("<" + NAME, sut.serializeCurrentContent());
 
         sut.loadAttributes(mockReader);
-        assertEquals(NAMESPACES_SERIALIZATION + ATTRIBUTES_SERIALIZATION + ">",
-                sut.serializeCurrentContent());
+        assertEquals("<" + NAME + NAMESPACES_SERIALIZATION
+                + ATTRIBUTES_SERIALIZATION + ">", sut.serializeCurrentContent());
 
         appendTextToBodyInFragments();
         assertEquals(BODY_TEXT, sut.serializeCurrentContent());

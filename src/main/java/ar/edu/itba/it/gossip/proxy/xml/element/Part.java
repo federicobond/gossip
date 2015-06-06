@@ -13,5 +13,7 @@ public abstract class Part {
         return serialization;
     }
 
-    abstract String getSerialization();
+    String getSerialization() { // optional operation
+        throw new UnsupportedOperationException();
+    }
 }

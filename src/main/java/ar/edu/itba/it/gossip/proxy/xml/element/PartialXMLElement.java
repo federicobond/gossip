@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import ar.edu.itba.it.gossip.util.PartiallySerializable;
@@ -85,10 +84,6 @@ public class PartialXMLElement implements PartiallySerializable {
         return this;
     }
 
-    private void assumeStartTagEnded() {
-        assumeState(startTagEnded, "%s doesn't have a start tag", this);
-    }
-
     public void setBodyTransformation(
             final Function<String, String> bodyTransformation) {
         require(bodyTransformation != null);
@@ -100,16 +95,13 @@ public class PartialXMLElement implements PartiallySerializable {
                 childP -> childP.setBodyTransformation(bodyTransformation));
     }
 
-    protected void removeParts(final Predicate<? super Part> pred) {
-        parts.removeIf(pred);
-    }
-
     @Override
     public String serializeCurrentContent() {
         String serialization = new String();
         List<Part> toRemove = new LinkedList<Part>();
         for (Part part : parts) {
-            if (!part.isSerialized()) {
+            if (!part.isSerialized()) { // IMPORTANT: ChildParts could not be
+                                        // serialized and thus appear here!
                 serialization += serialize(part);
                 if (!part.isSerialized()) { // that is, if the part still isn't
                                             // completely serialized
@@ -136,18 +128,6 @@ public class PartialXMLElement implements PartiallySerializable {
         return namePartOpt.get().getName();
     }
 
-    protected void modifyName(String newName) {
-        Optional<NamePart> namePartOpt = getNamePart();
-        assumeState(namePartOpt.isPresent(), "Element's name is not set %s",
-                this);
-        namePartOpt.get().setName(newName);
-        Optional<EndPart> endPartOpt = getEndPart();
-        if (endPartOpt.isPresent()) {
-            endPartOpt.get().setName(newName);
-        }
-        // NOTE: it is ok not to fail, 'this' may have an end (yet)!
-    }
-
     public Map<String, String> getAttributes() {
         Optional<AttributesPart> attributesPartOpt = getAttributesPart();
         assumeState(attributesPartOpt.isPresent(),
@@ -163,7 +143,7 @@ public class PartialXMLElement implements PartiallySerializable {
     }
 
     public String getBody() {
-        Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class, 2);
+        Stream<BodyPart> bodyParts = getPartsOfClassAsStream(BodyPart.class);
         return bodyParts.map(body -> body.getText()).collect(joining());
     }
 
@@ -176,16 +156,29 @@ public class PartialXMLElement implements PartiallySerializable {
         return this.parent;
     }
 
-    public boolean isCurrentContentFullySerialized() {
-        return parts.isEmpty() && ended;
+    protected void modifyName(String newName) {
+        Optional<NamePart> namePartOpt = getNamePart();
+        assumeState(namePartOpt.isPresent(), "Element's name is not set %s",
+                this);
+        namePartOpt.get().setName(newName);
+        if (ended) {
+            Optional<EndPart> endPartOpt = getEndPart();
+            endPartOpt.get().setName(newName);
+        }
+        // NOTE: it is ok not to fail, 'this' may have an end (yet)!
     }
 
-    public boolean isBodyBeingTransformed() {
+    protected boolean isBodyBeingTransformed() {
         return bodyTransformation != null;
     }
 
-    // NOTE: either directly or indirectly
-    public boolean isParentOf(PartialXMLElement child) {
+    protected boolean isCurrentContentFullySerialized() {
+        return parts.isEmpty() && ended;
+    }
+
+    protected boolean isParentOf(PartialXMLElement child) { // NOTE: either
+                                                            // directly or
+                                                            // indirectly
         return child != this && child.getParent().isPresent()
                 && getChildrenAsStream().anyMatch(myChild ->
                 // TODO: comparing by identity here sounds right (since whatever
@@ -194,8 +187,9 @@ public class PartialXMLElement implements PartiallySerializable {
                         myChild == child || myChild.isParentOf(child));
     }
 
-    private void assumeNotEnded() {
-        assumeState(!getEndPart().isPresent(), "Element already ended %s", this);
+    private Stream<PartialXMLElement> getChildrenAsStream() {
+        return getPartsOfClassAsStream(ChildPart.class).map(
+                childP -> childP.getChild());
     }
 
     private Optional<NamePart> getNamePart() {
@@ -206,12 +200,22 @@ public class PartialXMLElement implements PartiallySerializable {
         return getPartsOfClassAsStream(AttributesPart.class).findFirst();
     }
 
-    private Stream<PartialXMLElement> getChildrenAsStream() {
-        return getPartsOfClassAsStream(ChildPart.class).map(
-                childP -> childP.getChild());
+    private <P extends Part> Stream<P> getPartsOfClassAsStream(
+            Class<P> partClass) {
+        return parts.stream().filter(partClass::isInstance)
+                .map(partClass::cast);
+    }
+
+    private void assumeStartTagEnded() {
+        assumeState(startTagEnded, "%s doesn't have a start tag", this);
+    }
+
+    private void assumeNotEnded() {
+        assumeState(!ended, "Element already ended %s", this);
     }
 
     private Optional<EndPart> getEndPart() {
+        assumeState(ended, "%s hasn't ended yet", this);
         if (!parts.isEmpty()) {
             Part lastPart = last(parts);
             if (lastPart instanceof EndPart) {
@@ -221,26 +225,13 @@ public class PartialXMLElement implements PartiallySerializable {
         return Optional.empty();
     }
 
-    private <P extends Part> Stream<P> getPartsOfClassAsStream(
-            Class<P> partClass) {
-        return parts.stream().filter(partClass::isInstance)
-                .map(partClass::cast);
-    }
+    @Override
+    public String toString() {
+        Stream<Part> unserializedParts = parts.stream();
+        String yetToSerialize = unserializedParts.map(
+                part -> getSerialization(part)).collect(joining());
 
-    private <P extends Part> Stream<P> getPartsOfClassAsStream(
-            Class<P> partClass, int from) {
-        return parts.subList(from, parts.size()).stream()
-                .filter(partClass::isInstance).map(partClass::cast);
-    }
-
-    String getSerialization() { // TODO: test method! remove this later
-        return getSerialization(parts.stream().filter(
-                part -> !part.isSerialized()));
-    }
-
-    private String getSerialization(Stream<Part> parts) { // TODO: test method!
-                                                          // remove this later
-        return parts.map(part -> getSerialization(part)).collect(joining());
+        return "\n-----Not serialized yet-----\n" + yetToSerialize;
     }
 
     private String getSerialization(Part part) { // TODO: test method! remove
@@ -249,18 +240,5 @@ public class PartialXMLElement implements PartiallySerializable {
             return bodyTransformation.apply(part.getSerialization());
         }
         return part.getSerialization();
-    }
-
-    @Override
-    public String toString() {
-        Stream<Part> serializedParts = parts.stream().filter(
-                part -> part.isSerialized());
-        Stream<Part> unserializedParts = parts.stream().filter(
-                part -> !part.isSerialized());
-
-        return "\n-----Already serialized-----\n"
-                + getSerialization(serializedParts)
-                + "\n-----Not serialized yet-----\n"
-                + getSerialization(unserializedParts);
     }
 }
