@@ -35,7 +35,7 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
 
     @Override
     public void handleEndElement(AsyncXMLStreamReader<?> reader) {
-        xmppElement.end();
+        xmppElement.end(reader);
 
         handleEnd(xmppElement);
 

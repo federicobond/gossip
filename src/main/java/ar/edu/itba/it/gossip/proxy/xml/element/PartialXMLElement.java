@@ -73,11 +73,10 @@ public class PartialXMLElement implements PartiallySerializable {
         return this;
     }
 
-    public PartialXMLElement end() {
+    public PartialXMLElement end(AsyncXMLStreamReader<?> from) {
         assumeNotEnded();
         assumePartsExist(NamePart.class, AttributesPart.class);
-
-        parts.add(new EndPart(this.getName()));
+        parts.add(new EndPart(from));
         return this;
     }
 
@@ -98,6 +97,7 @@ public class PartialXMLElement implements PartiallySerializable {
     @Override
     public String serializeCurrentContent() {
         String serialization = new String();
+        List<Part> toRemove = new LinkedList<Part>();
         for (Part part : parts) {
             if (!part.isSerialized()) {
                 serialization += serialize(part);
@@ -106,7 +106,9 @@ public class PartialXMLElement implements PartiallySerializable {
                     return serialization;
                 }
             }
+            toRemove.add(part);
         }
+//        parts.removeAll(toRemove);
         return serialization;
     }
 

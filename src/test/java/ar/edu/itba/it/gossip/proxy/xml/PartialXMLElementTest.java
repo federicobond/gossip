@@ -41,12 +41,14 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public class PartialXMLElementTest {
     private static final String NAME = "stream:stream";
 
+    @SuppressWarnings("unchecked")
     private static final List<Pair<String, String>> ATTRIBUTES = asUnmodifiableList(
             asPair("version", "'1.0'"), asPair("from", "'localhost'"),
             asPair("id", "'b5332dc6-14e9-478e-a77b-b287eac44140'"),
             asPair("xml:lang", "'en'"));
     private static final String ATTRIBUTES_SERIALIZATION = serializeAttributes(asMap(ATTRIBUTES));
 
+    @SuppressWarnings("unchecked")
     private static final List<Pair<String, String>> NAMESPACES = asUnmodifiableList(
             asPair("xmlns:stream", "'http://etherx.jabber.org/streams'"),
             asPair("xmlns", "'jabber:client'"));
@@ -159,7 +161,7 @@ public class PartialXMLElementTest {
         appendTextToBodyInFragments();
         sut.addChild(mockChild);
 
-        sut.end();
+        sut.end(mockReader);
 
         assertEquals(START_TAG + BODY_TEXT + CHILD_SERIALIZATION + END_TAG,
                 sut.serializeCurrentContent());
@@ -180,7 +182,7 @@ public class PartialXMLElementTest {
         sut.addChild(mockChild);
         assertEquals(CHILD_SERIALIZATION, sut.serializeCurrentContent());
 
-        sut.end();
+        sut.end(mockReader);
         assertEquals(END_TAG, sut.serializeCurrentContent());
     }
 

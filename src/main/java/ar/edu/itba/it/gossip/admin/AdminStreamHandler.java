@@ -65,7 +65,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
 	@Override
 	public void handleEndElement(AsyncXMLStreamReader<?> reader) {
-		xmlElement.end();
+		xmlElement.end(reader);
 
 		handleEnd(PartialAdminElement.from(xmlElement));
 
