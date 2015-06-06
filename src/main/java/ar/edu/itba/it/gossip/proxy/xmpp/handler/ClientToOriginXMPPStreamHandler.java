@@ -34,6 +34,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     private State state = INITIAL;
     private boolean clientNotifiedOfMute;
+    private boolean clientCauseOfMute;
 
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
@@ -73,13 +74,15 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             // fall through
         case LINKED:
             if (element.getType() == MESSAGE) {
-                if (isMutingCurrentUser()) {
+                Message message = (Message) element;
+                if (isMuted(message)) {
                     clientNotifiedOfMute = false;
+                    clientCauseOfMute = isCurrentUserMuted();
                     state = MUTED_IN_MESSAGE;
                 } else {
                     // TODO: check config to see if leet conversion should be
                     // enabled
-                    ((Message) element).enableLeetConversion();
+                    message.enableLeetConversion();
                 }
                 // fall through
             }
@@ -180,12 +183,15 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                 element.consumeCurrentContent();
                 break;
             case MESSAGE:
-                if (!isMutingCurrentUser()) {
+                Message message = (Message) element;
+                if (!isCurrentUserMuted()) {
                     // TODO: this assumes that messages cannot be embedded into
                     // other messages or anything like that! If that were the
                     // case, this *will* fail
                     state = LINKED;
-                    sendUnmutedNotificationToClient((Message) element);
+                    if (clientCauseOfMute) {
+                        sendUnmutedNotificationToClient(message);
+                    }
                 } else {
                     state = MUTED_OUTSIDE_MESSAGE;
                 }
@@ -226,6 +232,10 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                         + "\" id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\" xml:lang=\"en\" xmlns=\"jabber:toClient\">");
     }
 
+    private void sendDocumentStartToOrigin() {
+        sendToOrigin("<?xml version=\"1.0\"?>");
+    }
+
     private void sendStreamFeaturesToClient() {
         sendToClient("<stream:features>\n"
                 + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
@@ -236,22 +246,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     private void sendToClient(String message) {
         writeTo(toClient, message);
-    }
-
-    private void sendMutedNotificationToClient(Message message) {
-        sendNotificationToClient(message.getReceiver(),
-                "You have been muted, you will not be able to talk to other users");
-    }
-
-    private void sendUnmutedNotificationToClient(Message message) {
-        sendNotificationToClient(message.getReceiver(),
-                "You are free to talk again");
-    }
-
-    private void sendNotificationToClient(String from, String text) {
-        sendToClient("<message type=\"chat\" from=\"" + from + "\" to=\""
-                + getCurrentUser() + "\">" + "<body>" + text + "</body>"
-                + "</message>");
     }
 
     protected void sendToOrigin(PartialXMPPElement element) {
@@ -274,16 +268,39 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         return conversation.getCredentials().getUsername();
     }
 
-    protected boolean isMutingCurrentUser() {
+    protected boolean isMuted(Message message) {
+        // TODO: change this!
+        return isCurrentUserMuted() || message.getReceiver().contains("mute");
+    }
+
+    protected boolean isCurrentUserMuted() {
         // TODO: change this!
         return getCurrentUser().contains("mute");
     }
 
-    private void sendDocumentStartToOrigin() {
-        sendToOrigin("<?xml version=\"1.0\"?>");
+    private void sendMutedNotificationToClient(Message message) {
+        final String msg;
+        if (clientCauseOfMute) {
+            msg = "You have been muted, you will not be able to talk to other users";
+        } else {
+            msg = message.getReceiver()
+                    + " has been muted, you will not be able to talk to them";
+        }
+        sendNotificationToClient(message.getReceiver(), msg);
+    }
+
+    private void sendUnmutedNotificationToClient(Message message) {
+        sendNotificationToClient(message.getReceiver(),
+                "You are free to talk again");
+    }
+
+    private void sendNotificationToClient(String from, String text) {
+        sendToClient("<message type=\"chat\" from=\"" + from + "\" to=\""
+                + getCurrentUser() + "\">" + "<body>" + text + "</body>"
+                + "</message>");
     }
 
     protected enum State {
-        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED, MUTED_OUTSIDE_MESSAGE, MUTED_IN_MESSAGE
+        INITIAL, EXPECT_CREDENTIALS, VALIDATING_CREDENTIALS, LINKED, MUTED_OUTSIDE_MESSAGE, MUTED_IN_MESSAGE;
     }
 }

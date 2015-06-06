@@ -3,7 +3,14 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_FAILURE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
-import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.*;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTHENTICATED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.AUTH_FAILED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.EXPECT_AUTH_FEATURES;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.INITIAL;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.LINKED;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.MUTED_IN_MESSAGE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.MUTED_OUTSIDE_MESSAGE;
+import static ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler.State.VALIDATING_CREDENTIALS;
 
 import java.io.OutputStream;
 
@@ -24,8 +31,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private final OutputStream toOrigin;
 
     private State state = INITIAL;
-
-    // private boolean otherNotifiedOfMute;
 
     public OriginToClientXMPPStreamHandler(final XMPPConversation conversation,
             final OutputStream toClient, final OutputStream toOrigin)
@@ -63,8 +68,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             break;
         case LINKED:
             if (element.getType() == MESSAGE) {
-                if (isMutingSender((Message) element)) {
-                    // otherNotifiedOfMute = false;
+                if (isMuted((Message) element)) {
                     state = MUTED_IN_MESSAGE;
                 } else {
                     // TODO: if you want to convert messages from outside origin
@@ -78,11 +82,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             switch (element.getType()) {
             case BODY:
             case SUBJECT:
-                // if(!otherNotifiedOfMute) {
-                // Message message = (Message) element.getParent().get();
-                // sendMutedNotificationToSender(message);
-                // otherNotifiedOfMute = true;
-                // }
                 element.consumeCurrentContent();
                 break;
             case COMPOSING:
@@ -96,7 +95,6 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             break;
         case MUTED_OUTSIDE_MESSAGE:
             if (element.getType() == MESSAGE) {
-                // otherNotifiedOfMute = false;
                 state = MUTED_IN_MESSAGE;
             }
             sendToClient(element);
@@ -183,12 +181,11 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
                 element.consumeCurrentContent();
                 break;
             case MESSAGE:
-                if (!isMutingSender((Message) element)) {
+                if (!isCurrentUserMuted()) {
                     // TODO: this assumes that messages cannot be embedded into
                     // other messages or anything like that! If that were the
                     // case, this *will* fail
                     state = LINKED;
-                    // sendUnmutedNotificationToSender((Message) element);
                 } else {
                     state = MUTED_OUTSIDE_MESSAGE;
                 }
@@ -232,9 +229,14 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         writeTo(toClient, message);
     }
 
-    protected boolean isMutingSender(Message message) {
+    protected boolean isMuted(Message message) {
         // TODO: change this!
-        return message.getSender().contains("mute");
+        return isCurrentUserMuted() || message.getSender().contains("mute");
+    }
+
+    protected boolean isCurrentUserMuted() {
+        // TODO: change this!
+        return getCurrentUser().contains("mute");
     }
 
     private String getCurrentUser() {

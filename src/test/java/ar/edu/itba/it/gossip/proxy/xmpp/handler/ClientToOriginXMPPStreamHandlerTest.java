@@ -164,7 +164,7 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         }
 
         @Override
-        protected boolean isMutingCurrentUser() {
+        protected boolean isCurrentUserMuted() {
             return mutingUser;
         }
 
