@@ -51,10 +51,12 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
 	@Override
 	public void handleStartElement(AsyncXMLStreamReader<?> reader) {
-		if (xmlElement == null) {
+	    if (xmlElement == null) {
 			xmlElement = new PartialXMLElement();
 		} else {
-			xmlElement = new PartialXMLElement(xmlElement);
+			PartialXMLElement newXMLElement = new PartialXMLElement();
+			xmlElement.addChild(newXMLElement);
+			xmlElement = newXMLElement;
 		}
 		xmlElement.loadName(reader).loadAttributes(reader);
 
