@@ -97,10 +97,6 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         reader.getInputFeeder().endOfInput();
     }
 
-    protected void writeTo(ByteStream stream, String payload) {
-        writeTo(stream.getOutputStream(), payload);
-    }
-
     protected void writeTo(OutputStream stream, String payload) {
         try {
             stream.write(payload.getBytes(StandardCharsets.UTF_8));

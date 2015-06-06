@@ -23,12 +23,12 @@ public class XMPPConversation extends ProxiedTCPConversation {
             final TCPStream originToClient = getOriginToClientStream();
 
             final TCPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
-                    this, clientToOrigin.getView(),
+                    this, clientToOrigin.getOutputStream(),
                     originToClient.getOutputStream());
             clientToOrigin.setHandler(clientToOriginHandler);
 
             final TCPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
-                    this, originToClient.getView(),
+                    this, originToClient.getOutputStream(),
                     clientToOrigin.getOutputStream());
             originToClient.setHandler(originToClientHandler);
         } catch (XMLStreamException e) {

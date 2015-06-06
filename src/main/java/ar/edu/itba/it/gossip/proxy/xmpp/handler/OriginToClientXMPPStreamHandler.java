@@ -16,24 +16,23 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
 public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
-    private final ByteStream originToClient;
+    private final OutputStream toClient;
     private final OutputStream toOrigin;
 
     private State state = INITIAL;
 
     public OriginToClientXMPPStreamHandler(final XMPPConversation conversation,
-            final ByteStream originToClient, final OutputStream toOrigin)
+            final OutputStream toClient, final OutputStream toOrigin)
             throws XMLStreamException {
         this.conversation = conversation;
         this.toOrigin = toOrigin;
-        this.originToClient = originToClient;
+        this.toClient = toClient;
     }
 
     @Override
@@ -148,13 +147,12 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
                 + ArrayUtils.toString(currentContent.getBytes()));
         sendToClient(currentContent);
         System.out.println("\nOutgoing buffer afterwards:");
-        ((ByteBufferOutputStream) originToClient.getOutputStream())
-                .printBuffer(false, true, true);
+        ((ByteBufferOutputStream) toClient).printBuffer(false, true, true);
         System.out.println("</O2C sending to client>\n");
     }
 
     protected void sendToClient(String message) {
-        writeTo(originToClient, message);
+        writeTo(toClient, message);
     }
 
     protected enum State {

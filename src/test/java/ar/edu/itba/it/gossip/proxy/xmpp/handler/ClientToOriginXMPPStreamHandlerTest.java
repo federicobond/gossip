@@ -18,7 +18,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
@@ -57,8 +56,6 @@ public class ClientToOriginXMPPStreamHandlerTest extends
     @Mock
     private XMPPConversation conversation;
 
-    @Mock
-    private ByteStream clientToOrigin;
     private ByteArrayOutputStream toOrigin;
     private ByteArrayOutputStream toClient;
 
@@ -69,12 +66,10 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         when(conversation.getCredentials()).thenReturn(CREDENTIALS);
 
         toOrigin = new ByteArrayOutputStream();
-        when(clientToOrigin.getOutputStream()).thenReturn(toOrigin);
-
         toClient = new ByteArrayOutputStream();
 
-        sut = new TestClientToOriginXMPPStreamHandler(conversation,
-                clientToOrigin, toClient);
+        sut = new TestClientToOriginXMPPStreamHandler(conversation, toOrigin,
+                toClient);
     }
 
     @Test
@@ -154,9 +149,9 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         boolean mutingUser = false;
 
         TestClientToOriginXMPPStreamHandler(XMPPConversation conversation,
-                ByteStream clientToOrigin, OutputStream toClient)
+                OutputStream toOrigin, OutputStream toClient)
                 throws XMLStreamException {
-            super(conversation, clientToOrigin, toClient);
+            super(conversation, toOrigin, toClient);
         }
 
         @Override

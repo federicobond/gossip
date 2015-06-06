@@ -19,7 +19,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
@@ -30,25 +29,24 @@ import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final XMPPConversation conversation;
-    private final ByteStream clientToOrigin;
+    private final OutputStream toOrigin;
     private final OutputStream toClient;
-
 
     private State state = INITIAL;
     private boolean clientNotifiedOfMute;
 
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
-    
+
     // Maybe this fits better in another class.
     // Somewhere we need to store the origin we are talking to, to be able to
     // restart the communication
-    private String originName; 
+    private String originName;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
-            final ByteStream clientToOrigin, final OutputStream toClient)
+            final OutputStream toOrigin, final OutputStream toClient)
             throws XMLStreamException {
         this.conversation = conversation;
-        this.clientToOrigin = clientToOrigin;
+        this.toOrigin = toOrigin;
         this.toClient = toClient;
     }
 
@@ -162,12 +160,12 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                     + credentials.getPassword());
             connectToOrigin();
 
-            //Update the origin name because might be changed by multiplexation. 
+            // Update the origin name because might be changed by
+            // multiplexation.
             originName = proxyConfig.getOriginName(credentials.getUsername());
-			sendStreamOpenToOrigin(originName);
-     
-            resetStream();
+            sendStreamOpenToOrigin(originName);
 
+            resetStream();
 
             state = VALIDATING_CREDENTIALS;
             break;
@@ -203,21 +201,28 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         }
     }
 
-
     protected void connectToOrigin() {
         Credentials credentials = conversation.getCredentials();
-        InetSocketAddress address = proxyConfig.getOriginAddress(credentials.getUsername());
+        InetSocketAddress address = proxyConfig.getOriginAddress(credentials
+                .getUsername());
         getConnector().connectToOrigin(address);
     }
 
     private void sendStreamOpenToOrigin(String originName) {
-        // TODO: check "to" attribute. It fails if it does not match upstream host
-        writeTo(clientToOrigin, "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"" + originName + "\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
+        // TODO: check "to" attribute. It fails if it does not match upstream
+        // host
+        writeTo(toOrigin,
+                "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\""
+                        + originName
+                        + "\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
 
     }
 
     private void sendStreamOpenToClient(String originName) {
-        writeTo(toClient, "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" from=\"" + originName + "\" id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\" xml:lang=\"en\" xmlns=\"jabber:toClient\">");
+        writeTo(toClient,
+                "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" from=\""
+                        + originName
+                        + "\" id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\" xml:lang=\"en\" xmlns=\"jabber:toClient\">");
     }
 
     private void sendStreamFeaturesToClient() {
@@ -256,13 +261,12 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                 + ArrayUtils.toString(currentContent.getBytes()));
         sendToOrigin(currentContent);
         System.out.println("\nOutgoing buffer afterwards:");
-        ((ByteBufferOutputStream) clientToOrigin.getOutputStream())
-                .printBuffer(false, true, true);
+        ((ByteBufferOutputStream) toOrigin).printBuffer(false, true, true);
         System.out.println("</C2O sending to origin>\n");
     }
 
     protected void sendToOrigin(String message) {
-        writeTo(clientToOrigin, message);
+        writeTo(toOrigin, message);
     }
 
     private String getCurrentUser() {

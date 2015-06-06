@@ -44,8 +44,6 @@ public class OriginToClientXMPPStreamHandlerTest extends
     @Mock
     private XMPPConversation conversation;
 
-    @Mock
-    private ByteStream originToClient;
     private ByteArrayOutputStream toOrigin;
     private ByteArrayOutputStream toClient;
 
@@ -56,12 +54,10 @@ public class OriginToClientXMPPStreamHandlerTest extends
         when(conversation.getCredentials()).thenReturn(credentials);
 
         toClient = new ByteArrayOutputStream();
-        when(originToClient.getOutputStream()).thenReturn(toClient);
-
         toOrigin = new ByteArrayOutputStream();
 
-        sut = new TestOriginToClientXMPPStreamHandler(conversation,
-                originToClient, toOrigin);
+        sut = new TestOriginToClientXMPPStreamHandler(conversation, toClient,
+                toOrigin);
     }
 
     @Test
@@ -198,9 +194,9 @@ public class OriginToClientXMPPStreamHandlerTest extends
         int streamResets = 0;
 
         TestOriginToClientXMPPStreamHandler(XMPPConversation conversation,
-                ByteStream originToClient, OutputStream toOrigin)
+                OutputStream toClient, OutputStream toOrigin)
                 throws XMLStreamException {
-            super(conversation, originToClient, toOrigin);
+            super(conversation, toClient, toOrigin);
         }
 
         @Override
