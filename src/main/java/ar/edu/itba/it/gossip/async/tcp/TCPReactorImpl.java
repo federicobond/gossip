@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 public class TCPReactorImpl implements TCPReactor {
     private static final int TIMEOUT = 3000; // Wait timeout (milliseconds)
-    private static final String DEFAULT_HOSTNAME = "localhost";
 
     private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
 
@@ -31,14 +30,9 @@ public class TCPReactorImpl implements TCPReactor {
     private final Map<SocketChannel, TCPEventHandler> handlersByChannel = new IdentityHashMap<>();
 
     private boolean running = false;
-    private String hostname;
-
-    public TCPReactorImpl(String hostname) {
-        this.hostname = hostname;
-    }
 
     public TCPReactorImpl() {
-        this(DEFAULT_HOSTNAME);
+      
     }
 
     @Override
@@ -94,7 +88,7 @@ public class TCPReactorImpl implements TCPReactor {
     private void startListener(Selector selector, int port) throws IOException {
         ServerSocketChannel listenerChannel = ServerSocketChannel.open();
 
-        InetSocketAddress address = new InetSocketAddress(hostname, port);
+        InetSocketAddress address = new InetSocketAddress("localhost", port);
         ServerSocket serverSocket = listenerChannel.socket();
         serverSocket.bind(address);
 

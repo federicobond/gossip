@@ -9,13 +9,14 @@ import ar.edu.itba.it.gossip.proxy.xmpp.XMPPProxy;
 
 public class App {
     public static void main(String[] args) throws IOException {
-        TCPReactor reactor = new TCPReactorImpl("localhost");
+        TCPReactor reactor = new TCPReactorImpl();
         
         short proxyPort = 9998;
         short adminPort = 9999;
         
         reactor.addHandler(new XMPPProxy(reactor), proxyPort); 
         reactor.addHandler(new XMPPProxyAdmin(reactor), adminPort);
+
         
         reactor.start();
     }

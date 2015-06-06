@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
@@ -32,8 +33,16 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final ByteStream clientToOrigin;
     private final OutputStream toClient;
 
+
     private State state = INITIAL;
     private boolean clientNotifiedOfMute;
+
+    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+    
+    // Maybe this fits better in another class.
+    // Somewhere we need to store the origin we are talking to, to be able to
+    // restart the communication
+    private String originName; 
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
             final ByteStream clientToOrigin, final OutputStream toClient)
@@ -48,7 +57,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         switch (state) {
         case INITIAL:
             assumeType(element, STREAM_START);
-            sendStreamOpenToClient();
+            originName = proxyConfig.getOriginName();
+            sendStreamOpenToClient(originName);
             sendStreamFeaturesToClient();
             state = EXPECT_CREDENTIALS;
             break;
@@ -152,8 +162,12 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                     + credentials.getPassword());
             connectToOrigin();
 
-            sendStreamOpenToOrigin();
+            //Update the origin name because might be changed by multiplexation. 
+            originName = proxyConfig.getOriginName(credentials.getUsername());
+			sendStreamOpenToOrigin(originName);
+     
             resetStream();
+
 
             state = VALIDATING_CREDENTIALS;
             break;
@@ -189,21 +203,21 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         }
     }
 
+
     protected void connectToOrigin() {
         Credentials credentials = conversation.getCredentials();
-        InetSocketAddress address = getOriginAddressForUsername(credentials
-                .getUsername());
+        InetSocketAddress address = proxyConfig.getOriginAddress(credentials.getUsername());
         getConnector().connectToOrigin(address);
     }
 
-    private void sendStreamOpenToOrigin() {
-        // TODO: check "to" attribute. It fails if it does not match upstream
-        // host
-        sendToOrigin("<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"localhost\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
+    private void sendStreamOpenToOrigin(String originName) {
+        // TODO: check "to" attribute. It fails if it does not match upstream host
+        writeTo(clientToOrigin, "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\"" + originName + "\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
+
     }
 
-    private void sendStreamOpenToClient() {
-        sendToClient("<?xml version=\"1.0\"?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' version='1.0' from='localhost' id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b' xml:lang='en' xmlns='jabber:toClient'>");
+    private void sendStreamOpenToClient(String originName) {
+        writeTo(toClient, "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" from=\"" + originName + "\" id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\" xml:lang=\"en\" xmlns=\"jabber:toClient\">");
     }
 
     private void sendStreamFeaturesToClient() {
@@ -258,10 +272,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     protected boolean isMutingCurrentUser() {
         // TODO: change this!
         return getCurrentUser().contains("mute");
-    }
-
-    private InetSocketAddress getOriginAddressForUsername(String username) {
-        return new InetSocketAddress("localhost", 5222);
     }
 
     private void sendDocumentStartToOrigin() {
