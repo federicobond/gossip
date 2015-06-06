@@ -24,7 +24,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;

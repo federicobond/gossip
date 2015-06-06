@@ -107,7 +107,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             case AUTH_SUCCESS:
                 state = AUTHENTICATED;
                 sendToClient(element);
-                resetStream(); // TODO: check!
+                resetStream();
                 break;
             case AUTH_FAILURE:// TODO
                 sendToClient(element);

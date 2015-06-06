@@ -9,6 +9,7 @@ import java.nio.channels.SocketChannel;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
+import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxy implements TCPEventHandler {
     private final TCPReactor reactor;
@@ -56,13 +57,32 @@ public abstract class TCPProxy implements TCPEventHandler {
             buffer.flip();
 
             // FIXME: just for debugging purposes
-//            System.out.println(bufferName + "'s content: (JUST READ)"
-//                    + "\n===================\n" + BufferUtils.peek(buffer)
-//                    + "\n===================\n");
+            System.out.println(bufferName + "'s content: (JUST READ)"
+                    + "\n===================\n" + BufferUtils.peek(buffer)
+                    + "\n===================\n");
             // FIXME: just for debugging purposes
 
-            handler.handleRead(buffer,
+            int newPosition = handler.handleRead(buffer,
                     address -> connectToOrigin(key, conversation, address));
+
+            buffer.position(newPosition);
+            buffer.compact();
+            // FIXME: just for debugging purposes
+            System.out
+                    .println(bufferName
+                            + "'s content (AFTER READ):"
+                            + buffer
+                            + " ("
+                            + newPosition
+                            + "/"
+                            + buffer.capacity()
+                            + "="
+                            + ((double) newPosition)
+                            / buffer.capacity()
+                            + ")\n===================\n"
+                            + BufferUtils.peek((ByteBuffer) (buffer.duplicate()
+                                    .flip())) + "\n===================\n");
+            // FIXME: just for debugging purposes
 
             conversation.updateSubscription(key.selector());
         }
@@ -117,9 +137,9 @@ public abstract class TCPProxy implements TCPEventHandler {
                 + channel + "')");
 
         // FIXME: just for debugging purposes
-//        System.out.println(bufferName + "'s content: (AFTER WRITE)"
-//                + "\n===================\n" + BufferUtils.peek(buffer)
-//                + "\n===================\n");
+        // System.out.println(bufferName + "'s content: (AFTER WRITE)"
+        // + "\n===================\n" + BufferUtils.peek(buffer)
+        // + "\n===================\n");
         // FIXME: just for debugging purposes
 
         buffer.compact(); // Make room for more data to be read in

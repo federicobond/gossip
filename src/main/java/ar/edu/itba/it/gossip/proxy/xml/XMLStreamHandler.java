@@ -16,7 +16,6 @@ import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 
 import com.fasterxml.aalto.AsyncByteBufferFeeder;
 import com.fasterxml.aalto.AsyncXMLInputFactory;
@@ -24,6 +23,9 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 import com.fasterxml.aalto.stax.InputFactoryImpl;
 
 public abstract class XMLStreamHandler implements TCPStreamHandler {
+    private static final byte LT = 0x3C;
+    private static final byte GT = 0x3E;
+
     private static final AsyncXMLInputFactory inputFactory = new InputFactoryImpl();
 
     private XMLEventHandler xmlHandler;
@@ -35,7 +37,7 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     }
 
     @Override
-    public void handleRead(ByteBuffer buf, final DeferredConnector connector) {
+    public int handleRead(ByteBuffer buf, final DeferredConnector connector) {
         this.connector = connector;
         try {
             reader.getInputFeeder().feedInput(buf);
@@ -65,9 +67,23 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
             }
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
-        } finally {
-            this.connector = null;
         }
+        return getNewPosition(buf);
+    }
+
+    private int getNewPosition(ByteBuffer buffer) { // because thank you aalto
+                                                    // for not showing offsets
+        byte[] bytes = buffer.array();
+        for (int i = buffer.limit() - 1; i > buffer.position(); i--) {
+            if (bytes[i] == GT) { // "...>X" -> X's position
+                return buffer.limit();
+            }
+            if (bytes[i] == LT) { // "...<" -> <'s position
+                return i;
+            }
+        }
+        return buffer.limit(); // "..."X -> X's position (X hasn't been read
+                               // yet)
     }
 
     protected void resetStream() {

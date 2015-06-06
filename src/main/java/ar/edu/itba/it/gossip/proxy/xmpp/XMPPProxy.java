@@ -8,7 +8,6 @@ import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPProxy;
 
 public class XMPPProxy extends TCPProxy {
-
     public XMPPProxy(TCPReactor reactor) {
         super(reactor);
     }
@@ -22,5 +21,4 @@ public class XMPPProxy extends TCPProxy {
     public String toString() {
         return reflectionToString(this);
     }
-
 }
