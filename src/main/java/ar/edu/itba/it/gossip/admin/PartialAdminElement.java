@@ -46,7 +46,7 @@ public class PartialAdminElement implements PartiallySerializable {
 	}
 
 	public enum Type {
-		USER("usr"), PASS("pass"), LEET("leet"), SILENCE("silence"), ORIGIN(
+		START_ADMIN("admin"),USER("usr"), PASS("pass"), LEET("leet"), SILENCE("silence"), ORIGIN(
 				"origin"), STATS("stats"), QUIT("quit"), OTHER;
 
 		private static final Map<String, Type> typesByName;

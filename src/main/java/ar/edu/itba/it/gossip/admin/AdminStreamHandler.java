@@ -67,7 +67,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
 		handleEnd(PartialAdminElement.from(xmlElement));
 
-//		xmlElement = xmlElement.getParent().get(); // an element that wasn't
+		xmlElement = xmlElement.getParent().get(); // an element that wasn't
 													// open will never be
 													// closed,
 													// since the underlying
@@ -78,9 +78,13 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	public void handleStart(PartialAdminElement element) {
 		switch (state) {
 		case INITIAL:
-			assumeType(element, USER);
-			state = State.READ_USER;
+			assumeType(element, START_ADMIN);
+			state = State.EXPECT_USER;
 			break;
+		case EXPECT_USER:
+		    assumeType(element, USER);
+			state = State.READ_USER;
+            break;
 		case EXPECT_PASS:
 		    assumeType(element, PASS);
 		    state = State.READ_PASS;
@@ -97,6 +101,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	    xmlElement.appendToBody(reader);
 
 	    switch (state) {
+	    case EXPECT_USER:
+	        break;
 	    case READ_USER:
 	        user.append(xmlElement.getBody());
 	        break;
@@ -116,7 +122,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             assumeType(element, USER); // Check if this works
             state = State.EXPECT_PASS;
             sendSuccess();
-            resetStream();
             break;
         case READ_PASS:
             assumeType(element, PASS); // Check if this works
@@ -128,7 +133,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 state = State.INITIAL;
                 sendFail();
             }
-            //resetStream();
             break;
         default:
             sendFail();
@@ -175,7 +179,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
 	protected enum State {
-		INITIAL, READ_USER, READ_PASS, EXPECT_PASS, LOGGED_IN;
+		INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, LOGGED_IN;
 	}
 
 }
