@@ -1,7 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
-import static ar.edu.itba.it.gossip.util.PredicateUtils.isInstanceOfAny;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
@@ -25,6 +24,9 @@ public class PartialXMLElement implements PartiallySerializable {
     private final List<Part> parts;
     private Function<String, String> bodyTransformation;
 
+    private boolean startTagEnded = false;
+    private boolean ended = false;
+
     public PartialXMLElement() {
         this.parts = new LinkedList<>();
         this.parent = Optional.empty();
@@ -40,17 +42,18 @@ public class PartialXMLElement implements PartiallySerializable {
 
     public PartialXMLElement loadAttributes(AsyncXMLStreamReader<?> from) {
         assumeNotEnded();
-        assumePartsExist(NamePart.class);
+        assumeState(getNamePart().isPresent(), "%s doesn't have a name", this);
         assumeState(!getAttributesPart().isPresent(),
                 "%s already has attributes", this);
 
         parts.add(new AttributesPart(from));
+        startTagEnded = true;
         return this;
     }
 
     public PartialXMLElement appendToBody(AsyncXMLStreamReader<?> from) {
         assumeNotEnded();
-        assumePartsExist(NamePart.class, AttributesPart.class);
+        assumeStartTagEnded();
 
         parts.add(new BodyPart(from));
         return this;
@@ -58,7 +61,7 @@ public class PartialXMLElement implements PartiallySerializable {
 
     public PartialXMLElement addChild(PartialXMLElement child) {
         assumeNotEnded();
-        assumePartsExist(NamePart.class, AttributesPart.class);
+        assumeStartTagEnded();
         require(!child.isParentOf(this),
                 "%s cannot be a parent and a child of %s", child, this);
         require(!this.isParentOf(child), "%s is already parent of %s!", this,
@@ -75,9 +78,15 @@ public class PartialXMLElement implements PartiallySerializable {
 
     public PartialXMLElement end(AsyncXMLStreamReader<?> from) {
         assumeNotEnded();
-        assumePartsExist(NamePart.class, AttributesPart.class);
+        assumeStartTagEnded();
+
         parts.add(new EndPart(from));
+        ended = true;
         return this;
+    }
+
+    private void assumeStartTagEnded() {
+        assumeState(startTagEnded, "%s doesn't have a start tag", this);
     }
 
     public void setBodyTransformation(
@@ -85,6 +94,7 @@ public class PartialXMLElement implements PartiallySerializable {
         require(bodyTransformation != null);
         assumeNotSet(this.bodyTransformation,
                 "Body transformation is already set: %s", bodyTransformation);
+
         this.bodyTransformation = bodyTransformation;
         getChildren().forEach(
                 childP -> childP.setBodyTransformation(bodyTransformation));
@@ -108,7 +118,7 @@ public class PartialXMLElement implements PartiallySerializable {
             }
             toRemove.add(part);
         }
-//        parts.removeAll(toRemove);
+        parts.removeAll(toRemove);
         return serialization;
     }
 
@@ -167,7 +177,7 @@ public class PartialXMLElement implements PartiallySerializable {
     }
 
     public boolean isCurrentContentFullySerialized() {
-        return last(parts).isSerialized();
+        return parts.isEmpty() && ended;
     }
 
     public boolean isBodyBeingTransformed() {
@@ -184,27 +194,16 @@ public class PartialXMLElement implements PartiallySerializable {
                         myChild == child || myChild.isParentOf(child));
     }
 
-    @SafeVarargs
-    private final void assumePartsExist(Class<? extends Part>... partClasses) {
-        List<Class<? extends Part>> matchedClasses = parts.stream()
-                .filter(isInstanceOfAny(partClasses))
-                .map(part -> part.getClass()).collect(toList());
-
-        assumeState(matchedClasses.size() == partClasses.length,
-                "Element expected parts %s to exist, but only %s exist",
-                matchedClasses);
-    }
-
     private void assumeNotEnded() {
         assumeState(!getEndPart().isPresent(), "Element already ended %s", this);
     }
 
     private Optional<NamePart> getNamePart() {
-        return getPartByIndex(NamePart.class, 0);
+        return getPartsOfClassAsStream(NamePart.class).findFirst();
     }
 
     private Optional<AttributesPart> getAttributesPart() {
-        return getPartByIndex(AttributesPart.class, 1);
+        return getPartsOfClassAsStream(AttributesPart.class).findFirst();
     }
 
     private Stream<PartialXMLElement> getChildrenAsStream() {
@@ -218,14 +217,6 @@ public class PartialXMLElement implements PartiallySerializable {
             if (lastPart instanceof EndPart) {
                 return Optional.of((EndPart) lastPart);
             }
-        }
-        return Optional.empty();
-    }
-
-    private <P extends Part> Optional<P> getPartByIndex(Class<P> partClass,
-            int i) {
-        if (!parts.isEmpty() && parts.size() - 1 >= i) {
-            return Optional.of(partClass.cast(parts.get(i)));
         }
         return Optional.empty();
     }
