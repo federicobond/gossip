@@ -94,7 +94,40 @@ public abstract class TCPProxyAdmin implements TCPEventHandler {
     
     @Override
     public void handleWrite(SelectionKey key) throws IOException {
-        // reactor.unsubscribe((SocketChannel) key.channel());
+        UnproxiedTCPConversation conversation = (UnproxiedTCPConversation) key
+                .attachment();
+        SocketChannel channel = (SocketChannel) key.channel();
+
+        ByteBuffer buffer = conversation.getWriteBuffer();
+
+        // FIXME: just for debugging purposes
+        String bufferName = conversation.getBufferName(buffer);
+        String channelName = "admin";
+        // FIXME: just for debugging purposes
+
+        buffer.flip();
+        // // FIXME: just for debugging purposes
+        // System.out.println(bufferName + "'s content: (BEFORE WRITE)"
+        // + "\n===================\n" + BufferUtils.peek(buffer)
+        // + "\n===================\n");
+        // // FIXME: just for debugging purposes
+
+        int bytesWritten = channel.write(buffer);
+
+        System.out.println("Wrote " + bytesWritten + " bytes from '"
+                + bufferName + "' through '" + channelName + "Channel ("
+                + channel + "')");
+
+        // FIXME: just for debugging purposes
+        System.out.println(bufferName + "'s content: (AFTER WRITE)"
+                + "\n===================\n" + BufferUtils.peek(buffer)
+                + "\n===================\n");
+        // FIXME: just for debugging purposes
+
+        buffer.compact(); // Make room for more data to be read in
+
+        conversation.updateSubscription(key.selector());
+        //reactor.unsubscribe((SocketChannel) key.channel());
     }
 
     @Override

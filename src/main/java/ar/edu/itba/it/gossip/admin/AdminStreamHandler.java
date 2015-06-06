@@ -20,6 +20,7 @@ import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.*;
 
@@ -34,6 +35,9 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	private final InputStream fromClient; // Maybe it's a ByteStream
 	private final OutputStream toClient;
 
+	private StringBuffer user;
+	private StringBuffer pass;
+
 	public AdminStreamHandler(AdminConversation conversation,
 			InputStream fromClient, OutputStream toClient)
 			throws XMLStreamException {
@@ -41,6 +45,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		this.conversation = conversation;
 		this.fromClient = fromClient;
 		this.toClient = toClient;
+		this.user = new StringBuffer();
+		this.pass = new StringBuffer();
 	}
 
 	@Override
@@ -68,41 +74,68 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 													// stream is a valid XML one
 	}
 
-	@Override
-	public void handleCharacters(AsyncXMLStreamReader<?> reader) {
-		xmlElement.appendToBody(reader);
-		handleBody(PartialAdminElement.from(xmlElement));
-	}
 
 	public void handleStart(PartialAdminElement element) {
 		switch (state) {
 		case INITIAL:
 			assumeType(element, USER);
-			//sendStreamOpenToClient(originName);
-			sendSuccess();
-			state = State.EXPECT_PASS;
+			state = State.READ_USER;
 			break;
-//		case VALIDATING_CREDENTIALS:
-//			// FIXME: do check that the credentials were actually valid! (the
-//			// code here is just assuming the client will behave and wait for an
-//			// auth <success>).
-//			assumeType(element, STREAM_START);
-//			state = LINKED;
-//			System.out
-//					.println("Client is linked to origin, now messages may pass freely");
-//
-//			sendDocumentStartToOrigin();
-//			// fall through
-//		case LINKED:
-//			sendToOrigin(element);
-//			break;
-//		default:
-//			// do nothing TODO: change this!
+		case EXPECT_PASS:
+		    assumeType(element, PASS);
+		    state = State.READ_PASS;
+		    break;
 		default:
 			sendFail();
+			resetStream();
 			break;
 		}
 	}
+	
+	@Override
+    public void handleCharacters(AsyncXMLStreamReader<?> reader) {
+	    xmlElement.appendToBody(reader);
+
+	    switch (state) {
+	    case READ_USER:
+	        user.append(xmlElement.getBody());
+	        break;
+	    case READ_PASS:
+	        pass.append(xmlElement.getBody());
+	        break;
+	    default:
+	        sendFail();
+	        resetStream();
+            break;
+	    }
+    }
+
+	public void handleEnd(PartialAdminElement element) {
+        switch (state) {
+        case READ_USER:
+            assumeType(element, USER); // Check if this works
+            state = State.EXPECT_PASS;
+            sendSuccess();
+            resetStream();
+            break;
+        case READ_PASS:
+            assumeType(element, PASS); // Check if this works
+            // Validate user and pass and change state depending on success
+            if(user.equals("admin") && pass.equals("1234")){
+                state = State.LOGGED_IN;
+                sendSuccess();
+            }else{
+                state = State.INITIAL;
+                sendFail();
+            }
+            //resetStream();
+            break;
+        default:
+            sendFail();
+            resetStream();
+            break;
+        }        
+    }
 	
 	protected void assumeType(PartialAdminElement element, Type type) {
         assumeState(element.getType() == type,
@@ -110,40 +143,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 type);
     }
 
-	public void handleEnd(PartialAdminElement element) {
-		switch (state) {
-//		case EXPECT_USER:
-//			assumeType(element, AUTH_CHOICE);
-//			Credentials credentials = ((Auth) element).getCredentials();
-//			conversation.setCredentials(credentials);
-//			System.out.println(credentials.getUsername()
-//					+ " is trying to log in with password: "
-//					+ credentials.getPassword());
-//			connectToOrigin();
-//
-//			// Update the origin name because might be changed by
-//			// multiplexation.
-//			originName = proxyConfig.getOriginName(credentials.getUsername());
-//			sendStreamOpenToOrigin(originName);
-//
-//			resetStream();
-//
-//			state = VALIDATING_CREDENTIALS;
-//			break;
-//		case LINKED:
-//			sendToOrigin(element);
-//			break;
-//		default:
-//			// will never happen
-//			throw new IllegalStateException("Unexpected state" + state);
-		}
-	}
-
-	public void handleBody(PartialAdminElement element) {
-		if (state == State.LOGGED_IN) {
-			sendToOrigin(element);
-		}
-	}
+	
 
 	protected void sendToOrigin(PartialAdminElement element) {
 //		System.out.println("\n<C2O sending to origin>");
@@ -163,11 +163,11 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 	
 	private void sendSuccess() {
-		sendToClient("<ok/>");
+		sendToClient("<ok/>\n");
 	}
 	
 	private void sendFail() {
-		sendToClient("<err/>");
+		sendToClient("<err/>\n");
 	}
 	
 	private void sendToClient(String message) {
@@ -175,7 +175,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
 	protected enum State {
-		INITIAL, EXPECT_PASS, LOGGED_IN;
+		INITIAL, READ_USER, READ_PASS, EXPECT_PASS, LOGGED_IN;
 	}
 
 }
