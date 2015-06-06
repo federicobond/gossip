@@ -1,5 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
+import static ar.edu.itba.it.gossip.util.XMPPUtils.*;
+import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
@@ -28,6 +30,8 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
+    private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+
     private final XMPPConversation conversation;
     private final OutputStream toOrigin;
     private final OutputStream toClient;
@@ -35,13 +39,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private State state = INITIAL;
     private boolean clientNotifiedOfMute;
     private boolean clientCauseOfMute;
-
-    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
-
-    // Maybe this fits better in another class.
-    // Somewhere we need to store the origin we are talking to, to be able to
-    // restart the communication
-    private String originName;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
             final OutputStream toOrigin, final OutputStream toClient)
@@ -56,9 +53,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         switch (state) {
         case INITIAL:
             assumeType(element, STREAM_START);
-            originName = proxyConfig.getOriginName();
-            sendStreamOpenToClient(originName);
-            sendStreamFeaturesToClient();
+            sendStreamOpenToClient();
+            sendToClient(streamFeatures("PLAIN"));
             state = EXPECT_CREDENTIALS;
             break;
         case VALIDATING_CREDENTIALS:
@@ -67,10 +63,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
             // auth <success>).
             assumeType(element, STREAM_START);
             state = LINKED;
-            System.out.println("Client is linked to origin,"
-                    + " now messages may pass freely");
 
-            sendDocumentStartToOrigin();
+            sendToOrigin(DOCUMENT_START);
             // fall through
         case LINKED:
             if (element.getType() == MESSAGE) {
@@ -164,10 +158,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                     + credentials.getPassword());
             connectToOrigin();
 
-            // Update the origin name because might be changed by
-            // multiplexation.
-            originName = proxyConfig.getOriginName(credentials.getUsername());
-            sendStreamOpenToOrigin(originName);
+            sendStreamOpenToOrigin();
 
             resetStream();
 
@@ -209,39 +200,21 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected void connectToOrigin() {
-        Credentials credentials = conversation.getCredentials();
-        InetSocketAddress address = proxyConfig.getOriginAddress(credentials
-                .getUsername());
+        InetSocketAddress address = proxyConfig
+                .getOriginAddress(getCurrentUser());
         getConnector().connectToOrigin(address);
     }
 
-    private void sendStreamOpenToOrigin(String originName) {
-        // TODO: check "to" attribute. It fails if it does not match upstream
-        // host
+    private void sendStreamOpenToClient() {
+        writeTo(toClient, DOCUMENT_START + streamOpen());
+    }
+
+    private void sendStreamOpenToOrigin() {
+        String currentUser = getCurrentUser();
         writeTo(toOrigin,
-                "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" xmlns=\"jabber:client\" to=\""
-                        + originName
-                        + "\" xml:lang=\"en\" xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">");
-
-    }
-
-    private void sendStreamOpenToClient(String originName) {
-        writeTo(toClient,
-                "<?xml version=\"1.0\"?><stream:stream xmlns:stream=\"http://etherx.jabber.org/streams\" version=\"1.0\" from=\""
-                        + originName
-                        + "\" id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\" xml:lang=\"en\" xmlns=\"jabber:toClient\">");
-    }
-
-    private void sendDocumentStartToOrigin() {
-        sendToOrigin("<?xml version=\"1.0\"?>");
-    }
-
-    private void sendStreamFeaturesToClient() {
-        sendToClient("<stream:features>\n"
-                + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
-                + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
-                + "<mechanism>PLAIN</mechanism>\n" + "</mechanisms>\n"
-                + "</stream:features>");
+                DOCUMENT_START
+                        + streamOpen(currentUser, ProxyConfig.getInstance()
+                                .getOriginName(currentUser)));
     }
 
     private void sendToClient(String message) {
@@ -249,15 +222,15 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected void sendToOrigin(PartialXMPPElement element) {
-        System.out.println("\n<C2O sending to origin>");
+//        System.out.println("\n<C2O sending to origin>");
         String currentContent = element.serializeCurrentContent();
-        System.out.println("Message:\n'"
-                + StringEscapeUtils.escapeJava(currentContent) + "' (string) "
-                + ArrayUtils.toString(currentContent.getBytes()));
+//        System.out.println("Message:\n'"
+//                + StringEscapeUtils.escapeJava(currentContent) + "' (string) "
+//                + ArrayUtils.toString(currentContent.getBytes()));
         sendToOrigin(currentContent);
-        System.out.println("\nOutgoing buffer afterwards:");
-        ((ByteBufferOutputStream) toOrigin).printBuffer(false, true, true);
-        System.out.println("</C2O sending to origin>\n");
+//        System.out.println("\nOutgoing buffer afterwards:");
+//        ((ByteBufferOutputStream) toOrigin).printBuffer(false, true, true);
+//        System.out.println("</C2O sending to origin>\n");
     }
 
     protected void sendToOrigin(String message) {
@@ -294,10 +267,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                 "You are free to talk again");
     }
 
-    private void sendNotificationToClient(String from, String text) {
-        sendToClient("<message type=\"chat\" from=\"" + from + "\" to=\""
-                + getCurrentUser() + "\">" + "<body>" + text + "</body>"
-                + "</message>");
+    private void sendNotificationToClient(String receiver, String text) {
+        sendToClient(message(receiver, getCurrentUser(), text));
     }
 
     protected enum State {
