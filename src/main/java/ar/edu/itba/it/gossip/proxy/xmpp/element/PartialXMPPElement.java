@@ -24,6 +24,9 @@ public class PartialXMPPElement extends PartialXMLElement implements
             return new Auth(reader);
         case MESSAGE:
             return new Message(reader);
+        case SUBJECT:
+        case BODY:
+            return new TextfulMessageElement(reader);
         case COMPOSING:
         case PAUSED:
             return new MutableChatState(reader);

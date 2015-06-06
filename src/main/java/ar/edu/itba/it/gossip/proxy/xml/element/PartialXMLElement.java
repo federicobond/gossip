@@ -1,7 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.last;
-import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.require;
 import static java.util.stream.Collectors.joining;
@@ -11,7 +10,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import ar.edu.itba.it.gossip.util.PartiallySerializable;
@@ -21,7 +19,6 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public class PartialXMLElement implements PartiallySerializable {
     private Optional<PartialXMLElement> parent;
     private final List<Part> parts;
-    private Function<String, String> bodyTransformation;
 
     private boolean startTagEnded = false;
     private boolean ended = false;
@@ -66,11 +63,7 @@ public class PartialXMLElement implements PartiallySerializable {
         require(!this.isParentOf(child), "%s is already parent of %s!", this,
                 child);
 
-        ChildPart childPart = new ChildPart(child);
-        if (bodyTransformation != null) {
-            childPart.setBodyTransformation(bodyTransformation);
-        }
-        parts.add(childPart);
+        parts.add(new ChildPart(child));
         child.parent = Optional.of(this);
         return this;
     }
@@ -82,17 +75,6 @@ public class PartialXMLElement implements PartiallySerializable {
         parts.add(new EndPart(from));
         ended = true;
         return this;
-    }
-
-    public void setBodyTransformation(
-            final Function<String, String> bodyTransformation) {
-        require(bodyTransformation != null);
-        assumeNotSet(this.bodyTransformation,
-                "Body transformation is already set: %s", bodyTransformation);
-
-        this.bodyTransformation = bodyTransformation;
-        getChildren().forEach(
-                childP -> childP.setBodyTransformation(bodyTransformation));
     }
 
     @Override
@@ -114,10 +96,7 @@ public class PartialXMLElement implements PartiallySerializable {
         return serialization;
     }
 
-    protected String serialize(Part part) {
-        if (part instanceof BodyPart && bodyTransformation != null) {
-            return bodyTransformation.apply(part.serialize());
-        }
+    protected String serialize(Part part) { // to be overriden by subclasses
         return part.serialize();
     }
 
@@ -157,19 +136,16 @@ public class PartialXMLElement implements PartiallySerializable {
     }
 
     protected void modifyName(String newName) {
+        assumeState(startTagEnded, "Element's name is not set %s", this);
         Optional<NamePart> namePartOpt = getNamePart();
-        assumeState(namePartOpt.isPresent(), "Element's name is not set %s",
-                this);
-        namePartOpt.get().setName(newName);
+        if (namePartOpt.isPresent()) {
+            namePartOpt.get().setName(newName);
+        }
         if (ended) {
             Optional<EndPart> endPartOpt = getEndPart();
             endPartOpt.get().setName(newName);
         }
         // NOTE: it is ok not to fail, 'this' may have an end (yet)!
-    }
-
-    protected boolean isBodyBeingTransformed() {
-        return bodyTransformation != null;
     }
 
     protected boolean isCurrentContentFullySerialized() {
@@ -236,9 +212,6 @@ public class PartialXMLElement implements PartiallySerializable {
 
     private String getSerialization(Part part) { // TODO: test method! remove
                                                  // this later
-        if (part instanceof BodyPart && bodyTransformation != null) {
-            return bodyTransformation.apply(part.getSerialization());
-        }
         return part.getSerialization();
     }
 }

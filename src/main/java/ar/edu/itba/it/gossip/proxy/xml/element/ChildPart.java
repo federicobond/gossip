@@ -1,7 +1,5 @@
 package ar.edu.itba.it.gossip.proxy.xml.element;
 
-import java.util.function.Function;
-
 public class ChildPart extends Part {
     private final PartialXMLElement child;
 
@@ -21,9 +19,5 @@ public class ChildPart extends Part {
     @Override
     boolean isSerialized() {
         return child.isCurrentContentFullySerialized();
-    }
-
-    void setBodyTransformation(Function<String, String> transformation) {
-        this.child.setBodyTransformation(transformation);
     }
 }
