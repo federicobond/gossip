@@ -21,7 +21,8 @@ public class ProxiedTCPConversation implements TCPConversation {
         this.originToClient = new TCPStream(null, clientChannel);
     }
 
-    public void updateSubscription(Selector selector) throws ClosedChannelException {
+    public void updateSubscription(Selector selector)
+            throws ClosedChannelException {
         int clientFlags = clientToOrigin.getFromSubscriptionFlags()
                 | originToClient.getToSubscriptionFlags();
         getClientChannel().register(selector, clientFlags, this);
@@ -78,7 +79,9 @@ public class ProxiedTCPConversation implements TCPConversation {
             try {
                 getClientChannel().close();
             } finally {
-                getOriginChannel().close();
+                if (getOriginChannel() != null) {
+                    getOriginChannel().close();
+                }
             }
         } catch (IOException ignore) {
         }

@@ -1,7 +1,7 @@
 package ar.edu.itba.it.gossip.util;
 
 import static ar.edu.itba.it.gossip.util.XMLUtils.attr;
-import static ar.edu.itba.it.gossip.util.XMLUtils.attributes;
+import static ar.edu.itba.it.gossip.util.XMLUtils.*;
 import static ar.edu.itba.it.gossip.util.XMLUtils.concatKeyValue;
 
 public abstract class XMPPUtils {
@@ -51,5 +51,19 @@ public abstract class XMPPUtils {
     public static String message(String from, String to, String bodyText) {
         return MESSAGE_PREFIX + attributes(attr("from", from), attr("to", to))
                 + ">" + "<body>" + bodyText + "</body>" + "</message>";
+    }
+
+    public static String streamError() {
+        return DOCUMENT_START
+                + "<stream:stream"
+                + attributes(
+                        attr("id", ""),
+                        attr("xmlns:stream", "http://etherx.jabber.org/streams"),
+                        attr("version", "1.0"), attr("xmlns", "jabber:client"))
+                + "<stream:error>"
+                + "<invalid-namespace"
+                + attributes(attr("xmlns",
+                        "urn:ietf:params:xml:ns:xmpp-streams")) + "/>"
+                + "</stream:error>" + "</stream:stream>";
     }
 }
