@@ -28,11 +28,10 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         AbstractXMPPStreamHandlerTest {
     private static final String DOCUMENT_START = "<?xml version=\"1.0\"?>";
     private static final String FAKE_STREAM_START_FOR_CLIENT = "<stream:stream "
-            + "xmlns:stream='http://etherx.jabber.org/streams'"
-            + " version='1.0' from='localhost'"
-            + " id='6e5bb830-1e2d-40c3-8ebf-eacec740d83b'"
-            + " xml:lang='en'"
-            + " xmlns='jabber:toClient'>";
+            + "xmlns:stream=\"http://etherx.jabber.org/streams\""
+            + " version=\"1.0\" from=\"localhost\""
+            + " id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\""
+            + " xml:lang=\"en\"" + " xmlns=\"jabber:toClient\">";
     private static final String FAKE_STREAM_AUTH_FEATURES = "<stream:features>\n"
             + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
             + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
