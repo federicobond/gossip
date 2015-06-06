@@ -20,6 +20,6 @@ public class AdminStreamHandler implements TCPStreamHandler {
 
     @Override
     public void handleRead(ByteBuffer buf, DeferredConnector connector) {
-        // TODO Auto-generated method stub
+        //Here parse the commands?
     }
 }

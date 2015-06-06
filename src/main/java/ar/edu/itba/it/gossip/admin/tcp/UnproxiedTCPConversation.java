@@ -1,10 +1,12 @@
 package ar.edu.itba.it.gossip.admin.tcp;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
@@ -33,5 +35,32 @@ public class UnproxiedTCPConversation implements TCPConversation {
 
     public TCPStream getStream() {
         return stream;
+    }
+    
+    public ByteBuffer getReadBuffer(){
+        return stream.getFromBuffer();
+    }
+    
+    public ByteBuffer getWriteBuffer(){
+        return stream.getToBuffer();
+    }
+    
+    public TCPStreamHandler getHandler(){
+        return stream.getHandler();
+    }
+    
+    // FIXME: just for debugging purposes
+    public String getBufferName(ByteBuffer buffer){
+        if(buffer == stream.getFromBuffer()){
+            return "from buffer";
+        }
+        if(buffer == stream.getToBuffer()){
+            return "to buffer";
+        }
+        throw new IllegalArgumentException("Unknown buffer");
+    }
+    
+    public SocketChannel getChannel(){
+        return stream.getFromChannel();
     }
 }
