@@ -7,10 +7,6 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 public class EndPart extends Part {
     private String name;
 
-    EndPart(final String name) {
-        this.name = name;
-    }
-
     public EndPart(AsyncXMLStreamReader<?> from) {
         this.name = serializeQName(from.getName());
     }

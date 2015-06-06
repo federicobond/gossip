@@ -1,4 +1,4 @@
-package ar.edu.itba.it.gossip.proxy.xml;
+package ar.edu.itba.it.gossip.proxy.xml.element;
 
 import static ar.edu.itba.it.gossip.util.CollectionUtils.asMap;
 import static ar.edu.itba.it.gossip.util.CollectionUtils.asPair;
@@ -32,8 +32,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
