@@ -1,7 +1,8 @@
 package ar.edu.itba.it.gossip.util;
 
+import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.attr;
-import static ar.edu.itba.it.gossip.util.XMLUtils.*;
+import static ar.edu.itba.it.gossip.util.XMLUtils.attributes;
 import static ar.edu.itba.it.gossip.util.XMLUtils.concatKeyValue;
 
 public abstract class XMPPUtils {
@@ -23,6 +24,9 @@ public abstract class XMPPUtils {
 
     private static String MESSAGE_PREFIX = "<message"
             + attributes(attr("type", "chat"));
+
+    private static String AUTH_PREFIX = "<auth"
+            + attributes(attr("xmlns", "urn:ietf:params:xml:ns:xmpp-sasl"));
 
     public static String streamOpen() {
         return STREAM_OPEN_TAG_MANDATORY_PREFIX + ">";
@@ -65,5 +69,10 @@ public abstract class XMPPUtils {
                 + attributes(attr("xmlns",
                         "urn:ietf:params:xml:ns:xmpp-streams")) + "/>"
                 + "</stream:error>" + "</stream:stream>";
+    }
+
+    public static String auth(String mechanism, String encodedCredentials) {
+        return AUTH_PREFIX + attributes(attr("mechanism", mechanism)) + ">"
+                + encodedCredentials + "</auth>";
     }
 }
