@@ -2,6 +2,9 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.OTHER;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
+import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
+import static ar.edu.itba.it.gossip.util.XMLUtils.attr;
+import static ar.edu.itba.it.gossip.util.XMLUtils.attributes;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
@@ -27,26 +31,29 @@ import ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o.ClientToOriginXMPPStreamHand
 @RunWith(MockitoJUnitRunner.class)
 public class ClientToOriginXMPPStreamHandlerTest extends
         AbstractXMPPStreamHandlerTest {
-    private static final String DOCUMENT_START = "<?xml version=\"1.0\"?>";
-    private static final String FAKE_STREAM_START_FOR_CLIENT = "<stream:stream "
-            + "xmlns:stream=\"http://etherx.jabber.org/streams\""
-            + " version=\"1.0\" from=\"localhost\""
-            + " id=\"6e5bb830-1e2d-40c3-8ebf-eacec740d83b\""
-            + " xml:lang=\"en\"" + " xmlns=\"jabber:toClient\">";
-    private static final String FAKE_STREAM_AUTH_FEATURES = "<stream:features>\n"
-            + "<register xmlns=\"http://jabber.org/features/iq-register\"/>\n"
-            + "<mechanisms xmlns=\"urn:ietf:params:xml:ns:xmpp-sasl\">\n"
-            + "<mechanism>PLAIN</mechanism>\n"
-            + "</mechanisms>\n"
+    private static final String FAKE_STREAM_START_FOR_CLIENT = "<stream:stream"
+            + attributes(
+                    attr("xmlns:stream", "http://etherx.jabber.org/streams"),
+                    attr("version", "1.0"), attr("xmlns", "jabber:client"),
+                    attr("xml:lang", "en"),
+                    attr("xmlns:xml", "http://www.w3.org/XML/1998/namespace"))
+            + ">";
+    private static final String FAKE_STREAM_AUTH_FEATURES = "<stream:features>"
+            + "<register"
+            + attributes(attr("xmlns", "http://jabber.org/features/iq-register"))
+            + "/>" + "<mechanisms"
+            + attributes(attr("xmlns", "urn:ietf:params:xml:ns:xmpp-sasl"))
+            + ">" + "<mechanism>PLAIN</mechanism>" + "</mechanisms>"
             + "</stream:features>";
 
-    private static final String FAKE_STREAM_START_FOR_ORIGIN = "<stream:stream "
-            + "xmlns:stream=\"http://etherx.jabber.org/streams\""
-            + " version=\"1.0\""
-            + " xmlns=\"jabber:client\""
-            + " to=\"localhost\""
-            + " xml:lang=\"en\""
-            + " xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">";
+    private static final String FAKE_STREAM_START_FOR_ORIGIN = "<stream:stream"
+            + attributes(
+                    attr("xmlns:stream", "http://etherx.jabber.org/streams"),
+                    attr("version", "1.0"), attr("xmlns", "jabber:client"),
+                    attr("xml:lang", "en"),
+                    attr("xmlns:xml", "http://www.w3.org/XML/1998/namespace"),
+                    attr("from", "testUsername"), attr("to", "localhost"))
+            + ">";
 
     private static final String CURRENT_USER = "testUsername";
 
@@ -144,9 +151,8 @@ public class ClientToOriginXMPPStreamHandlerTest extends
     // class needed for method overrides
     private static class TestClientToOriginXMPPStreamHandler extends
             ClientToOriginXMPPStreamHandler {
-        int connectionAttempts = 0;
         int streamResets = 0;
-        boolean mutingUser = false;
+        int connectionAttempts = 0;
 
         TestClientToOriginXMPPStreamHandler(XMPPConversation conversation,
                 OutputStream toOrigin, OutputStream toClient)
@@ -155,18 +161,13 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         }
 
         @Override
-        protected void connectToOrigin() { // stub
-            connectionAttempts++;
-        }
-
-        @Override
         protected void resetStream() { // stub
             streamResets++;
         }
 
         @Override
-        protected boolean isCurrentUserMuted() {
-            return mutingUser;
+        protected DeferredConnector getConnector() {
+            return address -> connectionAttempts++;
         }
 
         @Override
