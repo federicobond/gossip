@@ -22,6 +22,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o.ClientToOriginXMPPStreamHandler;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClientToOriginXMPPStreamHandlerTest extends

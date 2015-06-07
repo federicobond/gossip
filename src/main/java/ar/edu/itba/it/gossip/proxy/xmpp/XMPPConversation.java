@@ -10,8 +10,8 @@ import javax.xml.stream.XMLStreamException;
 import ar.edu.itba.it.gossip.proxy.tcp.ProxiedTCPConversation;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.ClientToOriginXMPPStreamHandler;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.OriginToClientXMPPStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o.ClientToOriginXMPPStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c.OriginToClientXMPPStreamHandler;
 
 public class XMPPConversation extends ProxiedTCPConversation {
     private Credentials credentials;
