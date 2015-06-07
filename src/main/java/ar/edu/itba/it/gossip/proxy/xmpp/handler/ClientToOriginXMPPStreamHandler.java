@@ -79,9 +79,9 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
                     clientNotifiedOfMute = false;
                     state = MUTED_IN_MESSAGE;
                 } else {
-                    // TODO: check config to see if leet conversion should be
-                    // enabled
-                    ((Message) element).enableLeetConversion();
+                    if(proxyConfig.convertLeet()){
+                        ((Message) element).enableLeetConversion();
+                    }
                 }
                 // fall through
             }
@@ -125,7 +125,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         case LINKED:
             // this is here just in case leet conversion was enabled by the
             // admin after the message's start tag
-            if (element.getType() == MESSAGE) {
+            if (element.getType() == MESSAGE && proxyConfig.convertLeet()) {
                 ((Message) element).enableLeetConversion();
             }
             sendToOrigin(element);

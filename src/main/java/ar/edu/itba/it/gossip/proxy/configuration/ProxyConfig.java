@@ -12,6 +12,7 @@ public class ProxyConfig {
 	private final int DEFAULT_ORIGIN_PORT = 5222;
 	
 	private Map<String,String> userToOrigin = new HashMap<String,String>();
+	private boolean convertLeet = false;
 	
  	private ProxyConfig() {}
 	
@@ -38,4 +39,12 @@ public class ProxyConfig {
 		return DEFAULT_ORIGIN_ADDRESS;
 	}
 	
+	public boolean convertLeet(){
+	    return this.convertLeet;
+	}
+	
+	public void setLeet(boolean convertLeet){
+	    this.convertLeet = convertLeet;
+	    return;
+	}
 }
