@@ -1,13 +1,15 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
+import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 
 class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     private static final LinkedState INSTANCE = new LinkedState();
-
+    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+    
     protected static LinkedState getInstance() {
         return INSTANCE;
     }
@@ -25,9 +27,9 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
                 handler.setClientCauseOfMute(handler.isCurrentUserMuted());
                 handler.setState(MutedInMessageState.getInstance());
             } else {
-                // TODO: check config to see if leet conversion should be
-                // enabled
-                message.enableLeetConversion();
+                if(proxyConfig.convertLeet()){
+                    message.enableLeetConversion();
+                }
             }
         }
         handler.sendToOrigin(element);
@@ -39,7 +41,9 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
         // this is here just in case leet conversion was enabled by the
         // admin after the message's start tag
         if (element.getType() == MESSAGE) {
-            ((Message) element).enableLeetConversion();
+            if(proxyConfig.convertLeet()){
+                ((Message) element).enableLeetConversion();
+            }
         }
         handler.sendToOrigin(element);
     }
