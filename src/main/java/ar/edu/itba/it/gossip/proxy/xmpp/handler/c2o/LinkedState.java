@@ -3,8 +3,9 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 
-class LinkedState extends HandlerState {
+class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     private static final LinkedState INSTANCE = new LinkedState();
 
     protected static LinkedState getInstance() {
@@ -15,7 +16,7 @@ class LinkedState extends HandlerState {
     }
 
     @Override
-    protected void handleStart(ClientToOriginXMPPStreamHandler handler,
+    public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         if (element.getType() == MESSAGE) {
             Message message = (Message) element;
@@ -29,23 +30,23 @@ class LinkedState extends HandlerState {
                 message.enableLeetConversion();
             }
         }
-        sendToOrigin(handler, element);
+        handler.sendToOrigin(element);
     }
 
     @Override
-    protected void handleBody(ClientToOriginXMPPStreamHandler handler,
+    public void handleBody(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         // this is here just in case leet conversion was enabled by the
         // admin after the message's start tag
         if (element.getType() == MESSAGE) {
             ((Message) element).enableLeetConversion();
         }
-        sendToOrigin(handler, element);
+        handler.sendToOrigin(element);
     }
 
     @Override
-    protected void handleEnd(ClientToOriginXMPPStreamHandler handler,
+    public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        sendToOrigin(handler, element);
+        handler.sendToOrigin(element);
     }
 }

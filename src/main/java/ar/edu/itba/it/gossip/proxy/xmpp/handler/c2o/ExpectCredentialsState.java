@@ -9,8 +9,10 @@ import java.net.InetSocketAddress;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 
-class ExpectCredentialsState extends HandlerState {
+class ExpectCredentialsState extends
+        HandlerState<ClientToOriginXMPPStreamHandler> {
     private static final ExpectCredentialsState INSTANCE = new ExpectCredentialsState();
 
     protected static ExpectCredentialsState getInstance() {
@@ -21,20 +23,20 @@ class ExpectCredentialsState extends HandlerState {
     }
 
     @Override
-    protected void handleStart(ClientToOriginXMPPStreamHandler handler,
+    public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         // TODO: check! should NEVER happen!
     }
 
     @Override
-    protected void handleBody(ClientToOriginXMPPStreamHandler handler,
+    public void handleBody(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         // do nothing, just buffer element's contents
         // TODO: check for potential floods!
     }
 
     @Override
-    protected void handleEnd(ClientToOriginXMPPStreamHandler handler,
+    public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         assumeType(element, AUTH_CHOICE);
         Credentials credentials = ((Auth) element).getCredentials();
@@ -63,7 +65,7 @@ class ExpectCredentialsState extends HandlerState {
         String currentUser = handler.getCurrentUser();
         String originName = getProxyConfig().getOriginName(currentUser);
 
-        sendToOrigin(handler,
-                DOCUMENT_START + streamOpen(currentUser, originName));
+        handler.sendToOrigin(DOCUMENT_START
+                + streamOpen(currentUser, originName));
     }
 }

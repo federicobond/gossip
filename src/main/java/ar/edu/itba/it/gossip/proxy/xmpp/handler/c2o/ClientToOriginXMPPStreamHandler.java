@@ -9,6 +9,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
@@ -16,7 +17,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final OutputStream toOrigin;
     private final OutputStream toClient;
 
-    private HandlerState state = InitialState.getInstance();
+    private HandlerState<ClientToOriginXMPPStreamHandler> state = InitialState
+            .getInstance();
     private boolean clientNotifiedOfMute;
     private boolean clientCauseOfMute;
 
@@ -47,12 +49,24 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         writeTo(toOrigin, message);
     }
 
-    String getCurrentUser() {
-        return conversation.getCredentials().getUsername();
+    protected void sendToClient(String message) {
+        writeTo(toClient, message);
     }
 
-    void sendToClient(String message) {
-        writeTo(toClient, message);
+    protected void sendToOrigin(PartialXMPPElement element) {
+        // System.out.println("\n<C2O sending to origin>");
+        String currentContent = element.serializeCurrentContent();
+        // System.out.println("Message:\n'"
+        // + StringEscapeUtils.escapeJava(currentContent) + "' (string) "
+        // + ArrayUtils.toString(currentContent.getBytes()));
+        sendToOrigin(currentContent);
+        // System.out.println("\nOutgoing buffer afterwards:");
+        // ((ByteBufferOutputStream) toOrigin).printBuffer(false, true, true);
+        // System.out.println("</C2O sending to origin>\n");
+    }
+
+    String getCurrentUser() {
+        return conversation.getCredentials().getUsername();
     }
 
     boolean isMuted(Message message) {
@@ -65,7 +79,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         return getCurrentUser().contains("mute");
     }
 
-    void setState(final HandlerState state) {
+    void setState(final HandlerState<ClientToOriginXMPPStreamHandler> state) {
         this.state = state;
     }
 

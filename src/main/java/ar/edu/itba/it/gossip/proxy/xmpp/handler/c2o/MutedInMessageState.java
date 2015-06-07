@@ -4,8 +4,9 @@ import static ar.edu.itba.it.gossip.util.XMPPUtils.message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.MutableChatState;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 
-class MutedInMessageState extends HandlerState {
+class MutedInMessageState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     private static final MutedInMessageState INSTANCE = new MutedInMessageState();
 
     protected static MutedInMessageState getInstance() {
@@ -16,7 +17,7 @@ class MutedInMessageState extends HandlerState {
     }
 
     @Override
-    protected void handleStart(ClientToOriginXMPPStreamHandler handler,
+    public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         switch (element.getType()) {
         case BODY:
@@ -33,13 +34,13 @@ class MutedInMessageState extends HandlerState {
             ((MutableChatState) element).mute();
             // fall through
         default:
-            sendToOrigin(handler, element);
+            handler.sendToOrigin(element);
             break;
         }
     }
 
     @Override
-    protected void handleBody(ClientToOriginXMPPStreamHandler handler,
+    public void handleBody(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         switch (element.getType()) {
         case SUBJECT:
@@ -49,12 +50,12 @@ class MutedInMessageState extends HandlerState {
             element.consumeCurrentContent();
             break;
         default:
-            sendToOrigin(handler, element);
+            handler.sendToOrigin(element);
         }
     }
 
     @Override
-    protected void handleEnd(ClientToOriginXMPPStreamHandler handler,
+    public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         switch (element.getType()) {
         case SUBJECT:
@@ -76,7 +77,7 @@ class MutedInMessageState extends HandlerState {
             }
             // fall through
         default:
-            sendToOrigin(handler, element);
+            handler.sendToOrigin(element);
         }
     }
 
@@ -101,6 +102,6 @@ class MutedInMessageState extends HandlerState {
     private void sendNotificationToClient(
             ClientToOriginXMPPStreamHandler handler, String receiver,
             String text) {
-        sendToClient(handler, message(receiver, handler.getCurrentUser(), text));
+        handler.sendToClient(message(receiver, handler.getCurrentUser(), text));
     }
 }
