@@ -11,9 +11,11 @@ import java.io.OutputStream;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.admin.PartialAdminElement.Type;
+import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.*;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
@@ -25,7 +27,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	private State state = State.INITIAL;
 	private final InputStream fromClient; // Maybe it's a ByteStream
 	private final OutputStream toClient;
-
+	private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+	
 	private String user;
 	private String pass;
 
@@ -71,16 +74,41 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	public void handleStart(PartialAdminElement element) {
 		switch (state) {
 		case INITIAL:
-			assumeType(element, START_ADMIN);
-			state = State.EXPECT_USER;
+		    assumeType(element, START_ADMIN);
+            state = State.EXPECT_USER;
 			break;
 		case EXPECT_USER:
-		    assumeType(element, USER);
-			state = State.READ_USER;
+		    switch (element.getType()){
+            case USER:
+                //Looks unnecessary now
+                //assumeType(element, USER);
+                state = State.READ_USER;
+                break ;
+            case QUIT:
+                // TODO: quit gracefully
+                System.out.println("Admin wants to leave...");
+                break;
+            default:
+                // TODO: handle unexpected tag (error message)   
+                break;
+            }
             break;
 		case EXPECT_PASS:
 		    assumeType(element, PASS);
 		    state = State.READ_PASS;
+		    break;
+		case LOGGED_IN:
+		    switch (element.getType()){
+		    case LEET:
+		        state = State.READ_LEET;
+		        break;
+		    case SILENCE:
+		        break;
+		    case ORIGIN:
+		        break;
+		    case STATS:
+		        break;
+		    }
 		    break;
 		default:
 			sendFail();
@@ -88,31 +116,45 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 			break;
 		}
 	}
-	
-	@Override
+
+    @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
-	    xmlElement.appendToBody(reader);
+        xmlElement.appendToBody(reader);
     }
 
-	public void handleEnd(PartialAdminElement element) {
+    public void handleEnd(PartialAdminElement element) {
         switch (state) {
         case READ_USER:
             user = xmlElement.getBody();
-            assumeType(element, USER); // Check if this works
+            assumeType(element, USER);
             state = State.EXPECT_PASS;
             sendSuccess();
             break;
         case READ_PASS:
-            assumeType(element, PASS); // Check if this works
+            assumeType(element, PASS);
             pass = xmlElement.getBody();
             // Validate user and pass and change state depending on success
-            if(user.equals("admin") && pass.equals("1234")){
+            if (user.equals("admin") && pass.equals("1234")) {
                 state = State.LOGGED_IN;
                 sendSuccess();
-            }else{
+            } else {
                 state = State.EXPECT_USER;
                 sendFail();
             }
+            break;
+        case READ_LEET:
+            assumeType(element,LEET);
+            String value = xmlElement.getBody();
+            if (value.toLowerCase().equals("on")) {
+                proxyConfig.setLeet(true);
+                sendSuccess();
+            } else if (value.toLowerCase().equals("off")) {
+                proxyConfig.setLeet(false);
+                sendSuccess();
+            } else {
+                sendFail("Wrong value");
+            }
+            state = State.LOGGED_IN;
             break;
         default:
             sendFail();
@@ -120,31 +162,35 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             break;
         }        
     }
-	
-	protected void assumeType(PartialAdminElement element, Type type) {
+
+    protected void assumeType(PartialAdminElement element, Type type) {
         assumeState(element.getType() == type,
                 "Event type mismatch, got: %s when %s was expected", element,
                 type);
     }
-	
-	protected void sendToOrigin(String message) {
+
+    protected void sendToOrigin(String message) {
     //    writeTo(clientToOrigin, message);
     }
-	
-	private void sendSuccess() {
-		sendToClient("<ok/>\n");
-	}
-	
-	private void sendFail() {
-		sendToClient("<err/>\n");
-	}
-	
-	private void sendToClient(String message) {
+
+    private void sendSuccess() {
+        sendToClient("<ok/>\n");
+    }
+
+    private void sendFail() {
+        sendToClient("<err/>\n");
+    }
+    
+    private void sendFail(String message) {
+        sendToClient("<err>" + message + "</err>\n");
+    }
+
+    private void sendToClient(String message) {
         writeTo(toClient, message);
     }
 
-	protected enum State {
-		INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, LOGGED_IN;
-	}
+    protected enum State {
+        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_LEET, LOGGED_IN;
+    }
 
 }
