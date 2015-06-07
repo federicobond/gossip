@@ -102,6 +102,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		    case SILENCE:
 		        break;
 		    case ORIGIN:
+		        state = State.READ_ORIGIN;
 		        break;
 		    case STATS:
 		        break;
@@ -153,6 +154,11 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             }
             state = State.LOGGED_IN;
             break;
+        case READ_ORIGIN:
+            assumeType(element,ORIGIN);
+            proxyConfig.addOrigin(xmlElement.getAttributes().get("usr"), xmlElement.getBody());
+            sendSuccess();
+            break;
         default:
             sendFail();
             resetStream();
@@ -187,7 +193,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
     protected enum State {
-        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_LEET, LOGGED_IN;
+        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_ORIGIN, READ_LEET, LOGGED_IN;
     }
 
 }
