@@ -20,6 +20,7 @@ public class ProxyConfig {
 		return INSTANCE;
 	}
 	
+	//Assumes all servers have the same name as address
 	public InetSocketAddress getOriginAddress(String username){
 		// Assumes that all origin servers listen in port 5222 (XMPP port)
 		if(userToOrigin.containsKey(username)){
@@ -35,6 +36,9 @@ public class ProxyConfig {
 		return DEFAULT_ORIGIN_ADDRESS;
 	}
 	
+	public void addOrigin(String username, String origin){
+	    userToOrigin.put(username, origin);
+	}
 	public String getOriginName(){
 		return DEFAULT_ORIGIN_ADDRESS;
 	}
