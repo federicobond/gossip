@@ -31,13 +31,14 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     private XMLEventHandler xmlHandler;
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
     private DeferredConnector connector;
+    private int gtsRead = 0;
 
     protected XMLStreamHandler() throws XMLStreamException {
         this.reader = newReader();
     }
 
     @Override
-    public int handleRead(ByteBuffer buf, final DeferredConnector connector) {
+    public void handleRead(ByteBuffer buf, final DeferredConnector connector) {
         this.connector = connector;
         try {
             reader.getInputFeeder().feedInput(buf);
@@ -46,18 +47,21 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
                 int type = reader.next();
                 switch (type) {
                 case START_DOCUMENT:
+                    gtsRead++;
                     xmlHandler.handleStartDocument(reader);
                     break;
                 case END_DOCUMENT:
                     xmlHandler.handleEndDocument(reader);
                     break;
                 case START_ELEMENT:
+                    gtsRead++;
                     xmlHandler.handleStartElement(reader);
                     break;
                 case CHARACTERS:
                     xmlHandler.handleCharacters(reader);
                     break;
                 case END_ELEMENT:
+                    gtsRead++;
                     xmlHandler.handleEndElement(reader);
                     break;
                 }
@@ -68,22 +72,35 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
         }
-        return getNewPosition(buf);
+        this.connector = null;
+
+        buf.position(getNewPosition(buf));
+        buf.compact();
     }
 
-    private int getNewPosition(ByteBuffer buffer) { // because thank you aalto
-                                                    // for not showing offsets
+    protected int getNewPosition(ByteBuffer buffer) { // because thank you aalto
+                                                      // for not showing offsets
+        // IMPORTANT: this will NOT work with CDATAs NOR COMMENTS!
         byte[] bytes = buffer.array();
-        for (int i = buffer.limit() - 1; i > buffer.position(); i--) {
-            if (bytes[i] == GT) { // "...>X" -> X's position
-                return buffer.limit();
-            }
-            if (bytes[i] == LT) { // "...<" -> <'s position
-                return i;
+        for (int i = buffer.position(); i < buffer.limit(); i++) {
+            switch (bytes[i]) {
+            case LT:
+                if (gtsRead == 0) { // "(...<...>)*<..." case
+                    return i; // return last <'s position
+                }
+                break;
+            case GT:
+                if (gtsRead > 0) { // "...>X" -> X's position
+                    gtsRead--;
+                }
+                break;
+            default:
+                // do nothing
             }
         }
-        return buffer.limit(); // "..."X -> X's position (X hasn't been read
-                               // yet)
+
+        // "(...<...>)*..." case
+        return buffer.limit();
     }
 
     protected void resetStream() {

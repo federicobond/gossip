@@ -7,5 +7,5 @@ import java.nio.ByteBuffer;
 public interface TCPStreamHandler {
     void handleEndOfInput();
 
-    int handleRead(ByteBuffer buf, DeferredConnector connector);
+    void handleRead(ByteBuffer buf, DeferredConnector connector);
 }

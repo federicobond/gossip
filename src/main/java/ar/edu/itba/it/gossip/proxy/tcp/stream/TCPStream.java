@@ -92,10 +92,6 @@ public class TCPStream extends ByteStream {
         BufferUtils.transfer(getFromBuffer(), getToBuffer());
     }
 
-    public ByteStream getView() {
-        return new ByteStreamHandle(this);
-    }
-
     private static class Endpoint {
         SocketChannel channel;
         final ByteBuffer buffer = ByteBuffer.allocate(BUF_SIZE);

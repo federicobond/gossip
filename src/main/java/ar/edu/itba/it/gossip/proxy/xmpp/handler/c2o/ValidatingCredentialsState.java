@@ -24,10 +24,10 @@ class ValidatingCredentialsState extends
         // auth <success>).
         assumeType(element, STREAM_START);
 
-        handler.setState(LinkedState.getInstance());
-
         handler.sendToOrigin(DOCUMENT_START);
         handler.sendToOrigin(element); // send client's stream start to origin
+
+        handler.setState(LinkedState.getInstance());
     }
 
     @Override

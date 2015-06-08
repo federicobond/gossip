@@ -62,23 +62,14 @@ public abstract class TCPProxy implements TCPEventHandler {
                     + "\n===================\n");
             // FIXME: just for debugging purposes
 
-            int newPosition = handler.handleRead(buffer,
+            handler.handleRead(buffer,
                     address -> connectToOrigin(key, conversation, address));
 
-            buffer.position(newPosition);
-            buffer.compact();
             // FIXME: just for debugging purposes
             System.out
                     .println(bufferName
                             + "'s content (AFTER READ):"
                             + buffer
-                            + " ("
-                            + newPosition
-                            + "/"
-                            + buffer.capacity()
-                            + "="
-                            + ((double) newPosition)
-                            / buffer.capacity()
                             + ")\n===================\n"
                             + BufferUtils.peek((ByteBuffer) (buffer.duplicate()
                                     .flip())) + "\n===================\n");
