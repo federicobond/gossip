@@ -66,4 +66,9 @@ public class ProxyConfig {
 	public boolean isSilenced(String user){
 	    return silencedUsers.contains(user.trim().toLowerCase());
 	}
+	
+	public String getStats(int type){
+	    //TODO: save stats and return it here.
+	    return "0";
+	}
 }
