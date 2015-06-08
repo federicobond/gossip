@@ -1,6 +1,7 @@
 package ar.edu.itba.it.gossip.util;
 
-import static ar.edu.itba.it.gossip.util.CollectionUtils.*;
+import static ar.edu.itba.it.gossip.util.CollectionUtils.asPair;
+
 import java.util.Map;
 import java.util.Map.Entry;
 

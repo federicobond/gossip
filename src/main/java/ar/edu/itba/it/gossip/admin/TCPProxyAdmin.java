@@ -10,9 +10,7 @@ import java.nio.channels.SocketChannel;
 import ar.edu.itba.it.gossip.admin.tcp.UnproxiedTCPConversation;
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
-import ar.edu.itba.it.gossip.proxy.tcp.ProxiedTCPConversation;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
-import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxyAdmin implements TCPEventHandler {

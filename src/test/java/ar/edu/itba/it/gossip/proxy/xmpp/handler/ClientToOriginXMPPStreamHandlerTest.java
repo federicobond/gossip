@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
+import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
@@ -63,6 +64,8 @@ public class ClientToOriginXMPPStreamHandlerTest extends
     @Mock
     private XMPPConversation conversation;
 
+    @Mock
+    private TCPStream clientToOrigin;
     private ByteArrayOutputStream toOrigin;
     private ByteArrayOutputStream toClient;
 
@@ -74,9 +77,10 @@ public class ClientToOriginXMPPStreamHandlerTest extends
 
         toOrigin = new ByteArrayOutputStream();
         toClient = new ByteArrayOutputStream();
+        when(clientToOrigin.getOutputStream()).thenReturn(toOrigin);
 
-        sut = new TestClientToOriginXMPPStreamHandler(conversation, toOrigin,
-                toClient);
+        sut = new TestClientToOriginXMPPStreamHandler(conversation,
+                clientToOrigin, toClient);
     }
 
     @Test
@@ -155,9 +159,9 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         int connectionAttempts = 0;
 
         TestClientToOriginXMPPStreamHandler(XMPPConversation conversation,
-                OutputStream toOrigin, OutputStream toClient)
+                TCPStream clientToOrigin, OutputStream toClient)
                 throws XMLStreamException {
-            super(conversation, toOrigin, toClient);
+            super(conversation, clientToOrigin, toClient);
         }
 
         @Override

@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
@@ -44,6 +45,8 @@ public class OriginToClientXMPPStreamHandlerTest extends
     @Mock
     private XMPPConversation conversation;
 
+    @Mock
+    private TCPStream originToClient;
     private ByteArrayOutputStream toOrigin;
     private ByteArrayOutputStream toClient;
 
@@ -55,9 +58,10 @@ public class OriginToClientXMPPStreamHandlerTest extends
 
         toClient = new ByteArrayOutputStream();
         toOrigin = new ByteArrayOutputStream();
+        when(originToClient.getOutputStream()).thenReturn(toClient);
 
-        sut = new TestOriginToClientXMPPStreamHandler(conversation, toClient,
-                toOrigin);
+        sut = new TestOriginToClientXMPPStreamHandler(conversation,
+                originToClient, toOrigin);
     }
 
     @Test
@@ -139,6 +143,7 @@ public class OriginToClientXMPPStreamHandlerTest extends
         toOrigin.reset();
 
         sendAuthSuccess();
+        assertEquals(1, sut.twinAwakens);
         toClient.reset();
 
         startStream();
@@ -190,18 +195,23 @@ public class OriginToClientXMPPStreamHandlerTest extends
     // class needed for method overrides
     private static class TestOriginToClientXMPPStreamHandler extends
             OriginToClientXMPPStreamHandler {
-
         int streamResets = 0;
+        int twinAwakens = 0;
 
         TestOriginToClientXMPPStreamHandler(XMPPConversation conversation,
-                OutputStream toClient, OutputStream toOrigin)
+                TCPStream originToClient, OutputStream toOrigin)
                 throws XMLStreamException {
-            super(conversation, toClient, toOrigin);
+            super(conversation, originToClient, toOrigin);
         }
 
         @Override
         protected void resetStream() { // stub
             streamResets++;
+        }
+
+        @Override
+        protected void wakeUpTwin() {
+            twinAwakens++;
         }
 
         @Override

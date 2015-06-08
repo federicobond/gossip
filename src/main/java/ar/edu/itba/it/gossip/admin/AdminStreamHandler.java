@@ -1,28 +1,19 @@
 package ar.edu.itba.it.gossip.admin;
 
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.PASS;
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.START_ADMIN;
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.USER;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
-
 import ar.edu.itba.it.gossip.admin.PartialAdminElement.Type;
-import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.ByteStream;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
-import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
-import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.*;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
