@@ -39,9 +39,11 @@ class ValidatingCredentialsState extends
             handler.setState(AuthenticatedState.getInstance());
             handler.sendToClient(element);
             handler.resetStream();
+            handler.wakeUpTwin();
             break;
         case AUTH_FAILURE:// TODO
             handler.sendToClient(element);
+            handler.wakeUpTwin();
             break;
         default:
             throw new IllegalStateException("Unexpected event type: "
