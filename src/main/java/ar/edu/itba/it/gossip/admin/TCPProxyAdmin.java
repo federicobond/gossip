@@ -128,6 +128,10 @@ public abstract class TCPProxyAdmin implements TCPEventHandler {
 
         conversation.updateSubscription(key.selector());
         //reactor.unsubscribe((SocketChannel) key.channel());
+        
+        if(conversation.hasQuit()) {
+            conversation.closeChannels();
+        }
     }
 
     @Override
