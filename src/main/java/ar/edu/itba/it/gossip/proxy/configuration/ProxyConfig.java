@@ -59,6 +59,10 @@ public class ProxyConfig {
 	    silencedUsers.add(user.trim().toLowerCase());
 	}
 	
+	public void unsilence(String user){
+        silencedUsers.remove(user.trim().toLowerCase());
+    }
+	
 	public boolean isSilenced(String user){
 	    return silencedUsers.contains(user.trim().toLowerCase());
 	}

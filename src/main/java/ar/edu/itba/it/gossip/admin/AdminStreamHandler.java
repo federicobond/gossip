@@ -103,6 +103,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		        state = State.READ_LEET;
 		        break;
 		    case SILENCE:
+		        state = State.READ_SILENCE;
 		        break;
 		    case ORIGIN:
 		        state = State.READ_ORIGIN;
@@ -145,11 +146,11 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             break;
         case READ_LEET:
             assumeType(element,LEET);
-            String value = xmlElement.getBody();
-            if (value.toLowerCase().equals("on")) {
+            String leetValue = xmlElement.getBody();
+            if (leetValue.toLowerCase().equals("on")) {
                 proxyConfig.setLeet(true);
                 sendSuccess();
-            } else if (value.toLowerCase().equals("off")) {
+            } else if (leetValue.toLowerCase().equals("off")) {
                 proxyConfig.setLeet(false);
                 sendSuccess();
             } else {
@@ -161,6 +162,21 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             assumeType(element,ORIGIN);
             proxyConfig.addOrigin(xmlElement.getAttributes().get("usr"), xmlElement.getBody());
             sendSuccess();
+            state = State.LOGGED_IN;
+            break;
+        case READ_SILENCE:
+            assumeType(element,SILENCE);
+            String silenceValue = xmlElement.getAttributes().get("value");
+            if (silenceValue.toLowerCase().equals("on")) {
+                proxyConfig.silence(xmlElement.getBody());
+                sendSuccess();
+            }else if(silenceValue.toLowerCase().equals("off")) {
+                proxyConfig.unsilence(xmlElement.getBody());
+                sendSuccess();
+            }else{
+                sendFail("Wrong value");
+            }
+            state = State.LOGGED_IN;
             break;
         default:
             sendFail();
@@ -196,7 +212,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
     protected enum State {
-        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_ORIGIN, READ_LEET, LOGGED_IN;
+        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_ORIGIN, READ_LEET, READ_SILENCE, LOGGED_IN;
     }
 
 }
