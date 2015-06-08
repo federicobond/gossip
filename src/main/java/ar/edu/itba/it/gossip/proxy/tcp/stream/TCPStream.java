@@ -22,6 +22,8 @@ public class TCPStream extends ByteStream {
 
     private TCPStreamHandler handler;// TODO: check!
 
+    private boolean influxPaused = false;
+
     public TCPStream(final SocketChannel fromChannel,
             final SocketChannel toChannel) {
         this.from = new Endpoint(fromChannel);
@@ -69,7 +71,10 @@ public class TCPStream extends ByteStream {
     }
 
     public int getFromSubscriptionFlags() {
-        return getFromBuffer().hasRemaining() ? SelectionKey.OP_READ : 0;
+        if (!influxPaused && getFromBuffer().hasRemaining()) {
+            return SelectionKey.OP_READ;
+        }
+        return 0;
     }
 
     public int getToSubscriptionFlags() {
@@ -86,6 +91,16 @@ public class TCPStream extends ByteStream {
         from.channel = channel;
     }
 
+    @Override
+    public void pauseInflow() {
+        this.influxPaused = true;
+    }
+
+    @Override
+    public void resumeInflow() {
+        this.influxPaused = false;
+    }
+    
     @Override
     // moves data safely from fromBuffer to toBuffer
     public void flush() {

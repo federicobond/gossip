@@ -4,6 +4,7 @@ import java.io.OutputStream;
 
 import javax.xml.stream.XMLStreamException;
 
+import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
@@ -19,11 +20,12 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
             .getInstance();
 
     public OriginToClientXMPPStreamHandler(final XMPPConversation conversation,
-            final OutputStream toClient, final OutputStream toOrigin)
+            final TCPStream originToClient, final OutputStream toOrigin)
             throws XMLStreamException {
+        super(originToClient);
         this.conversation = conversation;
         this.toOrigin = toOrigin;
-        this.toClient = toClient;
+        this.toClient = originToClient.getOutputStream();
     }
 
     @Override
@@ -76,8 +78,13 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     @Override
-    protected void resetStream() {
+    protected void resetStream() { // just for visibility
         super.resetStream();
+    }
+
+    @Override
+    protected void wakeUpTwin() { // just for visibility
+        super.wakeUpTwin();
     }
 
     void setState(final HandlerState<OriginToClientXMPPStreamHandler> state) {

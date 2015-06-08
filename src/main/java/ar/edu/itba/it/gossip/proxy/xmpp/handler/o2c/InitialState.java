@@ -12,7 +12,6 @@ class InitialState extends HandlerState<OriginToClientXMPPStreamHandler> {
     }
 
     protected InitialState() {
-
     }
 
     @Override
@@ -20,6 +19,7 @@ class InitialState extends HandlerState<OriginToClientXMPPStreamHandler> {
             PartialXMPPElement element) {
         assumeType(element, STREAM_START);
         handler.setState(ExpectAuthFeaturesState.getInstance());
+        handler.wakeUpTwin();
     }
 
     @Override

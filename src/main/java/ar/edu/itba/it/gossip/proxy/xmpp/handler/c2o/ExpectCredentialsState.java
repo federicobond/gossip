@@ -25,7 +25,7 @@ class ExpectCredentialsState extends
     @Override
     public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // TODO: check! should NEVER happen!
+        // TODO: check!
     }
 
     @Override
@@ -51,6 +51,7 @@ class ExpectCredentialsState extends
         handler.resetStream();
 
         handler.setState(ValidatingCredentialsState.getInstance());
+        handler.waitForTwin();
     }
 
     private void connectToOrigin(ClientToOriginXMPPStreamHandler handler) {

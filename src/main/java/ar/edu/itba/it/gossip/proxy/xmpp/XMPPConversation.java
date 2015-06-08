@@ -8,8 +8,8 @@ import java.nio.channels.SocketChannel;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.ProxiedTCPConversation;
-import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o.ClientToOriginXMPPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c.OriginToClientXMPPStreamHandler;
 
@@ -22,15 +22,15 @@ public class XMPPConversation extends ProxiedTCPConversation {
             final TCPStream clientToOrigin = getClientToOriginStream();
             final TCPStream originToClient = getOriginToClientStream();
 
-            final TCPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
-                    this, clientToOrigin.getOutputStream(),
-                    originToClient.getOutputStream());
+            final XMPPStreamHandler clientToOriginHandler = new ClientToOriginXMPPStreamHandler(
+                    this, clientToOrigin, originToClient.getOutputStream());
             clientToOrigin.setHandler(clientToOriginHandler);
 
-            final TCPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
-                    this, originToClient.getOutputStream(),
-                    clientToOrigin.getOutputStream());
+            final XMPPStreamHandler originToClientHandler = new OriginToClientXMPPStreamHandler(
+                    this, originToClient, clientToOrigin.getOutputStream());
             originToClient.setHandler(originToClientHandler);
+
+            clientToOriginHandler.setTwin(originToClientHandler);
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
         }

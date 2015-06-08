@@ -12,6 +12,10 @@ public abstract class ByteStream {
 
     public abstract void flush();
 
+    public abstract void pauseInflow();
+
+    public abstract void resumeInflow();
+
     @Override
     public String toString() {
         return reflectionToString(this);

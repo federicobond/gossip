@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
+import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
@@ -23,10 +24,11 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private boolean clientCauseOfMute;
 
     public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
-            final OutputStream toOrigin, final OutputStream toClient)
+            final TCPStream clientToOrigin, final OutputStream toClient)
             throws XMLStreamException {
+        super(clientToOrigin);
         this.conversation = conversation;
-        this.toOrigin = toOrigin;
+        this.toOrigin = clientToOrigin.getOutputStream();
         this.toClient = toClient;
     }
 
@@ -88,13 +90,18 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     @Override
-    protected DeferredConnector getConnector() {
+    protected DeferredConnector getConnector() { // just for visibility
         return super.getConnector();
     }
 
     @Override
-    protected void resetStream() {
+    protected void resetStream() { // just for visibility
         super.resetStream();
+    }
+
+    @Override
+    protected void waitForTwin() { // just for visibility
+        super.waitForTwin();
     }
 
     boolean isClientNotifiedOfMute() {
@@ -112,4 +119,5 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     void setClientCauseOfMute(final boolean value) {
         this.clientCauseOfMute = value;
     }
+
 }
