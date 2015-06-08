@@ -29,7 +29,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	private PartialXMLElement xmlElement;
 	private final AdminConversation conversation;
 	private State state = State.INITIAL;
-	private final InputStream fromClient; // Maybe it's a ByteStream
 	private final OutputStream toClient;
 	private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 	private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
@@ -42,7 +41,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 			throws XMLStreamException {
 		setXMLEventHandler(this);
 		this.conversation = conversation;
-		this.fromClient = fromClient;
 		this.toClient = toClient;
 		this.user = new String();
 		this.pass = new String();
@@ -59,7 +57,11 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		}
 		xmlElement.loadName(reader).loadAttributes(reader);
 
-		handleStart(PartialAdminElement.from(xmlElement));
+		try{
+		    handleStart(PartialAdminElement.from(xmlElement));
+		}catch (IllegalStateException e){
+		    sendFail("Unexpected command");
+		}
 	}
 
 	@Override
@@ -90,8 +92,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 state = State.READ_USER;
                 break ;
             case QUIT:
-                // TODO: quit gracefully
-                System.out.println("Admin wants to leave...");
+                quitAdmin();
                 break;
             default:
                 // TODO: handle unexpected tag (error message)   
@@ -99,8 +100,14 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             }
             break;
 		case EXPECT_PASS:
-		    assumeType(element, PASS);
-		    state = State.READ_PASS;
+		    switch(element.getType()) {
+		    case QUIT:
+		        quitAdmin();
+		        break;
+		    case PASS:
+	            state = State.READ_PASS;
+	            break;
+		    }
 		    break;
 		case LOGGED_IN:
 		    switch (element.getType()){
@@ -116,6 +123,9 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		    case STATS:
 		        state = State.READ_STATS;
 		        break;
+		    case QUIT:
+		        quitAdmin();
+                break;
 		    }
 		    break;
 		default:
@@ -207,14 +217,17 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         }        
     }
 
+    private void quitAdmin() {
+        sendSuccess();
+        logger.info("Admin disconected");
+        conversation.quit();
+        state = State.INITIAL;
+    }
+
     protected void assumeType(PartialAdminElement element, Type type) {
         assumeState(element.getType() == type,
                 "Event type mismatch, got: %s when %s was expected", element,
                 type);
-    }
-
-    protected void sendToOrigin(String message) {
-    //    writeTo(clientToOrigin, message);
     }
 
     private void sendSuccess() {
