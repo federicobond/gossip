@@ -7,7 +7,11 @@ import java.io.OutputStream;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ar.edu.itba.it.gossip.admin.PartialAdminElement.Type;
+import ar.edu.itba.it.gossip.async.tcp.TCPReactorImpl;
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
@@ -25,6 +29,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	private final InputStream fromClient; // Maybe it's a ByteStream
 	private final OutputStream toClient;
 	private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+	private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
 	
 	private String user;
 	private String pass;
@@ -128,6 +133,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             user = xmlElement.getBody();
             assumeType(element, USER);
             state = State.EXPECT_PASS;
+            logger.info("User trying to log to admin > " + user);
             sendSuccess();
             break;
         case READ_PASS:
@@ -136,6 +142,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             // Validate user and pass and change state depending on success
             if (user.equals("admin") && pass.equals("1234")) {
                 state = State.LOGGED_IN;
+                logger.info("User logged in to admin > " + user);
                 sendSuccess();
             } else {
                 state = State.EXPECT_USER;
@@ -147,9 +154,11 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             String leetValue = xmlElement.getBody();
             if (leetValue.toLowerCase().equals("on")) {
                 proxyConfig.setLeet(true);
+                logger.info("L33t conversion turned on");
                 sendSuccess();
             } else if (leetValue.toLowerCase().equals("off")) {
                 proxyConfig.setLeet(false);
+                logger.info("L33t conversion turned off");
                 sendSuccess();
             } else {
                 sendFail("Wrong value");
@@ -158,18 +167,24 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             break;
         case READ_ORIGIN:
             assumeType(element,ORIGIN);
-            proxyConfig.addOrigin(xmlElement.getAttributes().get("usr"), xmlElement.getBody());
+            String originUser = xmlElement.getAttributes().get("usr");
+            String originAddr = xmlElement.getBody();
+            proxyConfig.addOrigin(originUser, originAddr);
+            logger.info("New origin added > " + originUser + " for user " + originAddr);
             sendSuccess();
             state = State.LOGGED_IN;
             break;
         case READ_SILENCE:
             assumeType(element,SILENCE);
             String silenceValue = xmlElement.getAttributes().get("value");
+            String silenceUser = xmlElement.getBody();
             if (silenceValue.toLowerCase().equals("on")) {
-                proxyConfig.silence(xmlElement.getBody());
+                proxyConfig.silence(silenceUser);
+                logger.info("The user < " + silenceUser + " > has been silenced");
                 sendSuccess();
             }else if(silenceValue.toLowerCase().equals("off")) {
-                proxyConfig.unsilence(xmlElement.getBody());
+                proxyConfig.unsilence(silenceUser);
+                logger.info("The user < " + silenceUser + " > has been not silenced any more");
                 sendSuccess();
             }else{
                 sendFail("Wrong value");
