@@ -2,7 +2,9 @@ package ar.edu.itba.it.gossip.proxy.configuration;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ProxyConfig {
 	private static final ProxyConfig INSTANCE = new ProxyConfig();
@@ -12,6 +14,7 @@ public class ProxyConfig {
 	private final int DEFAULT_ORIGIN_PORT = 5222;
 	
 	private Map<String,String> userToOrigin = new HashMap<String,String>();
+	private Set<String> silencedUsers = new HashSet<String>();
 	private boolean convertLeet = false;
 	
  	private ProxyConfig() {}
@@ -50,5 +53,13 @@ public class ProxyConfig {
 	public void setLeet(boolean convertLeet){
 	    this.convertLeet = convertLeet;
 	    return;
+	}
+	
+	public void silence(String user){
+	    silencedUsers.add(user.trim().toLowerCase());
+	}
+	
+	public boolean isSilenced(String user){
+	    return silencedUsers.contains(user.trim().toLowerCase());
 	}
 }
