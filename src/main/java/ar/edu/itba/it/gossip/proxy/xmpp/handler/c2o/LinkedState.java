@@ -52,5 +52,8 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         handler.sendToOrigin(element);
+        if (element.getType() == MESSAGE) {
+            proxyConfig.countMessage();
+        }
     }
 }

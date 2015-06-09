@@ -25,6 +25,9 @@ public class ProxyConfig {
 	private boolean convertLeet = false;
 	
 	private AtomicLong bytesWritten = new AtomicLong();
+	private AtomicLong bytesRead = new AtomicLong();
+	private AtomicLong accessCount = new AtomicLong();
+	private AtomicLong messagesSent = new AtomicLong();
 
  	private ProxyConfig() {
 		Properties properties = new Properties();
@@ -123,13 +126,37 @@ public class ProxyConfig {
 	    }
 	    return 0;
 	}
-	
+
 	public void countWrites(int written){
 	    this.bytesWritten.addAndGet(written);
 	}
-	
+
 	public long getWrittenBytes(){
 	    return this.bytesWritten.get();
+	}
+
+	public void countAccess(){
+	    this.accessCount.incrementAndGet();
+	}
+
+	public long getAccesses(){
+	    return this.accessCount.get();
+	}
+
+	public void countReads(int read){
+	    this.bytesRead.addAndGet(read);
+	}
+
+	public long getReadBytes(){
+	    return this.bytesRead.get();
+	}
+
+	public void countMessage(){
+	    this.messagesSent.incrementAndGet();
+	}
+
+	public long getMessagesCount(){
+	    return this.messagesSent.get();
 	}
 
 	public String getAdminUser() {

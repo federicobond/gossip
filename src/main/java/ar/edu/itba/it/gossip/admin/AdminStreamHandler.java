@@ -227,9 +227,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             break;
         case READ_STATS:
             assumeType(element,STATS);
-            sendToClient("<stats type=\"" + xmlElement.getBody()+ "\">" 
-                    + proxyConfig.getStats(Integer.parseInt(xmlElement.getBody())) + "</stats>\n");
-            state = State.LOGGED_IN;
+            getStats(Integer.parseInt(xmlElement.getBody()));
             break;
         case QUIT:
             state = State.INITIAL;
@@ -248,6 +246,38 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         sendFailure(100, "Malformed XML input");
         conversation.quit();
         state = State.QUIT;
+    }
+
+    private void getStats(int option){
+        state = State.LOGGED_IN;
+        switch(option){
+        case 1:
+            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+                    + "\t <desc>Number of read bytes</desc> \n"
+                    + "\t <value>" + proxyConfig.getReadBytes() + "</value>\n"
+                    + "</stats>\n");
+            return ;
+        case 2:
+            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+                    + "\t <desc>Number of written bytes</desc> \n"
+                    + "\t <value>" + proxyConfig.getWrittenBytes() + "</value>\n"
+                    + "</stats>\n");
+            return ;
+        case 3:
+            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+                    + "\t <desc>Number of connections to proxy</desc> \n"
+                    + "\t <value>" + proxyConfig.getAccesses() + "</value>\n"
+                    + "</stats>\n");
+            return ;
+        case 4:
+            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+                    + "\t <desc>Number of messages through proxy</desc> \n"
+                    + "\t <value>" + proxyConfig.getMessagesCount() + "</value>\n"
+                    + "</stats>\n");
+            return ;
+        }
+        sendFailure(201, "Invalid statistics option");
+        return ;
     }
 
     private void quitAdmin() {

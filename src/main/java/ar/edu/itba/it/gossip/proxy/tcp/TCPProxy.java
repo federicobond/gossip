@@ -31,6 +31,7 @@ public abstract class TCPProxy implements TCPEventHandler {
 
         ProxiedTCPConversation conversation = instanceConversation(clientChannel);
         conversation.updateSubscription(key.selector());
+        proxyConfig.countAccess();
     }
 
     @Override
@@ -43,7 +44,7 @@ public abstract class TCPProxy implements TCPEventHandler {
         TCPStreamHandler handler = conversation.getHandlerFor(channel);
 
         int bytesRead = channel.read(buffer);
-
+        proxyConfig.countReads(bytesRead);
         // FIXME: just for debugging purposes
         String channelName = conversation.getClientChannel() == channel ? "client"
                 : "origin";
