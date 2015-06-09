@@ -11,7 +11,7 @@ import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.ProxiedXMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 import ar.edu.itba.it.gossip.util.xmpp.XMPPError;
 
@@ -22,7 +22,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private final OutputStream toClient;
     private final OutputStream toOrigin;
 
-    private HandlerState<OriginToClientXMPPStreamHandler> state = InitialState
+    private XMPPHandlerState<OriginToClientXMPPStreamHandler> state = InitialState
             .getInstance();
 
     public OriginToClientXMPPStreamHandler(
@@ -104,7 +104,7 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         super.resumeTwin();
     }
 
-    void setState(final HandlerState<OriginToClientXMPPStreamHandler> state) {
+    void setState(final XMPPHandlerState<OriginToClientXMPPStreamHandler> state) {
         this.state = state;
     }
 

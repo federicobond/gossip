@@ -3,9 +3,9 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class AuthenticatedState extends HandlerState<OriginToClientXMPPStreamHandler> {
+class AuthenticatedState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final AuthenticatedState INSTANCE = new AuthenticatedState();
 
     protected static AuthenticatedState getInstance() {

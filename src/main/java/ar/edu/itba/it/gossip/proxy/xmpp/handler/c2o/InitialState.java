@@ -5,9 +5,9 @@ import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.*;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class InitialState extends HandlerState<ClientToOriginXMPPStreamHandler> {
+class InitialState extends XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     private static final String PLAIN_AUTH = "PLAIN";
 
     private static final InitialState INSTANCE = new InitialState();

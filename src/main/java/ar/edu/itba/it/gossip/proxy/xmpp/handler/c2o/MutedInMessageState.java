@@ -5,9 +5,9 @@ import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.MutableChatState;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class MutedInMessageState extends HandlerState<ClientToOriginXMPPStreamHandler> {
+class MutedInMessageState extends XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     private static final MutedInMessageState INSTANCE = new MutedInMessageState();
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 

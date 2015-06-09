@@ -2,10 +2,10 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
 class MutedOutsideMessageState extends
-        HandlerState<ClientToOriginXMPPStreamHandler> {
+        XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     private static final MutedOutsideMessageState INSTANCE = new MutedOutsideMessageState();
 
     protected static MutedOutsideMessageState getInstance() {

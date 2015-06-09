@@ -5,7 +5,7 @@ import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 
-public abstract class HandlerState<C extends XMPPStreamHandler> {
+public abstract class XMPPHandlerState<C extends XMPPStreamHandler> {
     private static ProxyConfig PROXY_CONFIG = ProxyConfig.getInstance();
 
     public abstract void handleStart(C handler, PartialXMPPElement element);

@@ -3,10 +3,10 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
 class ValidatingCredentialsState extends
-        HandlerState<ClientToOriginXMPPStreamHandler> {
+        XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     private static final ValidatingCredentialsState INSTANCE = new ValidatingCredentialsState();
 
     protected static ValidatingCredentialsState getInstance() {

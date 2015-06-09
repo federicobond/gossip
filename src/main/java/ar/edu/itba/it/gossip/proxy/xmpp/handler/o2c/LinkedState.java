@@ -4,9 +4,9 @@ import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.M
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class LinkedState extends HandlerState<OriginToClientXMPPStreamHandler> {
+class LinkedState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final LinkedState INSTANCE = new LinkedState();
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 

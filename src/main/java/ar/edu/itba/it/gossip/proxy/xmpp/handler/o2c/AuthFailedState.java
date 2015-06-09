@@ -1,9 +1,9 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class AuthFailedState extends HandlerState<OriginToClientXMPPStreamHandler> {
+class AuthFailedState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final AuthFailedState INSTANCE = new AuthFailedState();
 
     protected static AuthFailedState getInstance() {

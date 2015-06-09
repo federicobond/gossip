@@ -10,10 +10,10 @@ import java.net.InetSocketAddress;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
 class ExpectCredentialsState extends
-        HandlerState<ClientToOriginXMPPStreamHandler> {
+        XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     private static final ExpectCredentialsState INSTANCE = new ExpectCredentialsState();
 
     protected static ExpectCredentialsState getInstance() {

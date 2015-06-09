@@ -2,10 +2,10 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_FAILURE;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
 class ValidatingCredentialsState extends
-        HandlerState<OriginToClientXMPPStreamHandler> {
+        XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final ValidatingCredentialsState INSTANCE = new ValidatingCredentialsState();
 
     protected static ValidatingCredentialsState getInstance() {

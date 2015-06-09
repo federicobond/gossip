@@ -14,7 +14,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
 import ar.edu.itba.it.gossip.proxy.xmpp.ProxiedXMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 import ar.edu.itba.it.gossip.util.xmpp.XMPPError;
 
@@ -25,7 +25,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private final OutputStream toOrigin;
     private final OutputStream toClient;
 
-    private HandlerState<ClientToOriginXMPPStreamHandler> state = InitialState
+    private XMPPHandlerState<ClientToOriginXMPPStreamHandler> state = InitialState
             .getInstance();
     private boolean clientNotifiedOfMute;
     private boolean clientCauseOfMute;
@@ -92,7 +92,7 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         return proxyConfig.isJIDSilenced(jid);
     }
 
-    void setState(final HandlerState<ClientToOriginXMPPStreamHandler> state) {
+    void setState(final XMPPHandlerState<ClientToOriginXMPPStreamHandler> state) {
         this.state = state;
     }
 

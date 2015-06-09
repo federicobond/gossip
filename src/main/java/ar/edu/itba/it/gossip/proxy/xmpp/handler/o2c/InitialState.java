@@ -3,9 +3,9 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
+import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class InitialState extends HandlerState<OriginToClientXMPPStreamHandler> {
+class InitialState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final InitialState INSTANCE = new InitialState();
 
     protected static InitialState getInstance() {
