@@ -24,8 +24,7 @@ class InitialState extends HandlerState<ClientToOriginXMPPStreamHandler> {
             PartialXMPPElement element) {
         if (element.getType() != STREAM_START) {
             sendStreamOpenToClient(handler);
-            handler.sendToClient(streamError(BAD_FORMAT));
-            handler.endHandling();
+            handler.sendErrorToClient(BAD_FORMAT);
             return;
         }
 
@@ -48,6 +47,7 @@ class InitialState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     @Override
     public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        throw new IllegalStateException("Unexpected state: " + this);
+        // will never happen
+        throw new RuntimeException();
     }
 }

@@ -2,6 +2,7 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.*;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.streamOpen;
 
 import java.net.InetSocketAddress;
@@ -25,25 +26,39 @@ class ExpectCredentialsState extends
     @Override
     public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // TODO: check!
+        // just buffer auth choice's start tag: the rest, discard
+        if (element.getType() != AUTH_CHOICE) {
+            element.consumeCurrentContent();
+        }
     }
 
     @Override
     public void handleBody(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // do nothing, just buffer element's contents
-        // TODO: check for potential floods!
+        // just buffer auth choice's contents: the rest, discard
+        if (element.getType() != AUTH_CHOICE) {
+            element.consumeCurrentContent();
+        }
     }
 
     @Override
     public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        assumeType(element, AUTH_CHOICE);
-        Credentials credentials = ((Auth) element).getCredentials();
+        if (element.getType() != AUTH_CHOICE) {
+            handler.sendErrorToClient(BAD_FORMAT);
+            return;
+        }
+        
+        final Credentials credentials;
+        try {
+            credentials = ((Auth) element).getCredentials();
+        } catch (IllegalArgumentException exc) {
+            handler.sendErrorToClient(MALFORMED_REQUEST);
+            return;
+        }
         System.out.println(credentials.getUsername()
                 + " is trying to log in with password: "
                 + credentials.getPassword());
-
         handler.setCredentials(credentials);
 
         connectToOrigin(handler);

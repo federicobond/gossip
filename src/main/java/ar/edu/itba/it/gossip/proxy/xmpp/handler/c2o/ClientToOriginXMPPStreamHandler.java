@@ -1,5 +1,8 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.streamError;
+
 import java.io.OutputStream;
 
 import javax.xml.stream.XMLStreamException;
@@ -13,6 +16,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
+import ar.edu.itba.it.gossip.util.xmpp.XMPPError;
 
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
@@ -96,10 +100,10 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         conversation.setCredentials(credentials);
     }
 
-    @Override
-    protected void endHandling() { // just for visibility
-        super.endHandling();
-    }
+//    @Override
+//    protected void endHandling() { // just for visibility
+//        super.endHandling();
+//    }
 
     @Override
     protected DeferredConnector getConnector() { // just for visibility
@@ -132,4 +136,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         this.clientCauseOfMute = value;
     }
 
+    void sendErrorToClient(XMPPError error) {
+        sendToClient(streamError(error));
+        endHandling();    
+    }
 }

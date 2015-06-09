@@ -17,6 +17,10 @@ public class Credentials {
         String[] parts = new String(Base64.getDecoder().decode(sanitizedStr),
                 StandardCharsets.UTF_8).split(SEPARATOR);
 
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Invalid credentials string: "
+                    + str);
+        }
         return new Credentials(parts[1], parts[2]);
     }
 

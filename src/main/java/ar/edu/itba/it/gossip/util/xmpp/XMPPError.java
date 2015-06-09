@@ -1,7 +1,7 @@
 package ar.edu.itba.it.gossip.util.xmpp;
 
 public enum XMPPError {
-    BAD_FORMAT("bad-format");
+    BAD_FORMAT("bad-format"), MALFORMED_REQUEST("malformed-request");
 
     private final String tagName;
 
