@@ -9,11 +9,13 @@ import java.nio.channels.SocketChannel;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
+import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxy implements TCPEventHandler {
     private final TCPReactor reactor;
-
+    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+    
     public TCPProxy(TCPReactor reactor) {
         this.reactor = reactor;
     }
@@ -122,7 +124,7 @@ public abstract class TCPProxy implements TCPEventHandler {
         // // FIXME: just for debugging purposes
 
         int bytesWritten = channel.write(buffer);
-
+        proxyConfig.countWrites(bytesWritten);
         System.out.println("Wrote " + bytesWritten + " bytes from '"
                 + bufferName + "' through '" + channelName + "Channel ("
                 + channel + "')");

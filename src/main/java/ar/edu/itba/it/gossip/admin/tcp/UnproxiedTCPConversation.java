@@ -12,6 +12,7 @@ import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
 public class UnproxiedTCPConversation implements TCPConversation {
     private final TCPStream stream;
+    private boolean hasQuit = false;
 
     protected UnproxiedTCPConversation(SocketChannel channel) {
         this.stream = new TCPStream(channel, channel);
@@ -32,7 +33,14 @@ public class UnproxiedTCPConversation implements TCPConversation {
             stream.getFromChannel().close();
         } catch (IOException ignore) {
         }
+    }
 
+    public void quit() {
+        hasQuit = true;
+    }
+
+    public boolean hasQuit() {
+        return hasQuit;
     }
 
     public TCPStream getStream() {
