@@ -271,8 +271,14 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             return ;
         case 4:
             sendToClient("<stats> \n\t <type>" + option + "</type> \n"
-                    + "\t <desc>Number of messages through proxy</desc> \n"
-                    + "\t <value>" + proxyConfig.getMessagesCount() + "</value>\n"
+                    + "\t <desc>Number of messages sent through proxy</desc> \n"
+                    + "\t <value>" + proxyConfig.getSentMessagesCount() + "</value>\n"
+                    + "</stats>\n");
+            return ;
+        case 5:
+            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+                    + "\t <desc>Number of messages received through proxy</desc> \n"
+                    + "\t <value>" + proxyConfig.getReceivedMessagesCount() + "</value>\n"
                     + "</stats>\n");
             return ;
         }

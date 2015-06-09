@@ -28,6 +28,7 @@ public class ProxyConfig {
 	private AtomicLong bytesRead = new AtomicLong();
 	private AtomicLong accessCount = new AtomicLong();
 	private AtomicLong messagesSent = new AtomicLong();
+	private AtomicLong messagesReceived = new AtomicLong();
 
  	private ProxyConfig() {
 		Properties properties = new Properties();
@@ -151,13 +152,21 @@ public class ProxyConfig {
 	    return this.bytesRead.get();
 	}
 
-	public void countMessage(){
+	public void countSentMessage(){
 	    this.messagesSent.incrementAndGet();
 	}
 
-	public long getMessagesCount(){
+	public long getSentMessagesCount(){
 	    return this.messagesSent.get();
 	}
+
+	public void countReceivedMessage(){
+        this.messagesReceived.incrementAndGet();
+    }
+
+    public long getReceivedMessagesCount(){
+        return this.messagesReceived.get();
+    }
 
 	public String getAdminUser() {
 		return adminUser;

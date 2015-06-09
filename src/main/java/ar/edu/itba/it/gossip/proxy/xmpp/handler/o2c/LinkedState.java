@@ -1,12 +1,14 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
+import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 
 class LinkedState extends HandlerState<OriginToClientXMPPStreamHandler> {
     private static final LinkedState INSTANCE = new LinkedState();
+    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
     protected static LinkedState getInstance() {
         return INSTANCE;
@@ -41,5 +43,8 @@ class LinkedState extends HandlerState<OriginToClientXMPPStreamHandler> {
     public void handleEnd(OriginToClientXMPPStreamHandler handler,
             PartialXMPPElement element) {
         handler.sendToClient(element);
+        if (element.getType() == MESSAGE) {
+            proxyConfig.countReceivedMessage();
+        }
     }
 }
