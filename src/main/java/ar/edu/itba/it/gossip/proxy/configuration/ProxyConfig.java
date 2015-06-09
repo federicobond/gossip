@@ -29,6 +29,8 @@ public class ProxyConfig {
 	private AtomicLong accessCount = new AtomicLong();
 	private AtomicLong messagesSent = new AtomicLong();
 	private AtomicLong messagesReceived = new AtomicLong();
+	private AtomicLong messagesMutedOutgoing = new AtomicLong();
+	private AtomicLong messagesMutedIngoing = new AtomicLong();
 
  	private ProxyConfig() {
 		Properties properties = new Properties();
@@ -119,14 +121,14 @@ public class ProxyConfig {
 	public boolean isSilenced(String user){
 	    return silencedUsers.contains(user.trim().toLowerCase());
 	}
-	
-	public long getStats(int type){
-	    switch(type){
-	        case 2:
-	            return getWrittenBytes();
-	    }
-	    return 0;
-	}
+
+    public String getAdminUser() {
+        return adminUser;
+    }
+
+    public String getAdminPassword() {
+        return adminPassword;
+    }
 
 	public void countWrites(int written){
 	    this.bytesWritten.addAndGet(written);
@@ -168,11 +170,20 @@ public class ProxyConfig {
         return this.messagesReceived.get();
     }
 
-	public String getAdminUser() {
-		return adminUser;
-	}
+    public void countMessageMutedIn(){
+        this.messagesMutedIngoing.incrementAndGet();
+    }
 
-	public String getAdminPassword() {
-		return adminPassword;
-	}
+    public long getMessagesMutedIn(){
+        return this.messagesMutedIngoing.get();
+    }
+
+    public void countMessageMutedOut(){
+        this.messagesMutedOutgoing.incrementAndGet();
+    }
+
+    public long getMessagesMutedOut(){
+        return this.messagesMutedOutgoing.get();
+    }
+
 }
