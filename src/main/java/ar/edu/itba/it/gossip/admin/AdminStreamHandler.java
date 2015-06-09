@@ -70,6 +70,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
 		handleEnd(PartialAdminElement.from(xmlElement));
 
+        // TODO: this breaks when we omit the root <admin> tag
 		xmlElement = xmlElement.getParent().get(); // an element that wasn't
 													// open will never be
 													// closed,
