@@ -1,6 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
+import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeSet;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 import java.nio.ByteBuffer;
@@ -68,6 +69,10 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
     protected void endHandling() {
         this.pause();
         stream.endInflowAfterTimeout();
+    }
+
+    protected void endTwinsHandling() {
+        twin.endHandling();
     }
 
     protected void waitForTwin() {

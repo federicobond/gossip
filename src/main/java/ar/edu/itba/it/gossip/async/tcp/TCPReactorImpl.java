@@ -15,9 +15,12 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static ar.edu.itba.it.gossip.util.CollectionUtils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -165,6 +168,8 @@ public class TCPReactorImpl implements TCPReactor {
 
     private void checkTimeouts() {
         long time = currentTimeMillis();
+
+        List<SocketChannel> toRemove = new LinkedList<>();
         for (Entry<SocketChannel, Long> entry : timeoutTimesByChannel
                 .entrySet()) {
             SocketChannel channel = entry.getKey();
@@ -172,7 +177,9 @@ public class TCPReactorImpl implements TCPReactor {
             if (time >= timeoutTime) {
                 closeQuietly(channel);
                 unsubscribe(channel);
+                toRemove.add(channel);
             }
         }
+        removeAll(timeoutTimesByChannel, toRemove);
     }
 }

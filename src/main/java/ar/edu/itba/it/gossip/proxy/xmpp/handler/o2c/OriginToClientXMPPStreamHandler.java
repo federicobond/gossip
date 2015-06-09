@@ -1,5 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.streamError;
+
 import java.io.OutputStream;
 
 import javax.xml.stream.XMLStreamException;
@@ -11,6 +13,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
+import ar.edu.itba.it.gossip.util.xmpp.XMPPError;
 
 public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
@@ -105,4 +108,9 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         this.state = state;
     }
 
+    void sendErrorToClient(XMPPError error) {
+        sendToClient(streamError(error));
+        endHandling();
+        endTwinsHandling();
+    }
 }

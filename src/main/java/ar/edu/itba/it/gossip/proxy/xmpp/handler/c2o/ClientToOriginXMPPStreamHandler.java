@@ -100,10 +100,10 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         conversation.setCredentials(credentials);
     }
 
-//    @Override
-//    protected void endHandling() { // just for visibility
-//        super.endHandling();
-//    }
+    // @Override
+    // protected void endHandling() { // just for visibility
+    // super.endHandling();
+    // }
 
     @Override
     protected DeferredConnector getConnector() { // just for visibility
@@ -138,6 +138,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     void sendErrorToClient(XMPPError error) {
         sendToClient(streamError(error));
-        endHandling();    
+        endHandling();
     }
 }

@@ -112,6 +112,14 @@ public abstract class CollectionUtils {
         }
         return true;
     }
+    
+
+    public static <K, V> void removeAll(Map<K, V> map,
+            Collection<K> keys) {
+        for (K key : keys) {
+            map.remove(key);
+        }
+    }
 
     public static <K, V> boolean contains(Map<K, V> map, Pair<K, V> pair) {
         V value = map.get(pair.getKey());

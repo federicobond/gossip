@@ -22,4 +22,10 @@ public abstract class ValidationUtils {
         Validate.validState(object == null, errorMessageTemplate, object,
                 errorMessageArgs);
     }
+
+    public static void assumeSet(Object object, String errorMessageTemplate,
+            Object... errorMessageArgs) {
+        Validate.validState(object != null, errorMessageTemplate, object,
+                errorMessageArgs);
+    }
 }
