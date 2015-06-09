@@ -8,4 +8,6 @@ public interface TCPStreamHandler {
     void handleEndOfInput();
 
     void handleRead(ByteBuffer buf, DeferredConnector connector);
+
+    void handleError(Exception ex);
 }

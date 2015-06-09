@@ -70,12 +70,17 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
                 }
             }
         } catch (XMLStreamException e) {
-            throw new RuntimeException(e);
+            handleError(e);
         }
         this.connector = null;
 
         buf.position(getNewPosition(buf));
         buf.compact();
+    }
+
+    @Override
+    public void handleError(Exception ex) {
+        throw new RuntimeException(ex);
     }
 
     protected int getNewPosition(ByteBuffer buffer) { // because thank you aalto
