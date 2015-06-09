@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,7 +24,7 @@ public class ProxyConfig {
 	private Set<String> silencedUsers = new HashSet<String>();
 	private boolean convertLeet = false;
 	
-	private int bytesWritten = 0;
+	private AtomicLong bytesWritten = new AtomicLong();
 
  	private ProxyConfig() {
 		Properties properties = new Properties();
@@ -115,7 +116,7 @@ public class ProxyConfig {
 	    return silencedUsers.contains(user.trim().toLowerCase());
 	}
 	
-	public int getStats(int type){
+	public long getStats(int type){
 	    switch(type){
 	        case 2:
 	            return getWrittenBytes();
@@ -124,11 +125,11 @@ public class ProxyConfig {
 	}
 	
 	public void countWrites(int written){
-	    this.bytesWritten += written;
+	    this.bytesWritten.addAndGet(written);
 	}
 	
-	public int getWrittenBytes(){
-	    return this.bytesWritten;
+	public long getWrittenBytes(){
+	    return this.bytesWritten.get();
 	}
 
 	public String getAdminUser() {
