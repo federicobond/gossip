@@ -3,8 +3,8 @@ Gossip [![Build Status](https://magnum.travis-ci.com/federicobond/gossip.svg?tok
 
 A small Java XMPP proxy.
 
+## Administration commands
 
-#Administration commands
 Conversation must be a valid XML, starting with:
 ```
 <?xml version="1.0"?>
