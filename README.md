@@ -25,3 +25,13 @@ Once the `<admin>` element is open, you can start sending commands:
 <stats>1|2|3</stats>
 <quit/>
 ```
+
+# Códigos de error
+
+ * 100 - Malformed XML input
+ * 101 - Unrecognized tag
+ * 102 - Wrong silence value
+ * 103 - Wrong leet value
+ * 104 - Unknown error
+ * 105 - Wrong admin credentials
+

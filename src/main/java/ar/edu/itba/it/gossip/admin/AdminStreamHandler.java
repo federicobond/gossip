@@ -57,10 +57,10 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		}
 		xmlElement.loadName(reader).loadAttributes(reader);
 
-		try{
+		try {
 		    handleStart(PartialAdminElement.from(xmlElement));
-		}catch (IllegalStateException e){
-		    sendFail("Unexpected command");
+		} catch (IllegalStateException e){
+		    sendFailure(104, "Unknown error");
 		}
 	}
 
@@ -77,6 +77,12 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 													// stream is a valid XML one
 	}
 
+    private boolean adminLogin(String user, String password) {
+        String adminUser = proxyConfig.getAdminUser();
+        String adminPassword = proxyConfig.getAdminPassword();
+
+        return user.equals(adminUser) && password.equals(adminPassword);
+    }
 
 	public void handleStart(PartialAdminElement element) {
 		switch (state) {
@@ -95,7 +101,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 quitAdmin();
                 break;
             default:
-                sendFail("Invalid command");
+                sendFailure(101, "Unrecognized tag");
                 break;
             }
             break;
@@ -108,7 +114,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 	            state = State.READ_PASS;
 	            break;
 	        default:
-	            sendFail("Invalid command");
+	            sendFailure(101, "Unrecognized tag");
 	            break;
 		    }
 		    break;
@@ -130,12 +136,12 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		        quitAdmin();
                 break;
             default:
-                sendFail("Invalid command");
+                sendFailure(101, "Unrecognized tag");
                 break;
 		    }
 		    break;
 		default:
-			sendFail();
+			sendFailure(104, "Unknown error");
 			resetStream();
 			break;
 		}
@@ -159,31 +165,32 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             assumeType(element, PASS);
             pass = xmlElement.getBody();
             // Validate user and pass and change state depending on success
-            String adminUser = proxyConfig.getAdminUser();
-            String adminPassword = proxyConfig.getAdminPassword();
-
-            if (user.equals(adminUser) && pass.equals(adminPassword)) {
+            if (adminLogin(user, pass)) {
                 state = State.LOGGED_IN;
                 logger.info("User logged in to admin > " + user);
                 sendSuccess();
             } else {
                 state = State.EXPECT_USER;
-                sendFail();
+                sendFailure(105, "Wrong admin credentials");
             }
             break;
         case READ_LEET:
             assumeType(element,LEET);
-            String leetValue = xmlElement.getBody();
-            if (leetValue.toLowerCase().equals("on")) {
-                proxyConfig.setLeet(true);
-                logger.info("L33t conversion turned on");
-                sendSuccess();
-            } else if (leetValue.toLowerCase().equals("off")) {
-                proxyConfig.setLeet(false);
-                logger.info("L33t conversion turned off");
-                sendSuccess();
-            } else {
-                sendFail("Wrong value");
+            String leetValue = xmlElement.getBody().toLowerCase();
+
+            switch (leetValue) {
+                case "on":
+                    proxyConfig.setLeet(true);
+                    logger.info("L33t conversion turned on");
+                    sendSuccess();
+                    break;
+                case "off":
+                    proxyConfig.setLeet(false);
+                    logger.info("L33t conversion turned off");
+                    sendSuccess();
+                    break;
+                default:
+                    sendFailure(103, "Wrong leet value");
             }
             state = State.LOGGED_IN;
             break;
@@ -198,18 +205,22 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             break;
         case READ_SILENCE:
             assumeType(element,SILENCE);
-            String silenceValue = xmlElement.getAttributes().get("value");
+            String silenceValue = xmlElement.getAttributes().get("value").toLowerCase();
             String silenceUser = xmlElement.getBody();
-            if (silenceValue.toLowerCase().equals("on")) {
-                proxyConfig.silence(silenceUser);
-                logger.info("The user < " + silenceUser + " > has been silenced");
-                sendSuccess();
-            }else if(silenceValue.toLowerCase().equals("off")) {
-                proxyConfig.unsilence(silenceUser);
-                logger.info("The user < " + silenceUser + " > has been not silenced any more");
-                sendSuccess();
-            }else{
-                sendFail("Wrong value");
+
+            switch (silenceValue) {
+                case "on":
+                    proxyConfig.silence(silenceUser);
+                    logger.info("The user < " + silenceUser + " > has been silenced");
+                    sendSuccess();
+                    break;
+                case "off":
+                    proxyConfig.unsilence(silenceUser);
+                    logger.info("The user < " + silenceUser + " > has been not silenced any more");
+                    sendSuccess();
+                    break;
+                default:
+                    sendFailure(102, "Wrong silence value");
             }
             state = State.LOGGED_IN;
             break;
@@ -225,7 +236,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         case LOGGED_IN:
             break;
         default:
-            sendFail();
+            sendFailure(101, "Unrecognized tag");
             resetStream();
             break;
         }        
@@ -233,7 +244,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
     @Override
     public void handleError(Exception e) {
-        sendFail("Invalid input");
+        sendFailure(100, "Malformed XML input");
         conversation.quit();
         state = State.QUIT;
     }
@@ -252,15 +263,17 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
     private void sendSuccess() {
-        sendToClient("<ok/>\n");
+        sendToClient("<success />\n");
     }
 
-    private void sendFail() {
-        sendToClient("<err/>\n");
-    }
-    
-    private void sendFail(String message) {
-        sendToClient("<err>" + message + "</err>\n");
+    private void sendFailure(int code, String message) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<error>\n\t<code>");
+        sb.append(code);
+        sb.append("</code>\n\t<message>");
+        sb.append(message);
+        sb.append("</message>\n</error>\n");
+        sendToClient(sb.toString());
     }
 
     private void sendToClient(String message) {
