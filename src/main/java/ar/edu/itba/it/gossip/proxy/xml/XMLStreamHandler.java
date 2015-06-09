@@ -22,13 +22,12 @@ import com.fasterxml.aalto.AsyncXMLInputFactory;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 import com.fasterxml.aalto.stax.InputFactoryImpl;
 
-public abstract class XMLStreamHandler implements TCPStreamHandler {
+public abstract class XMLStreamHandler implements TCPStreamHandler,
+        XMLEventHandler {
     private static final byte LT = 0x3C;
     private static final byte GT = 0x3E;
 
     private static final AsyncXMLInputFactory inputFactory = new InputFactoryImpl();
-
-    private XMLEventHandler xmlHandler;
 
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
     private DeferredConnector connector;
@@ -50,21 +49,21 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
                 switch (type) {
                 case START_DOCUMENT:
                     gtsRead++;
-                    xmlHandler.handleStartDocument(reader);
+                    handleStartDocument(reader);
                     break;
                 case END_DOCUMENT:
-                    xmlHandler.handleEndDocument(reader);
+                    handleEndDocument(reader);
                     break;
                 case START_ELEMENT:
                     gtsRead++;
-                    xmlHandler.handleStartElement(reader);
+                    handleStartElement(reader);
                     break;
                 case CHARACTERS:
-                    xmlHandler.handleCharacters(reader);
+                    handleCharacters(reader);
                     break;
                 case END_ELEMENT:
                     gtsRead++;
-                    xmlHandler.handleEndElement(reader);
+                    handleEndElement(reader);
                     break;
                 }
                 if (type == EVENT_INCOMPLETE) {
@@ -72,7 +71,7 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
                 }
             }
         } catch (XMLStreamException e) {
-            xmlHandler.handleError(e);
+            handleError(e);
         }
         this.connector = null;
 
@@ -134,10 +133,6 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
 
     protected DeferredConnector getConnector() {
         return connector;
-    }
-
-    public void setXMLEventHandler(final XMLEventHandler eventHandler) {
-        this.xmlHandler = eventHandler;
     }
 
     @Override

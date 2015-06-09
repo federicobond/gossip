@@ -15,5 +15,5 @@ public interface XMLEventHandler {
 
     void handleCharacters(AsyncXMLStreamReader<?> reader);
 
-    void handleError(XMLStreamException e);
+    void handleError(XMLStreamException exc);
 }

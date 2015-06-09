@@ -8,10 +8,7 @@ import java.nio.ByteBuffer;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
-import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
-import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
-import ar.edu.itba.it.gossip.proxy.xmpp.ProxiedXMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
@@ -19,7 +16,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public abstract class XMPPStreamHandler extends XMLStreamHandler implements
-        XMPPEventHandler, XMLEventHandler {
+        XMPPEventHandler {
     private TCPStream stream;
     private XMPPStreamHandler twin;
 
@@ -29,7 +26,6 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
     protected XMPPStreamHandler(final TCPStream stream)
             throws XMLStreamException {
         this.stream = stream;
-        setXMLEventHandler(this);
     }
 
     @Override
