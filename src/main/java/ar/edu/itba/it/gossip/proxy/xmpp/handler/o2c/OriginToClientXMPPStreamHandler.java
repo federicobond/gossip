@@ -46,14 +46,24 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         state.handleEnd(this, element);
     }
 
-    protected boolean isMuted(Message message) {
-        String from = message.getSender();
-        String to = message.getReceiver();
-        return proxyConfig.isSilenced(from) || proxyConfig.isSilenced(to);
+    String getCurrentUser() {
+        return conversation.getCredentials().getUsername();
     }
 
-    public boolean isJIDMuted(String jid) {
-        return proxyConfig.isSilenced(jid);
+    boolean isMuted(Message message) {
+        String from = message.getSender();
+        if (from == null) { // administrative message from own server
+            return isClientMuted();
+        }
+        return isJIDMuted(from) || isClientMuted();
+    }
+
+    boolean isClientMuted() {
+        return isJIDMuted(proxyConfig.getJID(getCurrentUser()));
+    }
+
+    private boolean isJIDMuted(String jid) {
+        return proxyConfig.isJIDSilenced(jid);
     }
 
     String encodeCredentials() {
@@ -93,4 +103,5 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     void setState(final HandlerState<OriginToClientXMPPStreamHandler> state) {
         this.state = state;
     }
+
 }

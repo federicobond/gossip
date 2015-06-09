@@ -64,7 +64,7 @@ class ExpectCredentialsState extends
 
     private void sendStreamOpenToOrigin(ClientToOriginXMPPStreamHandler handler) {
         String currentUser = handler.getCurrentUser();
-        String originName = getProxyConfig().getOriginName(currentUser);
+        String originName = getProxyConfig().getXMPPServerName();
 
         handler.sendToOrigin(DOCUMENT_START
                 + streamOpen(currentUser, originName));

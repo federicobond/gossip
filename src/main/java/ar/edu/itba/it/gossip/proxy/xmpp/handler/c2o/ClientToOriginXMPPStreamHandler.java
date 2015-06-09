@@ -75,13 +75,16 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     boolean isMuted(Message message) {
-        String from = message.getSender();
         String to = message.getReceiver();
-        return proxyConfig.isSilenced(from) || proxyConfig.isSilenced(to);
+        return isClientMuted() || isJIDMuted(to);
     }
 
-    boolean isJIDMuted(String jid) {
-        return proxyConfig.isSilenced(jid);
+    boolean isClientMuted() {
+        return isJIDMuted(proxyConfig.getJID(getCurrentUser()));
+    }
+
+    private boolean isJIDMuted(String jid) {
+        return proxyConfig.isJIDSilenced(jid);
     }
 
     void setState(final HandlerState<ClientToOriginXMPPStreamHandler> state) {

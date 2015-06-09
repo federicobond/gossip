@@ -199,7 +199,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             assumeType(element,ORIGIN);
             String originUser = xmlElement.getAttributes().get("usr");
             String originAddr = xmlElement.getBody();
-            proxyConfig.addOrigin(originUser, originAddr);
+            proxyConfig.addOriginMapping(originUser, originAddr);
             logger.info("New origin added > " + originUser + " for user " + originAddr);
             sendSuccess();
             state = State.LOGGED_IN;

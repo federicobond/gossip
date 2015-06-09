@@ -19,9 +19,10 @@ public class ProxyConfig {
 
     private String defaultOriginHost;
     private int defaultOriginPort;
+    private String xmppServerName;
 
-    private Map<String, String> userToOrigin = new HashMap<String, String>();
-    private Set<String> silencedUsers = new HashSet<String>();
+    private Map<String, InetSocketAddress> localUsersToOrigin = new HashMap<String, InetSocketAddress>();
+    private Set<String> silencedJIDs = new HashSet<String>();
     private boolean convertLeet = false;
 
     private AtomicLong bytesWritten = new AtomicLong();
@@ -54,12 +55,14 @@ public class ProxyConfig {
                 "localhost");
         defaultOriginPort = Integer.parseInt(properties.getProperty(
                 "origin.default.port", "5222"));
+        xmppServerName = properties
+                .getProperty("xmpp.server.name", "localhost");
 
         String[] users = properties.getProperty("users.silenced").split(",");
         for (String user : users) {
             user = user.trim();
             if (!user.equals("")) {
-                silencedUsers.add(user);
+                silencedJIDs.add(user);
             }
         }
 
@@ -68,12 +71,14 @@ public class ProxyConfig {
             user = user.trim();
             if (!user.equals("")) {
                 String[] parts = user.split("@");
-                if (parts.length != 2) {
+                String[] addressParts = parts[1].split(":");
+                if (parts.length != 2 || addressParts.length != 2) {
                     log.log(Level.WARNING,
                             "Skipped invalid multiplexed user value: ", user);
                     continue;
                 }
-                userToOrigin.put(parts[0], parts[1]);
+                localUsersToOrigin.put(parts[0], new InetSocketAddress(
+                        addressParts[0], Integer.parseInt(addressParts[1])));
             }
         }
     }
@@ -82,29 +87,24 @@ public class ProxyConfig {
         return INSTANCE;
     }
 
-    // Assumes all servers have the same name as address
-    public InetSocketAddress getOriginAddress(String username) {
-        // Assumes that all origin servers listen in port 5222 (XMPP port)
-        if (userToOrigin.containsKey(username)) {
-            return new InetSocketAddress(userToOrigin.get(username),
-                    defaultOriginPort);
-        }
-        return new InetSocketAddress(defaultOriginHost, defaultOriginPort);
+    public InetSocketAddress getOriginAddress(String localUsername) {
+        return localUsersToOrigin.getOrDefault(localUsername,
+                new InetSocketAddress(defaultOriginHost, defaultOriginPort));
     }
 
-    public String getOriginName(String username) {
-        if (userToOrigin.containsKey(username)) {
-            return userToOrigin.get(username);
-        }
+    public void addOriginMapping(String username, String origin) { // FIXME add
+                                                                   // port as
+                                                                   // parameter
+        localUsersToOrigin.put(username, new InetSocketAddress(origin,
+                defaultOriginPort));
+    }
+
+    public String getOriginHostname() {
         return defaultOriginHost;
     }
 
-    public void addOrigin(String username, String origin) {
-        userToOrigin.put(username, origin);
-    }
-
-    public String getOriginName() {
-        return defaultOriginHost;
+    public String getXMPPServerName() {
+        return xmppServerName;
     }
 
     public boolean convertLeet() {
@@ -117,23 +117,24 @@ public class ProxyConfig {
     }
 
     public void silence(String user) {
-        silencedUsers.add(user.trim().toLowerCase());
+        silencedJIDs.add(user.trim().toLowerCase());
     }
 
     public void unsilence(String user) {
-        silencedUsers.remove(user.trim().toLowerCase());
+        silencedJIDs.remove(user.trim().toLowerCase());
     }
 
-    public boolean isSilenced(String user) {
-        return silencedUsers.contains(user.trim().toLowerCase());
+    public boolean isJIDSilenced(String jid) {
+        String[] parts = jid.split("/");
+        String jidProper = parts[0]; // that is, without a resource attached
+        return silencedJIDs.contains(jidProper.trim().toLowerCase());
     }
 
-    public String getAdminUser() {
-        return adminUser;
-    }
-
-    public String getAdminPassword() {
-        return adminPassword;
+    public long getStats(int type) {
+        if (type == 2) {
+            return getWrittenBytes();
+        }
+        return 0;
     }
 
     public void countWrites(int written) {
@@ -192,4 +193,23 @@ public class ProxyConfig {
         return this.messagesMutedOutgoing.get();
     }
 
+    public void countMessage() {
+        this.messagesSent.incrementAndGet();
+    }
+
+    public long getMessagesCount() {
+        return this.messagesSent.get();
+    }
+
+    public String getAdminUser() {
+        return adminUser;
+    }
+
+    public String getAdminPassword() {
+        return adminPassword;
+    }
+
+    public String getJID(String localUser) {
+        return localUser + "@" + xmppServerName;
+    }
 }

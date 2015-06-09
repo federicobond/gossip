@@ -9,7 +9,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     private static final LinkedState INSTANCE = new LinkedState();
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
-    
+
     protected static LinkedState getInstance() {
         return INSTANCE;
     }
@@ -24,10 +24,10 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
             Message message = (Message) element;
             if (handler.isMuted(message)) {
                 handler.setClientNotifiedOfMute(false);
-                handler.setClientCauseOfMute(handler.isJIDMuted(message.getSender()));
+                handler.setClientCauseOfMute(handler.isClientMuted());
                 handler.setState(MutedInMessageState.getInstance());
             } else {
-                if (proxyConfig.convertLeet()){
+                if (proxyConfig.convertLeet()) {
                     message.enableLeetConversion();
                 }
             }
@@ -41,7 +41,7 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
         // this is here just in case leet conversion was enabled by the
         // admin after the message's start tag
         if (element.getType() == MESSAGE) {
-            if (proxyConfig.convertLeet()){
+            if (proxyConfig.convertLeet()) {
                 ((Message) element).enableLeetConversion();
             }
         }
