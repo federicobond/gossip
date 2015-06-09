@@ -95,7 +95,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 quitAdmin();
                 break;
             default:
-                // TODO: handle unexpected tag (error message)   
+                sendFail("Invalid command");
                 break;
             }
             break;
@@ -106,6 +106,9 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		        break;
 		    case PASS:
 	            state = State.READ_PASS;
+	            break;
+	        default:
+	            sendFail("Invalid command");
 	            break;
 		    }
 		    break;
@@ -125,6 +128,9 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 		        break;
 		    case QUIT:
 		        quitAdmin();
+                break;
+            default:
+                sendFail("Invalid command");
                 break;
 		    }
 		    break;
@@ -212,6 +218,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             break;
         case QUIT:
             state = State.INITIAL;
+            break;
+        case LOGGED_IN:
             break;
         default:
             sendFail();
