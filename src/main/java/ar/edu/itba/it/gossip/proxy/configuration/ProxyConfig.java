@@ -1,25 +1,47 @@
 package ar.edu.itba.it.gossip.proxy.configuration;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ProxyConfig {
 	private static final ProxyConfig INSTANCE = new ProxyConfig();
-	
-	// For now, you just can change the origin here
-	private final String DEFAULT_ORIGIN_ADDRESS = "localhost";
-	private final int DEFAULT_ORIGIN_PORT = 5222;
+	private static final String CONFIG_PATH = "/proxy.properties";
+
+	private static final Logger log = Logger.getLogger("ProxyConfig");
+
+	private final String adminUser;
+	private final String adminPassword;
+
+	private final String defaultOriginHost;
+	private final int defaultOriginPort;
 	
 	private Map<String,String> userToOrigin = new HashMap<String,String>();
 	private Set<String> silencedUsers = new HashSet<String>();
 	private boolean convertLeet = false;
 	
 	private int bytesWritten = 0;
-	
- 	private ProxyConfig() {}
+
+ 	private ProxyConfig() {
+		Properties properties = new Properties();
+
+		InputStream is = getClass().getResourceAsStream(CONFIG_PATH);
+		try {
+			properties.load(is);
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Could not load proxy properties.");
+			System.exit(1);
+		}
+
+		adminUser = properties.getProperty("admin.user", "admin");
+		adminPassword = properties.getProperty("admin.password", "1234");
+        convertLeet = properties.getProperty("leet.default", "false").equals("true");
+		defaultOriginHost = properties.getProperty("origin.default.host", "localhost");
+		defaultOriginPort = Integer.parseInt(properties.getProperty("origin.default.port", "5222"));
+	}
 	
 	public static ProxyConfig getInstance() {
 		return INSTANCE;
@@ -29,23 +51,23 @@ public class ProxyConfig {
 	public InetSocketAddress getOriginAddress(String username){
 		// Assumes that all origin servers listen in port 5222 (XMPP port)
 		if(userToOrigin.containsKey(username)){
-				return new InetSocketAddress(userToOrigin.get(username),DEFAULT_ORIGIN_PORT);
+				return new InetSocketAddress(userToOrigin.get(username), defaultOriginPort);
 		}
-		return new InetSocketAddress(DEFAULT_ORIGIN_ADDRESS,DEFAULT_ORIGIN_PORT);
+		return new InetSocketAddress(defaultOriginHost, defaultOriginPort);
 	}
 	
 	public String getOriginName(String username){
 		if(userToOrigin.containsKey(username)){
 			return userToOrigin.get(username);
 		}
-		return DEFAULT_ORIGIN_ADDRESS;
+		return defaultOriginHost;
 	}
 	
 	public void addOrigin(String username, String origin){
 	    userToOrigin.put(username, origin);
 	}
 	public String getOriginName(){
-		return DEFAULT_ORIGIN_ADDRESS;
+		return defaultOriginHost;
 	}
 	
 	public boolean convertLeet(){
@@ -83,5 +105,13 @@ public class ProxyConfig {
 	
 	public int getWrittenBytes(){
 	    return this.bytesWritten;
+	}
+
+	public String getAdminUser() {
+		return adminUser;
+	}
+
+	public String getAdminPassword() {
+		return adminPassword;
 	}
 }

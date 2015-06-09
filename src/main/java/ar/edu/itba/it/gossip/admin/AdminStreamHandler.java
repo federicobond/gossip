@@ -159,7 +159,10 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             assumeType(element, PASS);
             pass = xmlElement.getBody();
             // Validate user and pass and change state depending on success
-            if (user.equals("admin") && pass.equals("1234")) {
+            String adminUser = proxyConfig.getAdminUser();
+            String adminPassword = proxyConfig.getAdminPassword();
+
+            if (user.equals(adminUser) && pass.equals(adminPassword)) {
                 state = State.LOGGED_IN;
                 logger.info("User logged in to admin > " + user);
                 sendSuccess();
@@ -226,6 +229,13 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             resetStream();
             break;
         }        
+    }
+
+    @Override
+    public void handleError(Exception e) {
+        sendFail("Invalid input");
+        conversation.quit();
+        state = State.QUIT;
     }
 
     private void quitAdmin() {

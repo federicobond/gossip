@@ -136,7 +136,7 @@ public abstract class TCPProxyAdmin implements TCPEventHandler {
     public void handleConnect(SelectionKey key) throws IOException {
         // should do nothing, since this handler will never connect to sockets
     }
-    
+
     protected abstract UnproxiedTCPConversation instanceConversation(SocketChannel channel);
    
 }
