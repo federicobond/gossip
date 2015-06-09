@@ -210,6 +210,9 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                     + proxyConfig.getStats(Integer.parseInt(xmlElement.getBody())) + "</stats>\n");
             state = State.LOGGED_IN;
             break;
+        case QUIT:
+            state = State.INITIAL;
+            break;
         default:
             sendFail();
             resetStream();
@@ -221,7 +224,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         sendSuccess();
         logger.info("Admin disconected");
         conversation.quit();
-        state = State.INITIAL;
+        state = State.QUIT;
     }
 
     protected void assumeType(PartialAdminElement element, Type type) {
@@ -247,7 +250,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
     protected enum State {
-        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_ORIGIN, READ_LEET, READ_SILENCE, READ_STATS, LOGGED_IN;
+        INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_ORIGIN, READ_LEET, READ_SILENCE, READ_STATS, LOGGED_IN, QUIT;
     }
 
 }
