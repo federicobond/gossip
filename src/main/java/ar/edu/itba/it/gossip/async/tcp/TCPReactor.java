@@ -13,4 +13,6 @@ public interface TCPReactor {
     void subscribe(SocketChannel channel, TCPEventHandler handler);
 
     void unsubscribe(SocketChannel channel);
+
+    void closeAfterTimeout(SocketChannel channel, long millis);
 }

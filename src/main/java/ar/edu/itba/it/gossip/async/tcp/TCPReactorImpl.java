@@ -1,6 +1,8 @@
 package ar.edu.itba.it.gossip.async.tcp;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
+import static ar.edu.itba.it.gossip.util.nio.ChannelUtils.closeQuietly;
+import static java.lang.System.currentTimeMillis;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,11 +31,11 @@ public class TCPReactorImpl implements TCPReactor {
     // Since SocketChannels don't implement hashcode and equals, compare them by
     // identity
     private final Map<SocketChannel, TCPEventHandler> handlersByChannel = new IdentityHashMap<>();
+    private final Map<SocketChannel, Long> timeoutTimesByChannel = new IdentityHashMap<>();
 
     private boolean running = false;
 
     public TCPReactorImpl() {
-      
     }
 
     @Override
@@ -60,6 +63,14 @@ public class TCPReactorImpl implements TCPReactor {
     }
 
     @Override
+    public void closeAfterTimeout(SocketChannel channel, long millis) {
+        assumeState(!timeoutTimesByChannel.containsKey(channel),
+                "%s is already on timeout", channel);
+        long timeoutTime = currentTimeMillis() + millis;
+        timeoutTimesByChannel.put(channel, timeoutTime);
+    }
+
+    @Override
     public void start() throws IOException {
         assumeState(!running, "%s is already running", this);
         assumeState(!handlersByListenerPort.isEmpty(),
@@ -76,6 +87,7 @@ public class TCPReactorImpl implements TCPReactor {
 
         logger.info("[START]: {}", this);
         while (running) {
+            checkTimeouts();
             // Wait for some channel to be ready (or timeout)
             int readyChannelCount = selector.select(TIMEOUT);
             if (readyChannelCount == 0) {
@@ -149,5 +161,18 @@ public class TCPReactorImpl implements TCPReactor {
             return handlersByListenerPort.get(port);
         }
         throw new IllegalArgumentException("Unknown channel type: " + channel);
+    }
+
+    private void checkTimeouts() {
+        long time = currentTimeMillis();
+        for (Entry<SocketChannel, Long> entry : timeoutTimesByChannel
+                .entrySet()) {
+            SocketChannel channel = entry.getKey();
+            long timeoutTime = entry.getValue();
+            if (time >= timeoutTime) {
+                closeQuietly(channel);
+                unsubscribe(channel);
+            }
+        }
     }
 }

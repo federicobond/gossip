@@ -6,8 +6,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
 public class UnproxiedTCPConversation implements TCPConversation {

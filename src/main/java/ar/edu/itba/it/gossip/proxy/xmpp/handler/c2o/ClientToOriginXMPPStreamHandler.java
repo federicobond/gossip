@@ -6,9 +6,9 @@ import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.tcp.DeferredConnector;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
-import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
+import ar.edu.itba.it.gossip.proxy.xmpp.ProxiedXMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
@@ -17,7 +17,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
-    private final XMPPConversation conversation;
+    private final ProxiedXMPPConversation conversation;
     private final OutputStream toOrigin;
     private final OutputStream toClient;
 
@@ -26,7 +26,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     private boolean clientNotifiedOfMute;
     private boolean clientCauseOfMute;
 
-    public ClientToOriginXMPPStreamHandler(final XMPPConversation conversation,
+    public ClientToOriginXMPPStreamHandler(
+            final ProxiedXMPPConversation conversation,
             final TCPStream clientToOrigin, final OutputStream toClient)
             throws XMLStreamException {
         super(clientToOrigin);
@@ -93,6 +94,11 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     void setCredentials(Credentials credentials) {
         conversation.setCredentials(credentials);
+    }
+
+    @Override
+    protected void endHandling() { // just for visibility
+        super.endHandling();
     }
 
     @Override

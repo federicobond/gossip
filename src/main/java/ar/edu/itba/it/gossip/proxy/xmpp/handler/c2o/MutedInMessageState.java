@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
-import static ar.edu.itba.it.gossip.util.XMPPUtils.message;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.message;
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.MutableChatState;

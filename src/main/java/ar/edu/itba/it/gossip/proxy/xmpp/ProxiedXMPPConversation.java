@@ -7,17 +7,19 @@ import java.nio.channels.SocketChannel;
 
 import javax.xml.stream.XMLStreamException;
 
+import ar.edu.itba.it.gossip.proxy.tcp.ChannelTerminator;
 import ar.edu.itba.it.gossip.proxy.tcp.ProxiedTCPConversation;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o.ClientToOriginXMPPStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c.OriginToClientXMPPStreamHandler;
 
-public class XMPPConversation extends ProxiedTCPConversation {
+public class ProxiedXMPPConversation extends ProxiedTCPConversation {
     private Credentials credentials;
 
-    protected XMPPConversation(SocketChannel clientChannel) {
-        super(clientChannel);
+    protected ProxiedXMPPConversation(SocketChannel clientChannel,
+            ChannelTerminator terminator) {
+        super(clientChannel, terminator);
         try {
             final TCPStream clientToOrigin = getClientToOriginStream();
             final TCPStream originToClient = getOriginToClientStream();

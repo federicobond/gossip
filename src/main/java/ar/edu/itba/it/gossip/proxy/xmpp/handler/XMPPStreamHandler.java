@@ -7,9 +7,11 @@ import java.nio.ByteBuffer;
 
 import javax.xml.stream.XMLStreamException;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
+import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
+import ar.edu.itba.it.gossip.proxy.xmpp.ProxiedXMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
@@ -18,12 +20,11 @@ import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         XMPPEventHandler, XMLEventHandler {
-
-    private PartialXMPPElement xmppElement;
-
-    protected boolean blocked = false;
     private TCPStream stream;
     private XMPPStreamHandler twin;
+
+    private PartialXMPPElement xmppElement;
+    protected boolean blocked = false;
 
     protected XMPPStreamHandler(final TCPStream stream)
             throws XMLStreamException {
@@ -63,28 +64,41 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         handleBody(xmppElement);
     }
 
-    protected void assumeType(PartialXMPPElement element, Type type) {
-        assumeState(element.getType() == type,
-                "Event type mismatch, got: %s when %s was expected", element,
-                type);
+    @Override
+    public void handleError(XMLStreamException e) {
+        // TODO: generic *XML* stream error
+    }
+
+    protected void endHandling() {
+        this.pause();
+        stream.endInflowAfterTimeout();
     }
 
     protected void waitForTwin() {
-        stream.pauseInflow(); // to avoid concurrency problems on the input
-                              // buffer
+        this.pause();
     }
 
-    protected void wakeUp() {
+    protected void resumeTwin() {
+        twin.resume();
+    }
+
+    @Override
+    protected void pause() {
+        stream.pauseInflow();// to avoid concurrency problems on the input
+                             // buffer
+        super.pause();
+    }
+
+    @Override
+    protected void resume() {
         ByteBuffer buffer = stream.getFromBuffer();
         buffer.flip(); // the buffer will be in write mode
+
+        super.resume();
         handleRead(buffer, null); // NOTE: so no sleeping when a
                                   // deferred connection relies
                                   // on that!
         stream.resumeInflow();
-    }
-
-    protected void wakeUpTwin() {
-        twin.wakeUp();
     }
 
     public void setTwin(final XMPPStreamHandler twin) {
@@ -97,4 +111,11 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         this.twin = twin;
         twin.twin = this;
     }
+
+    protected void assumeType(PartialXMPPElement element, Type type) {
+        assumeState(element.getType() == type,
+                "Event type mismatch, got: %s when %s was expected", element,
+                type);
+    }
+
 }

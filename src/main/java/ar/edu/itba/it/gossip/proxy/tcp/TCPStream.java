@@ -1,4 +1,4 @@
-package ar.edu.itba.it.gossip.proxy.tcp.stream;
+package ar.edu.itba.it.gossip.proxy.tcp;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
@@ -9,10 +9,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferInputStream;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
+import ar.edu.itba.it.gossip.util.nio.ByteStream;
 
 public class TCPStream extends ByteStream {
     private static final int BUF_SIZE = 4 * 1024;
@@ -20,14 +20,17 @@ public class TCPStream extends ByteStream {
     private final Endpoint from;
     private final Endpoint to;
 
+    private final ChannelTerminator channelTerminator;
+
     private TCPStreamHandler handler;// TODO: check!
 
-    private boolean influxPaused = false;
+    private boolean allowInflow = true;
 
     public TCPStream(final SocketChannel fromChannel,
-            final SocketChannel toChannel) {
+            final SocketChannel toChannel, final ChannelTerminator terminator) {
         this.from = new Endpoint(fromChannel);
         this.to = new Endpoint(toChannel);
+        this.channelTerminator = terminator;
     }
 
     public void setHandler(final TCPStreamHandler handler) {
@@ -71,7 +74,7 @@ public class TCPStream extends ByteStream {
     }
 
     public int getFromSubscriptionFlags() {
-        if (!influxPaused && getFromBuffer().hasRemaining()) {
+        if (allowInflow && getFromBuffer().hasRemaining()) {
             return SelectionKey.OP_READ;
         }
         return 0;
@@ -93,14 +96,19 @@ public class TCPStream extends ByteStream {
 
     @Override
     public void pauseInflow() {
-        this.influxPaused = true;
+        this.allowInflow = false;
     }
 
     @Override
     public void resumeInflow() {
-        this.influxPaused = false;
+        this.allowInflow = true;
     }
-    
+
+    public void endInflowAfterTimeout() {
+        this.allowInflow = false;
+        channelTerminator.closeAfterTimeout(getFromChannel());
+    }
+
     @Override
     // moves data safely from fromBuffer to toBuffer
     public void flush() {

@@ -1,13 +1,13 @@
 package ar.edu.itba.it.gossip.proxy.tcp;
 
-import java.io.IOException;
+import static ar.edu.itba.it.gossip.util.nio.ChannelUtils.closeQuietly;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
 public class ProxiedTCPConversation implements TCPConversation {
@@ -16,9 +16,10 @@ public class ProxiedTCPConversation implements TCPConversation {
     private Boolean connectingToOrigin = null; // Note: this is completely
                                                // intentional
 
-    protected ProxiedTCPConversation(SocketChannel clientChannel) {
-        this.clientToOrigin = new TCPStream(clientChannel, null);
-        this.originToClient = new TCPStream(null, clientChannel);
+    protected ProxiedTCPConversation(SocketChannel clientChannel,
+            ChannelTerminator terminator) {
+        this.clientToOrigin = new TCPStream(clientChannel, null, terminator);
+        this.originToClient = new TCPStream(null, clientChannel, terminator);
     }
 
     public void updateSubscription(Selector selector)
@@ -75,15 +76,11 @@ public class ProxiedTCPConversation implements TCPConversation {
     }
 
     public void closeChannels() {
-        try {
-            try {
-                getClientChannel().close();
-            } finally {
-                if (getOriginChannel() != null) {
-                    getOriginChannel().close();
-                }
-            }
-        } catch (IOException ignore) {
+        closeQuietly(getClientChannel());
+
+        SocketChannel originChannel = getOriginChannel();
+        if (originChannel != null) {
+            closeQuietly(originChannel);
         }
     }
 

@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
-import static ar.edu.itba.it.gossip.util.XMPPUtils.auth;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 

@@ -1,9 +1,9 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.*;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.*;
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
-import static ar.edu.itba.it.gossip.util.XMPPUtils.streamFeatures;
-import static ar.edu.itba.it.gossip.util.XMPPUtils.streamOpen;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 
@@ -22,7 +22,12 @@ class InitialState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     @Override
     public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        assumeType(element, STREAM_START);
+        if (element.getType() != STREAM_START) {
+            sendStreamOpenToClient(handler);
+            handler.sendToClient(streamError(BAD_FORMAT));
+            handler.endHandling();
+            return;
+        }
 
         sendStreamOpenToClient(handler);
         handler.sendToClient(streamFeatures(PLAIN_AUTH));
@@ -37,8 +42,7 @@ class InitialState extends HandlerState<ClientToOriginXMPPStreamHandler> {
     @Override
     public void handleBody(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // do nothing, just buffer element's contents
-        // TODO: check for potential floods!
+        element.consumeCurrentContent();
     }
 
     @Override

@@ -24,9 +24,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.Credentials;
-import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
+import ar.edu.itba.it.gossip.proxy.xmpp.ProxiedXMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c.OriginToClientXMPPStreamHandler;
@@ -43,7 +43,7 @@ public class OriginToClientXMPPStreamHandlerTest extends
             + credentials.encode() + "</auth>";
 
     @Mock
-    private XMPPConversation conversation;
+    private ProxiedXMPPConversation conversation;
 
     @Mock
     private TCPStream originToClient;
@@ -198,7 +198,7 @@ public class OriginToClientXMPPStreamHandlerTest extends
         int streamResets = 0;
         int twinAwakens = 0;
 
-        TestOriginToClientXMPPStreamHandler(XMPPConversation conversation,
+        TestOriginToClientXMPPStreamHandler(ProxiedXMPPConversation conversation,
                 TCPStream originToClient, OutputStream toOrigin)
                 throws XMLStreamException {
             super(conversation, originToClient, toOrigin);
@@ -210,7 +210,7 @@ public class OriginToClientXMPPStreamHandlerTest extends
         }
 
         @Override
-        protected void wakeUpTwin() {
+        protected void resumeTwin() {
             twinAwakens++;
         }
 

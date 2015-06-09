@@ -5,8 +5,8 @@ import java.nio.channels.SocketChannel;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.admin.tcp.UnproxiedTCPConversation;
+import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
-import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 
 public class AdminConversation extends UnproxiedTCPConversation {
     private final TCPStream adminStream;

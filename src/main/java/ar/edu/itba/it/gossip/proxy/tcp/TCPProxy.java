@@ -162,4 +162,8 @@ public abstract class TCPProxy implements TCPEventHandler {
 
     protected abstract ProxiedTCPConversation instanceConversation(
             SocketChannel clientChannel);
+
+    protected void closeAfterTimeout(SocketChannel channel, long millis) {
+        reactor.closeAfterTimeout(channel, millis);
+    }
 }

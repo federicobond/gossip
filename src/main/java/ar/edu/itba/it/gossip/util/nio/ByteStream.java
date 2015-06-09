@@ -1,4 +1,4 @@
-package ar.edu.itba.it.gossip.proxy.tcp.stream;
+package ar.edu.itba.it.gossip.util.nio;
 
 import static org.apache.commons.lang3.builder.ToStringBuilder.reflectionToString;
 

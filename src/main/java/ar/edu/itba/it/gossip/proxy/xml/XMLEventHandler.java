@@ -1,5 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xml;
 
+import javax.xml.stream.XMLStreamException;
+
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public interface XMLEventHandler {
@@ -12,4 +14,6 @@ public interface XMLEventHandler {
     void handleEndElement(AsyncXMLStreamReader<?> reader);
 
     void handleCharacters(AsyncXMLStreamReader<?> reader);
+
+    void handleError(XMLStreamException e);
 }

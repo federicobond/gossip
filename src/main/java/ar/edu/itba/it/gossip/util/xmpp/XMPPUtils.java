@@ -1,6 +1,5 @@
-package ar.edu.itba.it.gossip.util;
+package ar.edu.itba.it.gossip.util.xmpp;
 
-import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.attr;
 import static ar.edu.itba.it.gossip.util.XMLUtils.attributes;
 import static ar.edu.itba.it.gossip.util.XMLUtils.concatKeyValue;
@@ -57,15 +56,10 @@ public abstract class XMPPUtils {
                 + ">" + "<body>" + bodyText + "</body>" + "</message>";
     }
 
-    public static String streamError() {
-        return DOCUMENT_START
-                + "<stream:stream"
-                + attributes(
-                        attr("id", ""),
-                        attr("xmlns:stream", "http://etherx.jabber.org/streams"),
-                        attr("version", "1.0"), attr("xmlns", "jabber:client"))
-                + "<stream:error>"
-                + "<invalid-namespace"
+    public static String streamError(XMPPError error) {
+        return "<stream:error>"
+                + "<"
+                + error.getTagName()
                 + attributes(attr("xmlns",
                         "urn:ietf:params:xml:ns:xmpp-streams")) + "/>"
                 + "</stream:error>" + "</stream:stream>";

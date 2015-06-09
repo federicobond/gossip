@@ -29,9 +29,11 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
     private static final AsyncXMLInputFactory inputFactory = new InputFactoryImpl();
 
     private XMLEventHandler xmlHandler;
+
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> reader;
     private DeferredConnector connector;
     private int gtsRead = 0;
+    private boolean paused = false;
 
     protected XMLStreamHandler() throws XMLStreamException {
         this.reader = newReader();
@@ -43,7 +45,7 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         try {
             reader.getInputFeeder().feedInput(buf);
 
-            while (reader.hasNext()) {
+            while (!paused && reader.hasNext()) {
                 int type = reader.next();
                 switch (type) {
                 case START_DOCUMENT:
@@ -70,7 +72,7 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
                 }
             }
         } catch (XMLStreamException e) {
-            handleError(e);
+            xmlHandler.handleError(e);
         }
         this.connector = null;
 
@@ -115,6 +117,14 @@ public abstract class XMLStreamHandler implements TCPStreamHandler {
         } catch (XMLStreamException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected void pause() {
+        this.paused = true;
+    }
+
+    protected void resume() {
+        this.paused = false;
     }
 
     private AsyncXMLStreamReader<AsyncByteBufferFeeder> newReader()
