@@ -17,6 +17,8 @@ public class ProxyConfig {
 	private Set<String> silencedUsers = new HashSet<String>();
 	private boolean convertLeet = false;
 	
+	private int bytesWritten = 0;
+	
  	private ProxyConfig() {}
 	
 	public static ProxyConfig getInstance() {
@@ -67,8 +69,19 @@ public class ProxyConfig {
 	    return silencedUsers.contains(user.trim().toLowerCase());
 	}
 	
-	public String getStats(int type){
-	    //TODO: save stats and return it here.
-	    return "0";
+	public int getStats(int type){
+	    switch(type){
+	        case 2:
+	            return getWrittenBytes();
+	    }
+	    return 0;
+	}
+	
+	public void countWrites(int written){
+	    this.bytesWritten += written;
+	}
+	
+	public int getWrittenBytes(){
+	    return this.bytesWritten;
 	}
 }
