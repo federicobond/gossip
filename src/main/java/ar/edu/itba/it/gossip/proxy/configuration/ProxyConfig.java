@@ -13,11 +13,11 @@ public class ProxyConfig {
 
 	private static final Logger log = Logger.getLogger("ProxyConfig");
 
-	private final String adminUser;
-	private final String adminPassword;
+	private String adminUser;
+	private String adminPassword;
 
-	private final String defaultOriginHost;
-	private final int defaultOriginPort;
+	private String defaultOriginHost;
+	private int defaultOriginPort;
 	
 	private Map<String,String> userToOrigin = new HashMap<String,String>();
 	private Set<String> silencedUsers = new HashSet<String>();
@@ -35,12 +35,36 @@ public class ProxyConfig {
 			log.log(Level.SEVERE, "Could not load proxy properties.");
 			System.exit(1);
 		}
+		load(properties);
+	}
 
+	private void load(Properties properties) {
 		adminUser = properties.getProperty("admin.user", "admin");
 		adminPassword = properties.getProperty("admin.password", "1234");
-        convertLeet = properties.getProperty("leet.default", "false").equals("true");
+		convertLeet = properties.getProperty("leet.default", "false").equals("true");
 		defaultOriginHost = properties.getProperty("origin.default.host", "localhost");
 		defaultOriginPort = Integer.parseInt(properties.getProperty("origin.default.port", "5222"));
+
+		String[] users = properties.getProperty("users.silenced").split(",");
+		for (String user : users) {
+			user = user.trim();
+			if (!user.equals("")) {
+				silencedUsers.add(user);
+			}
+		}
+
+		users = properties.getProperty("users.multiplexed").split(",");
+		for (String user : users) {
+			user = user.trim();
+			if (!user.equals("")) {
+				String[] parts = user.split("@");
+				if (parts.length != 2) {
+					log.log(Level.WARNING, "Skipped invalid multiplexed user value: ", user);
+					continue;
+				}
+				userToOrigin.put(parts[0], parts[1]);
+			}
+		}
 	}
 	
 	public static ProxyConfig getInstance() {
