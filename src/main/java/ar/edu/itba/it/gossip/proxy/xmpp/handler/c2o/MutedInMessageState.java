@@ -66,7 +66,7 @@ class MutedInMessageState extends HandlerState<ClientToOriginXMPPStreamHandler> 
             break;
         case MESSAGE:
             Message message = (Message) element;
-            if (!handler.isCurrentUserMuted()) {
+            if (!handler.isJIDMuted(message.getSender())) {
                 // TODO: this assumes that messages cannot be embedded into
                 // other messages or anything like that! If that were the
                 // case, this *will* fail

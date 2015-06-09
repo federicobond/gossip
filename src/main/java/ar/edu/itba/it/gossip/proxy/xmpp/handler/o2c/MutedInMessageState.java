@@ -1,6 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
+import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.MutableChatState;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
@@ -57,7 +58,8 @@ class MutedInMessageState extends HandlerState<OriginToClientXMPPStreamHandler> 
             element.consumeCurrentContent();
             break;
         case MESSAGE:
-            if (!handler.isCurrentUserMuted()) {
+            Message message = (Message) element;
+            if (!handler.isJIDMuted(message.getReceiver())) {
                 // TODO: this assumes that messages cannot be embedded into
                 // other messages or anything like that! If that were the
                 // case, this *will* fail

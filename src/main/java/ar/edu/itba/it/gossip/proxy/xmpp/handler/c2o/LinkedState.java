@@ -24,10 +24,10 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
             Message message = (Message) element;
             if (handler.isMuted(message)) {
                 handler.setClientNotifiedOfMute(false);
-                handler.setClientCauseOfMute(handler.isCurrentUserMuted());
+                handler.setClientCauseOfMute(handler.isJIDMuted(message.getSender()));
                 handler.setState(MutedInMessageState.getInstance());
             } else {
-                if(proxyConfig.convertLeet()){
+                if (proxyConfig.convertLeet()){
                     message.enableLeetConversion();
                 }
             }
@@ -41,7 +41,7 @@ class LinkedState extends HandlerState<ClientToOriginXMPPStreamHandler> {
         // this is here just in case leet conversion was enabled by the
         // admin after the message's start tag
         if (element.getType() == MESSAGE) {
-            if(proxyConfig.convertLeet()){
+            if (proxyConfig.convertLeet()){
                 ((Message) element).enableLeetConversion();
             }
         }

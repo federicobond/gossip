@@ -4,6 +4,7 @@ import java.io.OutputStream;
 
 import javax.xml.stream.XMLStreamException;
 
+import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.tcp.stream.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPConversation;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
@@ -12,6 +13,8 @@ import ar.edu.itba.it.gossip.proxy.xmpp.handler.HandlerState;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPStreamHandler;
 
 public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
+    private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+
     private final XMPPConversation conversation;
     private final OutputStream toClient;
     private final OutputStream toOrigin;
@@ -44,13 +47,13 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected boolean isMuted(Message message) {
-        // TODO: change this!
-        return isCurrentUserMuted() || message.getSender().contains("mute");
+        String from = message.getSender();
+        String to = message.getReceiver();
+        return proxyConfig.isSilenced(from) || proxyConfig.isSilenced(to);
     }
 
-    protected boolean isCurrentUserMuted() {
-        // TODO: change this!
-        return conversation.getCredentials().getUsername().contains("mute");
+    public boolean isJIDMuted(String jid) {
+        return proxyConfig.isSilenced(jid);
     }
 
     String encodeCredentials() {
