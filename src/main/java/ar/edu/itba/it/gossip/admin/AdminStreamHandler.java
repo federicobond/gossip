@@ -11,6 +11,7 @@ import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.NoSuchElementException;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -73,12 +74,12 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
         handleEnd(PartialAdminElement.from(xmlElement));
 
-        // TODO: this breaks when we omit the root <admin> tag
-        xmlElement = xmlElement.getParent().get(); // an element that wasn't
-                                                   // open will never be
-                                                   // closed,
-                                                   // since the underlying
-                                                   // stream is a valid XML one
+        try{
+            xmlElement = xmlElement.getParent().get();
+        }catch (NoSuchElementException e){
+            // We do nothing because we have already sent an error
+        }
+         
     }
 
     private boolean adminLogin(String user, String password) {
@@ -91,14 +92,16 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     public void handleStart(PartialAdminElement element) {
         switch (state) {
         case INITIAL:
-            assumeType(element, START_ADMIN);
+            if(element.getType() != START_ADMIN){
+                sendFailure(101, "Unrecognized tag");
+                quitAdmin();
+                break;
+            }
             state = State.EXPECT_USER;
             break;
         case EXPECT_USER:
             switch (element.getType()) {
             case USER:
-                // Looks unnecessary now
-                // assumeType(element, USER);
                 state = State.READ_USER;
                 break;
             case QUIT:
@@ -113,6 +116,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         case EXPECT_PASS:
             switch (element.getType()) {
             case QUIT:
+                sendSuccess();
                 quitAdmin();
                 break;
             case PASS:
@@ -244,8 +248,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         case LOGGED_IN:
             break;
         default:
-            //sendFailure(101, "Unrecognized tag");
-            //resetStream();
             break;
         }
     }
@@ -311,7 +313,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
     private void sendSuccess() {
-        sendToClient("<success />\n");
+        sendToClient("<success/>\n");
     }
 
     private void sendFailure(int code, String message) {
