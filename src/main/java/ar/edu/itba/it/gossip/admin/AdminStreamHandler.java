@@ -1,7 +1,11 @@
 package ar.edu.itba.it.gossip.admin;
 
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.LEET;
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.ORIGIN;
 import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.PASS;
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.SILENCE;
 import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.START_ADMIN;
+import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.STATS;
 import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.USER;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
@@ -19,7 +23,6 @@ import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xml.XMLEventHandler;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
-import static ar.edu.itba.it.gossip.admin.PartialAdminElement.Type.*;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 

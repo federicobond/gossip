@@ -11,7 +11,6 @@ import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
@@ -114,11 +113,4 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         this.twin = twin;
         twin.twin = this;
     }
-
-    protected void assumeType(PartialXMPPElement element, Type type) {
-        assumeState(element.getType() == type,
-                "Event type mismatch, got: %s when %s was expected", element,
-                type);
-    }
-
 }

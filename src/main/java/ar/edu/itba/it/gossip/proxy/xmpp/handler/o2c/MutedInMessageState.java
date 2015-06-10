@@ -1,12 +1,12 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
-import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.MutableChatState;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class MutedInMessageState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
+class MutedInMessageState extends
+        XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final MutedInMessageState INSTANCE = new MutedInMessageState();
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
@@ -59,9 +59,6 @@ class MutedInMessageState extends XMPPHandlerState<OriginToClientXMPPStreamHandl
             break;
         case MESSAGE:
             if (!handler.isClientMuted()) {
-                // TODO: this assumes that messages cannot be embedded into
-                // other messages or anything like that! If that were the
-                // case, this *will* fail
                 handler.setState(LinkedState.getInstance());
             } else {
                 handler.setState(MutedOutsideMessageState.getInstance());

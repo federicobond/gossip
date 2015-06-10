@@ -1,5 +1,6 @@
 package ar.edu.itba.it.gossip.async.tcp;
 
+import static ar.edu.itba.it.gossip.util.CollectionUtils.removeAll;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 import static ar.edu.itba.it.gossip.util.nio.ChannelUtils.closeQuietly;
 import static java.lang.System.currentTimeMillis;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static ar.edu.itba.it.gossip.util.CollectionUtils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

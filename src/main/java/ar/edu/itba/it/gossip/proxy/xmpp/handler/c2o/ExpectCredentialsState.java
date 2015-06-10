@@ -2,7 +2,8 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_CHOICE;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
-import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.*;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.MALFORMED_REQUEST;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.streamOpen;
 
 import java.net.InetSocketAddress;

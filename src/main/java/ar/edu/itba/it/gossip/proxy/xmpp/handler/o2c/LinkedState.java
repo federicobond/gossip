@@ -24,9 +24,6 @@ class LinkedState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
             Message message = (Message) element;
             if (handler.isMuted(message)) {
                 handler.setState(MutedInMessageState.getInstance());
-            } else {
-                // TODO: if you want to convert messages from outside origin
-                // to leet, this is the place!
             }
         }
         handler.sendToClient(element);
@@ -35,7 +32,6 @@ class LinkedState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     @Override
     public void handleBody(OriginToClientXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // TODO: check for leet case!
         handler.sendToClient(element);
     }
 
