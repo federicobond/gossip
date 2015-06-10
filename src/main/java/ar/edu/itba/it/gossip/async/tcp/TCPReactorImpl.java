@@ -56,6 +56,7 @@ public class TCPReactorImpl implements TCPReactor {
     @Override
     public void unsubscribe(SocketChannel channel) {
         handlersByChannel.remove(channel);
+        timeoutTimesByChannel.remove(channel);
         logger.info("Done handling channel: {}", channel);
     }
 
