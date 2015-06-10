@@ -95,9 +95,10 @@ public abstract class TCPProxyAdmin implements TCPEventHandler {
         UnproxiedTCPConversation conversation = (UnproxiedTCPConversation) key
                 .attachment();
         try {
+            SocketChannel channel = (SocketChannel) key.channel();
             ByteBuffer buffer = conversation.getWriteBuffer();
             buffer.flip();
-
+            channel.write(buffer);
             buffer.compact(); // Make room for more data to be read in
 
             conversation.updateSubscription(key.selector());
