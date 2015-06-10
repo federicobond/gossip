@@ -80,15 +80,8 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected void sendToClient(PartialXMPPElement element) {
-        // System.out.println("\n<O2C sending to client>");
         String currentContent = element.serializeCurrentContent();
-        // System.out.println("Message:\n'"
-        // + StringEscapeUtils.escapeJava(currentContent) + "' (string) "
-        // + ArrayUtils.toString(currentContent.getBytes()));
         sendToClient(currentContent);
-        // System.out.println("\nOutgoing buffer afterwards:");
-        // ((ByteBufferOutputStream) toClient).printBuffer(false, true, true);
-        // System.out.println("</O2C sending to client>\n");
     }
 
     protected void sendToClient(String message) {

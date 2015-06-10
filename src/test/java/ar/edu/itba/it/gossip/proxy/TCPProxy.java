@@ -45,44 +45,57 @@ public class TCPProxy implements TCPEventHandler {
     }
 
     @Override
-    public void handleAccept(final SelectionKey key) throws IOException {
-        final SocketChannel originServer = SocketChannel.open();
+    public void handleAccept(final SelectionKey key) {
+        try {
+            final SocketChannel originServer = SocketChannel.open();
 
-        SocketChannel clntChan = ((ServerSocketChannel) key.channel()).accept();
-        clntChan.configureBlocking(false); // Must be nonblocking to register
+            SocketChannel clntChan = ((ServerSocketChannel) key.channel())
+                    .accept();
+            clntChan.configureBlocking(false); // Must be nonblocking to
+                                               // register
 
-        originServer.configureBlocking(false);
-        // no nos registramos a ningun evento porque primero tenemos que
-        // establecer la conexion hacia el origin server
+            originServer.configureBlocking(false);
+            // no nos registramos a ningun evento porque primero tenemos que
+            // establecer la conexion hacia el origin server
 
-        // Initiate connection to server and repeatedly poll until complete
-        originServer.connect(new InetSocketAddress(host, port));
-        originServer
-                .register(key.selector(), SelectionKey.OP_CONNECT, clntChan);
+            // Initiate connection to server and repeatedly poll until complete
+            originServer.connect(new InetSocketAddress(host, port));
+            originServer.register(key.selector(), SelectionKey.OP_CONNECT,
+                    clntChan);
 
-        reactor.subscribe(clntChan, this);
-        reactor.subscribe(originServer, this);
+            reactor.subscribe(clntChan, this);
+            reactor.subscribe(originServer, this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public void handleConnect(final SelectionKey key) throws IOException {
-        final SocketChannel clientChannel = (SocketChannel) key.attachment();
-
-        SocketChannel originChannel = (SocketChannel) key.channel();
-        final ProxyState state = new ProxyState(clientChannel, originChannel);
+    public void handleConnect(final SelectionKey key) {
         try {
-            boolean ret = originChannel.finishConnect();
-            if (ret) {
-                // nos interesa cualquier cosa que venga de cualquiera de las
-                // dos puntas
-                state.updateSubscription(key.selector());
-            } else {
+            final SocketChannel clientChannel = (SocketChannel) key
+                    .attachment();
+
+            SocketChannel originChannel = (SocketChannel) key.channel();
+            final ProxyState state = new ProxyState(clientChannel,
+                    originChannel);
+            try {
+                boolean ret = originChannel.finishConnect();
+                if (ret) {
+                    // nos interesa cualquier cosa que venga de cualquiera de
+                    // las
+                    // dos puntas
+                    state.updateSubscription(key.selector());
+                } else {
+                    closeChannels(state);
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to connect to origin server: "
+                        + e.getMessage());
                 closeChannels(state);
             }
         } catch (IOException e) {
-            System.err.println("Failed to connect to origin server: "
-                    + e.getMessage());
-            closeChannels(state);
+            throw new RuntimeException(e);
         }
     }
 
@@ -93,33 +106,41 @@ public class TCPProxy implements TCPEventHandler {
     }
 
     @Override
-    public void handleRead(final SelectionKey key) throws IOException {
-        final ProxyState proxyState = (ProxyState) key.attachment();
-        final SocketChannel channel = (SocketChannel) key.channel();
+    public void handleRead(final SelectionKey key) {
+        try {
+            final ProxyState proxyState = (ProxyState) key.attachment();
+            final SocketChannel channel = (SocketChannel) key.channel();
 
-        final ByteBuffer buffer = proxyState.readBufferFor(channel);
+            final ByteBuffer buffer = proxyState.readBufferFor(channel);
 
-        long bytesRead = channel.read(buffer);
-        if (bytesRead == -1) { // Did the other end close?
-            closeChannels(proxyState);
-        } else if (bytesRead > 0) {
-            proxyState.updateSubscription(key.selector());
+            long bytesRead = channel.read(buffer);
+            if (bytesRead == -1) { // Did the other end close?
+                closeChannels(proxyState);
+            } else if (bytesRead > 0) {
+                proxyState.updateSubscription(key.selector());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void handleWrite(final SelectionKey key) throws IOException {
-        final ProxyState proxyState = (ProxyState) key.attachment();
+    public void handleWrite(final SelectionKey key) {
+        try {
+            final ProxyState proxyState = (ProxyState) key.attachment();
 
-        final SocketChannel channel = (SocketChannel) key.channel();
+            final SocketChannel channel = (SocketChannel) key.channel();
 
-        final ByteBuffer buffer = proxyState.writeBufferFor(channel);
+            final ByteBuffer buffer = proxyState.writeBufferFor(channel);
 
-        buffer.flip(); // Prepare buffer for writing
-        channel.write(buffer);
-        buffer.compact(); // Make room for more data to be read in
+            buffer.flip(); // Prepare buffer for writing
+            channel.write(buffer);
+            buffer.compact(); // Make room for more data to be read in
 
-        proxyState.updateSubscription(key.selector());
+            proxyState.updateSubscription(key.selector());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

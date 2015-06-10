@@ -31,7 +31,6 @@ public class UnproxiedTCPConversation implements TCPConversation {
         int streamToFlags = stream.getToSubscriptionFlags();
         stream.getFromChannel().register(selector, streamFlags | streamToFlags,
                 this);
-        // stream.getToChannel().register(selector, streamToFlags, this);
     }
 
     @Override
@@ -61,17 +60,6 @@ public class UnproxiedTCPConversation implements TCPConversation {
 
     public TCPStreamHandler getHandler() {
         return stream.getHandler();
-    }
-
-    // FIXME: just for debugging purposes
-    public String getBufferName(ByteBuffer buffer) {
-        if (buffer == stream.getFromBuffer()) {
-            return "from buffer";
-        }
-        if (buffer == stream.getToBuffer()) {
-            return "to buffer";
-        }
-        throw new IllegalArgumentException("Unknown buffer");
     }
 
     public SocketChannel getChannel() {

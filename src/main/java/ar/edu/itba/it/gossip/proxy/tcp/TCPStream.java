@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferInputStream;
 import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 import ar.edu.itba.it.gossip.util.nio.ByteStream;
@@ -106,12 +105,6 @@ public class TCPStream extends ByteStream {
     public void endInflowAfterTimeout() {
         this.allowInflow = false;
         channelTerminator.closeAfterTimeout(getFromChannel());
-    }
-
-    @Override
-    // moves data safely from fromBuffer to toBuffer
-    public void flush() {
-        BufferUtils.transfer(getFromBuffer(), getToBuffer());
     }
 
     private static class Endpoint {

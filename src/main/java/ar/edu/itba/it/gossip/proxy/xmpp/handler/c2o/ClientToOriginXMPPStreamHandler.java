@@ -74,15 +74,8 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
     }
 
     protected void sendToOrigin(PartialXMPPElement element) {
-        // System.out.println("\n<C2O sending to origin>");
         String currentContent = element.serializeCurrentContent();
-        // System.out.println("Message:\n'"
-        // + StringEscapeUtils.escapeJava(currentContent) + "' (string) "
-        // + ArrayUtils.toString(currentContent.getBytes()));
         sendToOrigin(currentContent);
-        // System.out.println("\nOutgoing buffer afterwards:");
-        // ((ByteBufferOutputStream) toOrigin).printBuffer(false, true, true);
-        // System.out.println("</C2O sending to origin>\n");
     }
 
     String getCurrentUser() {

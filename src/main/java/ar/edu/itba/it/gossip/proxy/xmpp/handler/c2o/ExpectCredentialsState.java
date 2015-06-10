@@ -57,9 +57,6 @@ class ExpectCredentialsState extends
             handler.sendErrorToClient(MALFORMED_REQUEST);
             return;
         }
-        System.out.println(credentials.getUsername()
-                + " is trying to log in with password: "
-                + credentials.getPassword());
         handler.setCredentials(credentials);
 
         connectToOrigin(handler);

@@ -25,14 +25,6 @@ public class ByteBufferOutputStream extends OutputStream {
         // FIXME should probably flip / compact / sth!
     }
 
-    // FIXME: just here for testing purposes
-    public void printBuffer(boolean bytes, boolean flip, boolean escape) {
-        BufferUtils.printContent(buf, flip, escape);
-        if (bytes) {
-            BufferUtils.printContentAsBytes(buf, flip);
-        }
-    }
-
     @Override
     public String toString() {
         return reflectionToString(this);

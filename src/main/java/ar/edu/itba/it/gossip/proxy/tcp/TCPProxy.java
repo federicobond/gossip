@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
-import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxy implements TCPEventHandler {
     private final Logger logger = LoggerFactory.getLogger(TCPProxy.class);
@@ -55,14 +54,6 @@ public abstract class TCPProxy implements TCPEventHandler {
 
             int bytesRead = channel.read(buffer);
             proxyConfig.countReads(bytesRead);
-            // FIXME: just for debugging purposes
-            String channelName = conversation.getClientChannel() == channel ? "client"
-                    : "origin";
-            String bufferName = conversation.getBufferName(buffer);
-            System.out.println("Read " + bytesRead + " bytes into '"
-                    + bufferName + "' through '" + channelName + "Channel ("
-                    + channel + "')");
-            // FIXME: just for debugging purposes
 
             if (bytesRead == -1) { // Did the other end close?
                 handler.handleEndOfInput();
@@ -70,23 +61,8 @@ public abstract class TCPProxy implements TCPEventHandler {
             } else if (bytesRead > 0) {
                 buffer.flip();
 
-                // FIXME: just for debugging purposes
-                System.out.println(bufferName + "'s content: (JUST READ)"
-                        + "\n===================\n" + BufferUtils.peek(buffer)
-                        + "\n===================\n");
-                // FIXME: just for debugging purposes
-
                 handler.handleRead(buffer,
                         address -> connectToOrigin(key, conversation, address));
-
-                // FIXME: just for debugging purposes
-                System.out.println(bufferName
-                        + "'s content (AFTER READ):"
-                        + buffer
-                        + ")\n===================\n"
-                        + BufferUtils.peek((ByteBuffer) (buffer.duplicate()
-                                .flip())) + "\n===================\n");
-                // FIXME: just for debugging purposes
 
                 conversation.updateSubscription(key.selector());
             }
@@ -131,30 +107,10 @@ public abstract class TCPProxy implements TCPEventHandler {
 
             ByteBuffer buffer = conversation.getWriteBufferFor(channel);
 
-            // FIXME: just for debugging purposes
-            String bufferName = conversation.getBufferName(buffer);
-            String channelName = conversation.getClientChannel() == channel ? "client"
-                    : "origin";
-            // FIXME: just for debugging purposes
-
             buffer.flip();
-            // // FIXME: just for debugging purposes
-            // System.out.println(bufferName + "'s content: (BEFORE WRITE)"
-            // + "\n===================\n" + BufferUtils.peek(buffer)
-            // + "\n===================\n");
-            // // FIXME: just for debugging purposes
 
             int bytesWritten = channel.write(buffer);
             proxyConfig.countWrites(bytesWritten);
-            System.out.println("Wrote " + bytesWritten + " bytes from '"
-                    + bufferName + "' through '" + channelName + "Channel ("
-                    + channel + "')");
-
-            // FIXME: just for debugging purposes
-            // System.out.println(bufferName + "'s content: (AFTER WRITE)"
-            // + "\n===================\n" + BufferUtils.peek(buffer)
-            // + "\n===================\n");
-            // FIXME: just for debugging purposes
 
             buffer.compact(); // Make room for more data to be read in
 

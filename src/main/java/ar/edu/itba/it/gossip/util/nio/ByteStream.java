@@ -10,8 +10,6 @@ public abstract class ByteStream {
 
     public abstract OutputStream getOutputStream();
 
-    public abstract void flush();
-
     public abstract void pauseInflow();
 
     public abstract void resumeInflow();

@@ -54,25 +54,11 @@ public abstract class TCPProxyAdmin implements TCPEventHandler {
 
             int bytesRead = channel.read(buffer);
 
-            // FIXME: just for debugging purposes
-            String channelName = "admin";
-            String bufferName = conversation.getBufferName(buffer);
-            System.out.println("Read " + bytesRead + " bytes into '"
-                    + bufferName + "' through '" + channelName + "Channel ("
-                    + channel + "')");
-            // FIXME: just for debugging purposes
-
             if (bytesRead == -1) {
                 handler.handleEndOfInput();
                 finish(conversation);
             } else if (bytesRead > 0) {
                 buffer.flip();
-
-                // FIXME: just for debugging purposes
-                System.out.println(bufferName + "'s content: (JUST READ)"
-                        + "\n===================\n" + BufferUtils.peek(buffer)
-                        + "\n===================\n");
-                // FIXME: just for debugging purposes
 
                 handler.handleRead(buffer,
                         address -> connect(key, conversation, address));
@@ -109,38 +95,12 @@ public abstract class TCPProxyAdmin implements TCPEventHandler {
         UnproxiedTCPConversation conversation = (UnproxiedTCPConversation) key
                 .attachment();
         try {
-            SocketChannel channel = (SocketChannel) key.channel();
-
             ByteBuffer buffer = conversation.getWriteBuffer();
-
-            // FIXME: just for debugging purposes
-            String bufferName = conversation.getBufferName(buffer);
-            String channelName = "admin";
-            // FIXME: just for debugging purposes
-
             buffer.flip();
-            // // FIXME: just for debugging purposes
-            // System.out.println(bufferName + "'s content: (BEFORE WRITE)"
-            // + "\n===================\n" + BufferUtils.peek(buffer)
-            // + "\n===================\n");
-            // // FIXME: just for debugging purposes
-
-            int bytesWritten = channel.write(buffer);
-
-            System.out.println("Wrote " + bytesWritten + " bytes from '"
-                    + bufferName + "' through '" + channelName + "Channel ("
-                    + channel + "')");
-
-            // FIXME: just for debugging purposes
-            System.out.println(bufferName + "'s content: (AFTER WRITE)"
-                    + "\n===================\n" + BufferUtils.peek(buffer)
-                    + "\n===================\n");
-            // FIXME: just for debugging purposes
 
             buffer.compact(); // Make room for more data to be read in
 
             conversation.updateSubscription(key.selector());
-            // reactor.unsubscribe((SocketChannel) key.channel());
 
             if (conversation.hasQuit()) {
                 conversation.closeChannels();

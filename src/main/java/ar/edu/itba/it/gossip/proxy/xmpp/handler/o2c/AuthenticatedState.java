@@ -25,8 +25,6 @@ class AuthenticatedState extends
         }
 
         handler.setState(LinkedState.getInstance());
-        System.out
-                .println("Origin is linked to the client, now messages may pass freely");
 
         handler.sendToClient(DOCUMENT_START);
         handler.sendToClient(element); // send stream start to client

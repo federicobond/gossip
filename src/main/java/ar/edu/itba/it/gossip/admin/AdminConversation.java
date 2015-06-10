@@ -23,10 +23,7 @@ public class AdminConversation extends UnproxiedTCPConversation {
                     adminStream.getInputStream(), adminStream.getOutputStream());
             adminStream.setHandler(adminHandler);
         } catch (XMLStreamException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
-
 }
