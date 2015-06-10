@@ -68,7 +68,7 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         throw new RuntimeException(e);
     }
 
-    protected void endHandling() {
+    public void endHandling() {
         this.pause();
         stream.endInflowAfterTimeout();
     }

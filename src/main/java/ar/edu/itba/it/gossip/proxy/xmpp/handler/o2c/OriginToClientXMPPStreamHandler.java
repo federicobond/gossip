@@ -113,9 +113,4 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         endHandling();
         endTwinsHandling();
     }
-
-    public void sendStreamEndToClient() {
-        // TODO Auto-generated method stub
-        
-    }
 }
