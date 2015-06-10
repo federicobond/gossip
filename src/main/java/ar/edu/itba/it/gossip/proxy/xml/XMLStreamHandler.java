@@ -143,8 +143,8 @@ public abstract class XMLStreamHandler implements TCPStreamHandler,
     protected void writeTo(OutputStream stream, String payload) {
         try {
             stream.write(payload.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception ex) {
+            handleError(ex);
         }
     }
 }

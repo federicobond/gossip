@@ -1,5 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.*;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
@@ -64,7 +65,7 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
 
     @Override
     public void handleError(Exception ex) {
-        throw new RuntimeException(ex); // FIXME
+        sendErrorToClient(BAD_FORMAT);
     }
 
     public void endHandling() {
@@ -113,6 +114,6 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         this.twin = twin;
         twin.twin = this;
     }
-    
+
     protected abstract void sendErrorToClient(XMPPError error);
 }
