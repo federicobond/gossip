@@ -54,6 +54,17 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         state.handleEnd(this, element);
     }
 
+    @Override
+    public void handleError(XMLStreamException xmlEx) {
+        state.handleError(this, xmlEx);
+    }
+
+    @Override
+    protected void sendErrorToClient(XMPPError error) {
+        sendToClient(streamError(error));
+        endHandling();
+    }
+
     protected void sendToOrigin(String message) {
         writeTo(toOrigin, message);
     }
@@ -99,11 +110,6 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
         conversation.setCredentials(credentials);
     }
 
-    // @Override
-    // protected void endHandling() { // just for visibility
-    // super.endHandling();
-    // }
-
     @Override
     protected DeferredConnector getConnector() { // just for visibility
         return super.getConnector();
@@ -133,10 +139,5 @@ public class ClientToOriginXMPPStreamHandler extends XMPPStreamHandler {
 
     void setClientCauseOfMute(final boolean value) {
         this.clientCauseOfMute = value;
-    }
-
-    void sendErrorToClient(XMPPError error) {
-        sendToClient(streamError(error));
-        endHandling();
     }
 }

@@ -11,6 +11,7 @@ import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.xml.XMLStreamHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.XMPPEventHandler;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
+import ar.edu.itba.it.gossip.util.xmpp.XMPPError;
 
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
@@ -62,9 +63,8 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
     }
 
     @Override
-    public void handleError(XMLStreamException e) {
-        // TODO: generic *XML* stream error
-        throw new RuntimeException(e);
+    public void handleError(Exception ex) {
+        throw new RuntimeException(ex); // FIXME
     }
 
     public void endHandling() {
@@ -113,4 +113,6 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
         this.twin = twin;
         twin.twin = this;
     }
+    
+    protected abstract void sendErrorToClient(XMPPError error);
 }

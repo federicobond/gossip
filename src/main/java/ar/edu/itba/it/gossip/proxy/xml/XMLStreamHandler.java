@@ -70,8 +70,8 @@ public abstract class XMLStreamHandler implements TCPStreamHandler,
                     break;
                 }
             }
-        } catch (XMLStreamException e) {
-            handleError(e);
+        } catch (XMLStreamException xmlExc) {
+            handleError(xmlExc);
         }
         this.connector = null;
 
@@ -79,14 +79,9 @@ public abstract class XMLStreamHandler implements TCPStreamHandler,
         buf.compact();
     }
 
-    @Override
-    public void handleError(Exception ex) {
-        throw new RuntimeException(ex);
-    }
-
     protected int getNewPosition(ByteBuffer buffer) { // because thank you aalto
                                                       // for not showing offsets
-        // IMPORTANT: this will NOT work with CDATAs NOR COMMENTS!
+        // IMPORTANT: this will NOT work with CDATAs OR COMMENTS!
         byte[] bytes = buffer.array();
         for (int i = buffer.position(); i < buffer.limit(); i++) {
             switch (bytes[i]) {

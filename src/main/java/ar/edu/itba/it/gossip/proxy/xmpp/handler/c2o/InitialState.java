@@ -5,6 +5,9 @@ import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.streamFeatures;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.streamOpen;
+
+import javax.xml.stream.XMLStreamException;
+
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
@@ -24,8 +27,7 @@ class InitialState extends XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
         if (element.getType() != STREAM_START) {
-            sendStreamOpenToClient(handler);
-            handler.sendErrorToClient(BAD_FORMAT);
+            sendErrorToClient(handler);
             return;
         }
 
@@ -50,5 +52,16 @@ class InitialState extends XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
             PartialXMPPElement element) {
         // will never happen
         throw new RuntimeException();
+    }
+
+    @Override
+    public void handleError(ClientToOriginXMPPStreamHandler handler,
+            XMLStreamException xmlEx) {
+        sendErrorToClient(handler);
+    }
+
+    private void sendErrorToClient(ClientToOriginXMPPStreamHandler handler) {
+        sendStreamOpenToClient(handler);
+        handler.sendErrorToClient(BAD_FORMAT);
     }
 }

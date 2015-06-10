@@ -50,6 +50,11 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         state.handleEnd(this, element);
     }
 
+    @Override
+    public void handleError(XMLStreamException xmlEx) {
+        state.handleError(this, xmlEx);
+    }
+
     String getCurrentUser() {
         return conversation.getCredentials().getUsername();
     }
@@ -108,7 +113,8 @@ public class OriginToClientXMPPStreamHandler extends XMPPStreamHandler {
         this.state = state;
     }
 
-    void sendErrorToClient(XMPPError error) {
+    @Override
+    protected void sendErrorToClient(XMPPError error) {
         sendToClient(streamError(error));
         endHandling();
         endTwinsHandling();
