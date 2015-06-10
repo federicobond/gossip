@@ -92,7 +92,9 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     public void handleStart(PartialAdminElement element) {
         switch (state) {
         case INITIAL:
-            if(element.getType() != START_ADMIN){
+            if(element.getType() == START_ADMIN){
+                sendToClient("<?xml version=\"1.0\"?>");
+            }else{
                 sendFailure(101, "Unrecognized tag");
                 quitAdmin();
                 break;
