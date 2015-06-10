@@ -3,7 +3,8 @@ Gossip [![Build Status](https://magnum.travis-ci.com/federicobond/gossip.svg?tok
 
 A small Java XMPP proxy.
 
-## Administration commands
+## Admin module
+### Commands
 
 Conversation must be a valid XML, starting with:
 ```
@@ -26,7 +27,7 @@ Once the `<admin>` element is open, you can start sending commands:
 <quit/>
 ```
 
-# Códigos de error
+### Error codes
 
  * 100 - Malformed XML input
  * 101 - Unrecognized tag
