@@ -1,6 +1,7 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.MESSAGE;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.Message;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
@@ -8,7 +9,7 @@ import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
 class LinkedState extends XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     private static final LinkedState INSTANCE = new LinkedState();
-    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+    private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
     protected static LinkedState getInstance() {
         return INSTANCE;
@@ -51,9 +52,15 @@ class LinkedState extends XMPPHandlerState<ClientToOriginXMPPStreamHandler> {
     @Override
     public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        handler.sendToOrigin(element);
-        if (element.getType() == MESSAGE) {
+        switch (element.getType()) {
+        case STREAM_START:
+            handler.sendErrorToClient(BAD_FORMAT);
+            break;
+        case MESSAGE:
             proxyConfig.countSentMessage();
+            // fall through
+        default:
+            handler.sendToOrigin(element);
         }
     }
 }
