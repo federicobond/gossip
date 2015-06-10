@@ -2,10 +2,12 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
-class AuthenticatedState extends XMPPHandlerState<OriginToClientXMPPStreamHandler> {
+class AuthenticatedState extends
+        XMPPHandlerState<OriginToClientXMPPStreamHandler> {
     private static final AuthenticatedState INSTANCE = new AuthenticatedState();
 
     protected static AuthenticatedState getInstance() {
@@ -18,7 +20,10 @@ class AuthenticatedState extends XMPPHandlerState<OriginToClientXMPPStreamHandle
     @Override
     public void handleStart(OriginToClientXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        assumeType(element, STREAM_START);
+        if (element.getType() != STREAM_START) {
+            handler.sendErrorToClient(BAD_FORMAT);
+        }
+
         handler.setState(LinkedState.getInstance());
         System.out
                 .println("Origin is linked to the client, now messages may pass freely");
@@ -30,14 +35,12 @@ class AuthenticatedState extends XMPPHandlerState<OriginToClientXMPPStreamHandle
     @Override
     public void handleBody(OriginToClientXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // do nothing, just buffer element's contents
-        // TODO: check for potential floods!
+        element.consumeCurrentContent();
     }
 
     @Override
     public void handleEnd(OriginToClientXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // will never happen
-        throw new IllegalStateException("Unexpected state:" + this);
+        throw new RuntimeException(); // will never happen
     }
 }
