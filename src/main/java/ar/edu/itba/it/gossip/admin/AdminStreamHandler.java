@@ -45,8 +45,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             throws XMLStreamException {
         this.conversation = conversation;
         this.toClient = toClient;
-        this.user = new String();
-        this.pass = new String();
     }
 
     @Override
@@ -93,7 +91,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         switch (state) {
         case INITIAL:
             if(element.getType() == START_ADMIN){
-                sendToClient("<?xml version=\"1.0\"?>");
+                sendToClient("<?xml version=\"1.0\"?>\n");
             }else{
                 sendFailure(101, "Unrecognized tag");
                 quitAdmin();
