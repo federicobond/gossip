@@ -4,10 +4,10 @@ Gossip [![Build Status](https://magnum.travis-ci.com/federicobond/gossip.svg?tok
 A small Java XMPP proxy.
 
 ## How to run
-The configuration file is located at `src/main/resources/proxy.properties`.  
-To compile the project, run `mvn clean package`
-Run the proxy executing `./bin/gossip`
 
+ * The configuration file is located at `src/main/resources/proxy.properties`.  
+ * To compile the project, run `mvn clean package`
+ * Run the proxy executing `./bin/gossip`
 
 ## Admin module
 ### Commands
