@@ -77,6 +77,11 @@ public abstract class XMLStreamHandler implements TCPStreamHandler,
 
         buf.position(getNewPosition(buf));
         buf.compact();
+
+        if (buf.limit() == buf.capacity()) { // clog of death
+            buf.clear(); // and let the clog of death become an xml exception on
+                         // the next read
+        }
     }
 
     protected int getNewPosition(ByteBuffer buffer) { // because thank you aalto
