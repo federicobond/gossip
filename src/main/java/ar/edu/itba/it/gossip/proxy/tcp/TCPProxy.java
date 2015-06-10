@@ -11,12 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import ar.edu.itba.it.gossip.async.tcp.TCPEventHandler;
 import ar.edu.itba.it.gossip.async.tcp.TCPReactor;
-import ar.edu.itba.it.gossip.async.tcp.TCPReactorImpl;
 import ar.edu.itba.it.gossip.proxy.configuration.ProxyConfig;
 import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 
 public abstract class TCPProxy implements TCPEventHandler {
-    private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(TCPProxy.class);
 
     private final TCPReactor reactor;
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();

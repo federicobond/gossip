@@ -91,13 +91,17 @@ public class TCPReactorImpl implements TCPReactor {
 
         logger.info("[START]: {}", this);
         while (running) {
-            checkTimeouts();
-            // Wait for some channel to be ready (or timeout)
-            int readyChannelCount = selector.select(TIMEOUT);
-            if (readyChannelCount == 0) {
-                continue;
+            try {
+                checkTimeouts();
+                // Wait for some channel to be ready (or timeout)
+                int readyChannelCount = selector.select(TIMEOUT);
+                if (readyChannelCount == 0) {
+                    continue;
+                }
+                handleEvents(selector.selectedKeys().iterator());
+            } catch (Exception ex) {
+                logger.error("{} fail", this);
             }
-            handleEvents(selector.selectedKeys().iterator());
         }
     }
 
