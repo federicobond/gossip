@@ -2,6 +2,7 @@ package ar.edu.itba.it.gossip.proxy.xmpp.handler.c2o;
 
 import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.STREAM_START;
 import static ar.edu.itba.it.gossip.util.XMLUtils.DOCUMENT_START;
+import static ar.edu.itba.it.gossip.util.xmpp.XMPPError.BAD_FORMAT;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
 
@@ -19,10 +20,9 @@ class ValidatingCredentialsState extends
     @Override
     public void handleStart(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // FIXME: do check that the credentials were actually valid! (the
-        // code here is just assuming the client will behave and wait for an
-        // auth <success>).
-        assumeType(element, STREAM_START);
+        if (element.getType() != STREAM_START) {
+            handler.sendErrorToClient(BAD_FORMAT);
+        }
 
         handler.sendToOrigin(DOCUMENT_START);
         handler.sendToOrigin(element); // send client's stream start to origin
@@ -33,13 +33,16 @@ class ValidatingCredentialsState extends
     @Override
     public void handleBody(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        // do nothing, just buffer element's contents
-        // TODO: check for potential floods!
+        element.consumeCurrentContent();
     }
 
     @Override
     public void handleEnd(ClientToOriginXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        throw new IllegalStateException("Unexpected state:" + this);
+        if (element.getType() == STREAM_START) {
+            handler.sendErrorToClient(BAD_FORMAT);
+            return;
+        }
+        throw new RuntimeException(); // will never happen
     }
 }
