@@ -1,6 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler.o2c;
 
-import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.AUTH_FEATURES;
+import static ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement.Type.*;
 import static ar.edu.itba.it.gossip.util.xmpp.XMPPUtils.auth;
 import ar.edu.itba.it.gossip.proxy.xmpp.element.PartialXMPPElement;
 import ar.edu.itba.it.gossip.proxy.xmpp.handler.XMPPHandlerState;
@@ -19,7 +19,7 @@ class ExpectAuthFeaturesState extends
     @Override
     public void handleStart(OriginToClientXMPPStreamHandler handler,
             PartialXMPPElement element) {
-        element.consumeCurrentContent();
+        element.consumeCurrentContent();// TODO: handle STREAM_ERRORs here!
     }
 
     @Override

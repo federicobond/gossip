@@ -62,7 +62,7 @@ public class PartialXMPPElement extends PartialXMLElement implements
                 "mechanisms"), AUTH_MECHANISM("mechanism"), AUTH_SUCCESS(
                 "success"), AUTH_FAILURE("failure"), MESSAGE("message"), SUBJECT(
                 "subject"), BODY("body"), COMPOSING("composing"), PAUSED(
-                "paused"), OTHER;
+                "paused"), STREAM_ERROR("stream:error"), OTHER;
 
         private static final Map<String, Type> typesByName;
 
@@ -83,11 +83,11 @@ public class PartialXMPPElement extends PartialXMLElement implements
 
         private final Optional<String> name;
 
-        Type() {
+        private Type() {
             this.name = Optional.empty();
         }
 
-        Type(String name) {
+        private Type(String name) {
             this.name = Optional.of(name);
         }
 
