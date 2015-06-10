@@ -62,7 +62,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         try {
             handleStart(PartialAdminElement.from(xmlElement));
         } catch (IllegalStateException e) {
-            sendFailure(104, "Unknown error");
+            sendFailure(104, "Unexpected tag");
+            quitAdmin();
         }
     }
 
@@ -101,6 +102,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 state = State.READ_USER;
                 break;
             case QUIT:
+                sendSuccess();
                 quitAdmin();
                 break;
             default:
@@ -136,6 +138,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 state = State.READ_STATS;
                 break;
             case QUIT:
+                sendSuccess();
                 quitAdmin();
                 break;
             default:
@@ -296,7 +299,6 @@ public class AdminStreamHandler extends XMLStreamHandler implements
     }
 
     private void quitAdmin() {
-        sendSuccess();
         logger.info("Admin disconected");
         conversation.quit();
         state = State.QUIT;
