@@ -27,59 +27,58 @@ import ar.edu.itba.it.gossip.proxy.xml.element.PartialXMLElement;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public class AdminStreamHandler extends XMLStreamHandler implements
-		XMLEventHandler {
+        XMLEventHandler {
 
-	private PartialXMLElement xmlElement;
-	private final AdminConversation conversation;
-	private State state = State.INITIAL;
-	private final OutputStream toClient;
-	private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
-	private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
-	
-	private String user;
-	private String pass;
+    private PartialXMLElement xmlElement;
+    private final AdminConversation conversation;
+    private State state = State.INITIAL;
+    private final OutputStream toClient;
+    private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+    private final Logger logger = LoggerFactory.getLogger(TCPReactorImpl.class);
 
-	public AdminStreamHandler(AdminConversation conversation,
-			InputStream fromClient, OutputStream toClient)
-			throws XMLStreamException {
-		setXMLEventHandler(this);
-		this.conversation = conversation;
-		this.toClient = toClient;
-		this.user = new String();
-		this.pass = new String();
-	}
+    private String user;
+    private String pass;
 
-	@Override
-	public void handleStartElement(AsyncXMLStreamReader<?> reader) {
-	    if (xmlElement == null) {
-			xmlElement = new PartialXMLElement();
-		} else {
-			PartialXMLElement newXMLElement = new PartialXMLElement();
-			xmlElement.addChild(newXMLElement);
-			xmlElement = newXMLElement;
-		}
-		xmlElement.loadName(reader).loadAttributes(reader);
+    public AdminStreamHandler(AdminConversation conversation,
+            InputStream fromClient, OutputStream toClient)
+            throws XMLStreamException {
+        this.conversation = conversation;
+        this.toClient = toClient;
+        this.user = new String();
+        this.pass = new String();
+    }
 
-		try {
-		    handleStart(PartialAdminElement.from(xmlElement));
-		} catch (IllegalStateException e){
-		    sendFailure(104, "Unknown error");
-		}
-	}
+    @Override
+    public void handleStartElement(AsyncXMLStreamReader<?> reader) {
+        if (xmlElement == null) {
+            xmlElement = new PartialXMLElement();
+        } else {
+            PartialXMLElement newXMLElement = new PartialXMLElement();
+            xmlElement.addChild(newXMLElement);
+            xmlElement = newXMLElement;
+        }
+        xmlElement.loadName(reader).loadAttributes(reader);
 
-	@Override
-	public void handleEndElement(AsyncXMLStreamReader<?> reader) {
-		xmlElement.end(reader);
+        try {
+            handleStart(PartialAdminElement.from(xmlElement));
+        } catch (IllegalStateException e) {
+            sendFailure(104, "Unknown error");
+        }
+    }
 
-		handleEnd(PartialAdminElement.from(xmlElement));
+    @Override
+    public void handleEndElement(AsyncXMLStreamReader<?> reader) {
+        xmlElement.end(reader);
+
+        handleEnd(PartialAdminElement.from(xmlElement));
 
         // TODO: this breaks when we omit the root <admin> tag
-		xmlElement = xmlElement.getParent().get(); // an element that wasn't
-													// open will never be
-													// closed,
-													// since the underlying
-													// stream is a valid XML one
-	}
+        xmlElement = xmlElement.getParent().get(); // an element that wasn't
+                                                   // open will never be
+                                                   // closed,
+                                                   // since the underlying
+                                                   // stream is a valid XML one
+    }
 
     private boolean adminLogin(String user, String password) {
         String adminUser = proxyConfig.getAdminUser();
@@ -88,19 +87,19 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         return user.equals(adminUser) && password.equals(adminPassword);
     }
 
-	public void handleStart(PartialAdminElement element) {
-		switch (state) {
-		case INITIAL:
-		    assumeType(element, START_ADMIN);
+    public void handleStart(PartialAdminElement element) {
+        switch (state) {
+        case INITIAL:
+            assumeType(element, START_ADMIN);
             state = State.EXPECT_USER;
-			break;
-		case EXPECT_USER:
-		    switch (element.getType()){
+            break;
+        case EXPECT_USER:
+            switch (element.getType()) {
             case USER:
-                //Looks unnecessary now
-                //assumeType(element, USER);
+                // Looks unnecessary now
+                // assumeType(element, USER);
                 state = State.READ_USER;
-                break ;
+                break;
             case QUIT:
                 quitAdmin();
                 break;
@@ -109,47 +108,47 @@ public class AdminStreamHandler extends XMLStreamHandler implements
                 break;
             }
             break;
-		case EXPECT_PASS:
-		    switch(element.getType()) {
-		    case QUIT:
-		        quitAdmin();
-		        break;
-		    case PASS:
-	            state = State.READ_PASS;
-	            break;
-	        default:
-	            sendFailure(101, "Unrecognized tag");
-	            break;
-		    }
-		    break;
-		case LOGGED_IN:
-		    switch (element.getType()){
-		    case LEET:
-		        state = State.READ_LEET;
-		        break;
-		    case SILENCE:
-		        state = State.READ_SILENCE;
-		        break;
-		    case ORIGIN:
-		        state = State.READ_ORIGIN;
-		        break;
-		    case STATS:
-		        state = State.READ_STATS;
-		        break;
-		    case QUIT:
-		        quitAdmin();
+        case EXPECT_PASS:
+            switch (element.getType()) {
+            case QUIT:
+                quitAdmin();
+                break;
+            case PASS:
+                state = State.READ_PASS;
                 break;
             default:
                 sendFailure(101, "Unrecognized tag");
                 break;
-		    }
-		    break;
-		default:
-			sendFailure(104, "Unknown error");
-			resetStream();
-			break;
-		}
-	}
+            }
+            break;
+        case LOGGED_IN:
+            switch (element.getType()) {
+            case LEET:
+                state = State.READ_LEET;
+                break;
+            case SILENCE:
+                state = State.READ_SILENCE;
+                break;
+            case ORIGIN:
+                state = State.READ_ORIGIN;
+                break;
+            case STATS:
+                state = State.READ_STATS;
+                break;
+            case QUIT:
+                quitAdmin();
+                break;
+            default:
+                sendFailure(101, "Unrecognized tag");
+                break;
+            }
+            break;
+        default:
+            sendFailure(104, "Unknown error");
+            resetStream();
+            break;
+        }
+    }
 
     @Override
     public void handleCharacters(AsyncXMLStreamReader<?> reader) {
@@ -179,57 +178,61 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             }
             break;
         case READ_LEET:
-            assumeType(element,LEET);
+            assumeType(element, LEET);
             String leetValue = xmlElement.getBody().toLowerCase();
 
             switch (leetValue) {
-                case "on":
-                    proxyConfig.setLeet(true);
-                    logger.info("L33t conversion turned on");
-                    sendSuccess();
-                    break;
-                case "off":
-                    proxyConfig.setLeet(false);
-                    logger.info("L33t conversion turned off");
-                    sendSuccess();
-                    break;
-                default:
-                    sendFailure(103, "Wrong leet value");
+            case "on":
+                proxyConfig.setLeet(true);
+                logger.info("L33t conversion turned on");
+                sendSuccess();
+                break;
+            case "off":
+                proxyConfig.setLeet(false);
+                logger.info("L33t conversion turned off");
+                sendSuccess();
+                break;
+            default:
+                sendFailure(103, "Wrong leet value");
             }
             state = State.LOGGED_IN;
             break;
         case READ_ORIGIN:
-            assumeType(element,ORIGIN);
+            assumeType(element, ORIGIN);
             String originUser = xmlElement.getAttributes().get("usr");
             String originAddr = xmlElement.getBody();
             proxyConfig.addOriginMapping(originUser, originAddr);
-            logger.info("New origin added > " + originUser + " for user " + originAddr);
+            logger.info("New origin added > " + originUser + " for user "
+                    + originAddr);
             sendSuccess();
             state = State.LOGGED_IN;
             break;
         case READ_SILENCE:
-            assumeType(element,SILENCE);
-            String silenceValue = xmlElement.getAttributes().get("value").toLowerCase();
+            assumeType(element, SILENCE);
+            String silenceValue = xmlElement.getAttributes().get("value")
+                    .toLowerCase();
             String silenceUser = xmlElement.getBody();
 
             switch (silenceValue) {
-                case "on":
-                    proxyConfig.silence(silenceUser);
-                    logger.info("The user < " + silenceUser + " > has been silenced");
-                    sendSuccess();
-                    break;
-                case "off":
-                    proxyConfig.unsilence(silenceUser);
-                    logger.info("The user < " + silenceUser + " > has been not silenced any more");
-                    sendSuccess();
-                    break;
-                default:
-                    sendFailure(102, "Wrong silence value");
+            case "on":
+                proxyConfig.silence(silenceUser);
+                logger.info("The user < " + silenceUser
+                        + " > has been silenced");
+                sendSuccess();
+                break;
+            case "off":
+                proxyConfig.unsilence(silenceUser);
+                logger.info("The user < " + silenceUser
+                        + " > has been not silenced any more");
+                sendSuccess();
+                break;
+            default:
+                sendFailure(102, "Wrong silence value");
             }
             state = State.LOGGED_IN;
             break;
         case READ_STATS:
-            assumeType(element,STATS);
+            assumeType(element, STATS);
             getStats(Integer.parseInt(xmlElement.getBody()));
             break;
         case QUIT:
@@ -241,7 +244,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
             sendFailure(101, "Unrecognized tag");
             resetStream();
             break;
-        }        
+        }
     }
 
     @Override
@@ -251,42 +254,45 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         state = State.QUIT;
     }
 
-    private void getStats(int option){
+    private void getStats(int option) {
         state = State.LOGGED_IN;
-        switch(option){
+        switch (option) {
         case 1:
             sendToClient("<stats> \n\t <type>" + option + "</type> \n"
-                    + "\t <desc>Number of read bytes</desc> \n"
-                    + "\t <value>" + proxyConfig.getReadBytes() + "</value>\n"
-                    + "</stats>\n");
-            return ;
+                    + "\t <desc>Number of read bytes</desc> \n" + "\t <value>"
+                    + proxyConfig.getReadBytes() + "</value>\n" + "</stats>\n");
+            return;
         case 2:
             sendToClient("<stats> \n\t <type>" + option + "</type> \n"
                     + "\t <desc>Number of written bytes</desc> \n"
-                    + "\t <value>" + proxyConfig.getWrittenBytes() + "</value>\n"
-                    + "</stats>\n");
-            return ;
+                    + "\t <value>" + proxyConfig.getWrittenBytes()
+                    + "</value>\n" + "</stats>\n");
+            return;
         case 3:
             sendToClient("<stats> \n\t <type>" + option + "</type> \n"
                     + "\t <desc>Number of connections to proxy</desc> \n"
                     + "\t <value>" + proxyConfig.getAccesses() + "</value>\n"
                     + "</stats>\n");
-            return ;
+            return;
         case 4:
-            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+            sendToClient("<stats> \n\t <type>"
+                    + option
+                    + "</type> \n"
                     + "\t <desc>Number of messages sent through proxy</desc> \n"
-                    + "\t <value>" + proxyConfig.getSentMessagesCount() + "</value>\n"
-                    + "</stats>\n");
-            return ;
+                    + "\t <value>" + proxyConfig.getSentMessagesCount()
+                    + "</value>\n" + "</stats>\n");
+            return;
         case 5:
-            sendToClient("<stats> \n\t <type>" + option + "</type> \n"
+            sendToClient("<stats> \n\t <type>"
+                    + option
+                    + "</type> \n"
                     + "\t <desc>Number of messages received through proxy</desc> \n"
-                    + "\t <value>" + proxyConfig.getReceivedMessagesCount() + "</value>\n"
-                    + "</stats>\n");
-            return ;
+                    + "\t <value>" + proxyConfig.getReceivedMessagesCount()
+                    + "</value>\n" + "</stats>\n");
+            return;
         }
         sendFailure(201, "Invalid statistics option");
-        return ;
+        return;
     }
 
     private void quitAdmin() {
@@ -320,8 +326,12 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         writeTo(toClient, message);
     }
 
+    @Override
+    public void handleError(XMLStreamException exc) {
+        // TODO Auto-generated method stub
+    }
+
     protected enum State {
         INITIAL, EXPECT_USER, READ_USER, READ_PASS, EXPECT_PASS, READ_ORIGIN, READ_LEET, READ_SILENCE, READ_STATS, LOGGED_IN, QUIT;
     }
-
 }

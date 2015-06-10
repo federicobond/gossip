@@ -5,14 +5,16 @@ import java.nio.channels.SocketChannel;
 import javax.xml.stream.XMLStreamException;
 
 import ar.edu.itba.it.gossip.admin.tcp.UnproxiedTCPConversation;
+import ar.edu.itba.it.gossip.proxy.tcp.ChannelTerminator;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 
 public class AdminConversation extends UnproxiedTCPConversation {
     private final TCPStream adminStream;
-    
-    public AdminConversation(SocketChannel clientChannel) {
-        super(clientChannel);
+
+    public AdminConversation(SocketChannel clientChannel,
+            ChannelTerminator terminator) {
+        super(clientChannel, terminator);
         this.adminStream = getStream();
 
         TCPStreamHandler adminHandler;
@@ -24,7 +26,7 @@ public class AdminConversation extends UnproxiedTCPConversation {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
     }
 
 }

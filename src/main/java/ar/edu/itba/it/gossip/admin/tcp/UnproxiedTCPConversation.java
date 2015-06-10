@@ -1,11 +1,13 @@
 package ar.edu.itba.it.gossip.admin.tcp;
 
-import java.io.IOException;
+import static ar.edu.itba.it.gossip.util.nio.ChannelUtils.closeQuietly;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import ar.edu.itba.it.gossip.proxy.tcp.ChannelTerminator;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStream;
 import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.util.nio.TCPConversation;
@@ -14,8 +16,9 @@ public class UnproxiedTCPConversation implements TCPConversation {
     private final TCPStream stream;
     private boolean hasQuit = false;
 
-    protected UnproxiedTCPConversation(SocketChannel channel) {
-        this.stream = new TCPStream(channel, channel);
+    protected UnproxiedTCPConversation(SocketChannel channel,
+            ChannelTerminator terminator) {
+        this.stream = new TCPStream(channel, channel, terminator);
     }
 
     @Override
@@ -23,16 +26,14 @@ public class UnproxiedTCPConversation implements TCPConversation {
             throws ClosedChannelException {
         int streamFlags = stream.getFromSubscriptionFlags();
         int streamToFlags = stream.getToSubscriptionFlags();
-        stream.getFromChannel().register(selector, streamFlags | streamToFlags, this);
-        //stream.getToChannel().register(selector, streamToFlags, this);
+        stream.getFromChannel().register(selector, streamFlags | streamToFlags,
+                this);
+        // stream.getToChannel().register(selector, streamToFlags, this);
     }
 
     @Override
     public void closeChannels() {
-        try {
-            stream.getFromChannel().close();
-        } catch (IOException ignore) {
-        }
+        closeQuietly(stream.getFromChannel());
     }
 
     public void quit() {
@@ -46,31 +47,31 @@ public class UnproxiedTCPConversation implements TCPConversation {
     public TCPStream getStream() {
         return stream;
     }
-    
-    public ByteBuffer getReadBuffer(){
+
+    public ByteBuffer getReadBuffer() {
         return stream.getFromBuffer();
     }
-    
-    public ByteBuffer getWriteBuffer(){
+
+    public ByteBuffer getWriteBuffer() {
         return stream.getToBuffer();
     }
-    
-    public TCPStreamHandler getHandler(){
+
+    public TCPStreamHandler getHandler() {
         return stream.getHandler();
     }
-    
+
     // FIXME: just for debugging purposes
-    public String getBufferName(ByteBuffer buffer){
-        if(buffer == stream.getFromBuffer()){
+    public String getBufferName(ByteBuffer buffer) {
+        if (buffer == stream.getFromBuffer()) {
             return "from buffer";
         }
-        if(buffer == stream.getToBuffer()){
+        if (buffer == stream.getToBuffer()) {
             return "to buffer";
         }
         throw new IllegalArgumentException("Unknown buffer");
     }
-    
-    public SocketChannel getChannel(){
+
+    public SocketChannel getChannel() {
         return stream.getFromChannel();
     }
 }

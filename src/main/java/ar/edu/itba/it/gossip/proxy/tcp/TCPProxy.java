@@ -15,7 +15,7 @@ import ar.edu.itba.it.gossip.util.nio.BufferUtils;
 public abstract class TCPProxy implements TCPEventHandler {
     private final TCPReactor reactor;
     private final ProxyConfig proxyConfig = ProxyConfig.getInstance();
-    
+
     public TCPProxy(TCPReactor reactor) {
         this.reactor = reactor;
     }

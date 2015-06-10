@@ -158,9 +158,9 @@ public class ClientToOriginXMPPStreamHandlerTest extends
         int streamResets = 0;
         int connectionAttempts = 0;
 
-        TestClientToOriginXMPPStreamHandler(ProxiedXMPPConversation conversation,
-                TCPStream clientToOrigin, OutputStream toClient)
-                throws XMLStreamException {
+        TestClientToOriginXMPPStreamHandler(
+                ProxiedXMPPConversation conversation, TCPStream clientToOrigin,
+                OutputStream toClient) throws XMLStreamException {
             super(conversation, clientToOrigin, toClient);
         }
 

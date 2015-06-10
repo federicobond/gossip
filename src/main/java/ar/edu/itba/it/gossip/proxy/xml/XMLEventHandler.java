@@ -5,9 +5,11 @@ import javax.xml.stream.XMLStreamException;
 import com.fasterxml.aalto.AsyncXMLStreamReader;
 
 public interface XMLEventHandler {
-    default void handleStartDocument(AsyncXMLStreamReader<?> reader) {}
+    default void handleStartDocument(AsyncXMLStreamReader<?> reader) {
+    }
 
-    default void handleEndDocument(AsyncXMLStreamReader<?> reader) {}
+    default void handleEndDocument(AsyncXMLStreamReader<?> reader) {
+    }
 
     void handleStartElement(AsyncXMLStreamReader<?> reader);
 
