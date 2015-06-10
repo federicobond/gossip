@@ -48,7 +48,7 @@ class ExpectCredentialsState extends
             handler.sendErrorToClient(BAD_FORMAT);
             return;
         }
-        
+
         final Credentials credentials;
         try {
             credentials = ((Auth) element).getCredentials();
@@ -78,7 +78,7 @@ class ExpectCredentialsState extends
     }
 
     private void sendStreamOpenToOrigin(ClientToOriginXMPPStreamHandler handler) {
-        String currentUser = handler.getCurrentUser();
+        String currentUser = getProxyConfig().getJID(handler.getCurrentUser());
         String originName = getProxyConfig().getXMPPServerName();
 
         handler.sendToOrigin(DOCUMENT_START

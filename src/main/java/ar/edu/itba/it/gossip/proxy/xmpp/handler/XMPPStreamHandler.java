@@ -1,7 +1,6 @@
 package ar.edu.itba.it.gossip.proxy.xmpp.handler;
 
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeNotSet;
-import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeSet;
 import static ar.edu.itba.it.gossip.util.ValidationUtils.assumeState;
 
 import java.nio.ByteBuffer;
@@ -47,11 +46,13 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
 
         handleEnd(xmppElement);
 
-        xmppElement = xmppElement.getParent().get(); // an element that wasn't
-                                                     // open will never be
-                                                     // closed, since the
-                                                     // underlying stream is a
-                                                     // valid XML one
+        xmppElement = xmppElement.getParent().orElse(null); // an element that
+                                                            // wasn't open will
+                                                            // never be closed,
+                                                            // since the
+                                                            // underlying stream
+                                                            // is a valid XML
+                                                            // one
     }
 
     @Override
@@ -64,6 +65,7 @@ public abstract class XMPPStreamHandler extends XMLStreamHandler implements
     @Override
     public void handleError(XMLStreamException e) {
         // TODO: generic *XML* stream error
+        throw new RuntimeException(e);
     }
 
     protected void endHandling() {
