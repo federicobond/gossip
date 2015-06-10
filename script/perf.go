@@ -3,16 +3,16 @@ package main
 import (
   "net"
   "fmt"
-  "time"
 )
 
 const (
   workers = 10
-  connections = 300
+  connections = 20000
 )
 
 func main() {
   tasks := make(chan int)
+  done := make(chan int)
 
   for i := 0; i < workers; i++ {
     go func(i int) {
@@ -35,6 +35,7 @@ func main() {
           }
           conn.Close()
         } else {
+          done <- i
           return
         }
       }
@@ -44,6 +45,10 @@ func main() {
   for i := 0; i < connections; i++ {
     tasks <- i
   }
-  time.Sleep(1 * time.Second)
+  close(tasks)
+  for j := 0; j < workers; j++ {
+    fmt.Println("closing worker", j)
+    <-done
+  }
   return
 }
