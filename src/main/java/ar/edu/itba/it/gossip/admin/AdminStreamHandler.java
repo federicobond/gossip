@@ -244,8 +244,8 @@ public class AdminStreamHandler extends XMLStreamHandler implements
         case LOGGED_IN:
             break;
         default:
-            sendFailure(101, "Unrecognized tag");
-            resetStream();
+            //sendFailure(101, "Unrecognized tag");
+            //resetStream();
             break;
         }
     }
