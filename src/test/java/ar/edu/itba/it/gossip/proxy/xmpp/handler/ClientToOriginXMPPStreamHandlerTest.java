@@ -53,8 +53,8 @@ public class ClientToOriginXMPPStreamHandlerTest extends
                     attr("version", "1.0"), attr("xmlns", "jabber:client"),
                     attr("xml:lang", "en"),
                     attr("xmlns:xml", "http://www.w3.org/XML/1998/namespace"),
-                    attr("from", "testUsername"), attr("to", "localhost"))
-            + ">";
+                    attr("from", "testUsername@localhost"),
+                    attr("to", "localhost")) + ">";
 
     private static final String CURRENT_USER = "testUsername";
 

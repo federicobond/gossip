@@ -72,46 +72,6 @@ public class OriginToClientXMPPStreamHandlerTest extends
     }
 
     @Test
-    public void testSendFailureThroughOnAuthFailure() {
-        sendOriginsFirstStart();
-        toOrigin.reset();
-
-        String[] serializations = { "failure serialization start",
-                "not authorized serialization", "text serialization start",
-                "text serialization", "text serialization end",
-                "failure serialization end" };
-        PartialXMPPElement failure = xmppElement(AUTH_FAILURE,
-                serializations[0], serializations[5]);
-        PartialXMPPElement notAuthorized = xmppElement(OTHER, serializations[1]);
-        PartialXMPPElement text = xmppElement(OTHER, serializations[2],
-                serializations[3], serializations[4]);
-
-        sut.handleStart(failure);
-        assertEquals(serializations[0], contents(toClient));
-        toClient.reset();
-
-        sut.handleEnd(notAuthorized);
-        assertEquals(serializations[1], contents(toClient));
-        toClient.reset();
-
-        sut.handleStart(text);
-        assertEquals(serializations[2], contents(toClient));
-        toClient.reset();
-
-        sut.handleBody(text);
-        assertEquals(serializations[3], contents(toClient));
-        toClient.reset();
-
-        sut.handleEnd(text);
-        assertEquals(serializations[4], contents(toClient));
-        toClient.reset();
-
-        sut.handleEnd(failure);
-        assertEquals(serializations[5], contents(toClient));
-        toClient.reset();
-    }
-
-    @Test
     public void testSendSuccessAndResetStreamThroughOnAuthSuccess() {
         sendOriginsFirstStart();
         toOrigin.reset();
@@ -197,6 +157,7 @@ public class OriginToClientXMPPStreamHandlerTest extends
             OriginToClientXMPPStreamHandler {
         int streamResets = 0;
         int twinAwakens = 0;
+        int endedTwin = 0;
 
         TestOriginToClientXMPPStreamHandler(
                 ProxiedXMPPConversation conversation, TCPStream originToClient,
@@ -212,6 +173,11 @@ public class OriginToClientXMPPStreamHandlerTest extends
         @Override
         protected void resumeTwin() {
             twinAwakens++;
+        }
+
+        @Override
+        protected void endTwinsHandling() {
+            endedTwin++;
         }
 
         @Override
