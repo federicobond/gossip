@@ -328,7 +328,7 @@ public class AdminStreamHandler extends XMLStreamHandler implements
 
     @Override
     public void handleError(XMLStreamException exc) {
-        // TODO Auto-generated method stub
+        handleError(new Exception());
     }
 
     protected enum State {
