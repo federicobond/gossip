@@ -13,12 +13,15 @@ import ar.edu.itba.it.gossip.proxy.tcp.TCPStreamHandler;
 import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
 public class UnproxiedTCPConversation implements TCPConversation {
+    private static final int BUFFER_SIZE = 1 * 1024; // bytes
+
     private final TCPStream stream;
     private boolean hasQuit = false;
 
     protected UnproxiedTCPConversation(SocketChannel channel,
             ChannelTerminator terminator) {
-        this.stream = new TCPStream(channel, channel, terminator);
+        this.stream = new TCPStream(channel, BUFFER_SIZE, channel, BUFFER_SIZE,
+                terminator);
     }
 
     @Override

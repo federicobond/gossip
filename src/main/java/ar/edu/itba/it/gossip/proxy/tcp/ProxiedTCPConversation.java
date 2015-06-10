@@ -11,6 +11,10 @@ import java.nio.channels.SocketChannel;
 import ar.edu.itba.it.gossip.util.nio.TCPConversation;
 
 public class ProxiedTCPConversation implements TCPConversation {
+    private static final int INPUT_BUFFER_SIZE = 4 * 1024; // bytes
+    private static final int OUT_TO_IN_RATIO = 4; // worst case, 'c' becomes
+                                                  // '<', which is "&lt;"
+
     private final TCPStream clientToOrigin;
     private final TCPStream originToClient;
     private Boolean connectingToOrigin = null; // Note: this is completely
@@ -18,8 +22,10 @@ public class ProxiedTCPConversation implements TCPConversation {
 
     protected ProxiedTCPConversation(SocketChannel clientChannel,
             ChannelTerminator terminator) {
-        this.clientToOrigin = new TCPStream(clientChannel, null, terminator);
-        this.originToClient = new TCPStream(null, clientChannel, terminator);
+        this.clientToOrigin = new TCPStream(clientChannel, INPUT_BUFFER_SIZE,
+                null, INPUT_BUFFER_SIZE * OUT_TO_IN_RATIO, terminator);
+        this.originToClient = new TCPStream(null, INPUT_BUFFER_SIZE,
+                clientChannel, INPUT_BUFFER_SIZE, terminator);
     }
 
     public void updateSubscription(Selector selector)
@@ -123,5 +129,4 @@ public class ProxiedTCPConversation implements TCPConversation {
         }
         throw new IllegalArgumentException("Unknown buffer");
     }
-
 }

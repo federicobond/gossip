@@ -15,21 +15,20 @@ import ar.edu.itba.it.gossip.util.nio.ByteBufferOutputStream;
 import ar.edu.itba.it.gossip.util.nio.ByteStream;
 
 public class TCPStream extends ByteStream {
-    private static final int BUF_SIZE = 4 * 1024;
-
     private final Endpoint from;
     private final Endpoint to;
 
     private final ChannelTerminator channelTerminator;
 
-    private TCPStreamHandler handler;// TODO: check!
+    private TCPStreamHandler handler;
 
     private boolean allowInflow = true;
 
-    public TCPStream(final SocketChannel fromChannel,
-            final SocketChannel toChannel, final ChannelTerminator terminator) {
-        this.from = new Endpoint(fromChannel);
-        this.to = new Endpoint(toChannel);
+    public TCPStream(final SocketChannel fromChannel, int inputBufferSize,
+            final SocketChannel toChannel, int outputBufferSize,
+            final ChannelTerminator terminator) {
+        this.from = new Endpoint(fromChannel, inputBufferSize);
+        this.to = new Endpoint(toChannel, outputBufferSize);
         this.channelTerminator = terminator;
     }
 
@@ -117,11 +116,13 @@ public class TCPStream extends ByteStream {
 
     private static class Endpoint {
         SocketChannel channel;
-        final ByteBuffer buffer = ByteBuffer.allocate(BUF_SIZE);
+        final ByteBuffer buffer;
 
-        Endpoint(final SocketChannel channel) { // NOTE: null is acceptable
-                                                // here!
+        Endpoint(final SocketChannel channel, int bufferSize) { // NOTE: null is
+                                                                // acceptable
+                                                                // here!
             this.channel = channel;
+            this.buffer = ByteBuffer.allocate(bufferSize);
         }
 
         @Override
